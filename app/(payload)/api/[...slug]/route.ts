@@ -1,4 +1,3 @@
-import config from "@/payload.config";
 import {
     REST_DELETE,
     REST_GET,
@@ -8,11 +7,11 @@ import {
     REST_PUT,
 } from "@payloadcms/next/routes";
 
-const configPromise = Promise.resolve(config);
+import { payloadConfigPromise } from "@/lib/payloadConfig";
 
-export const GET = REST_GET(configPromise);
-export const POST = REST_POST(configPromise);
-export const DELETE = REST_DELETE(configPromise);
-export const PATCH = REST_PATCH(configPromise);
-export const PUT = REST_PUT(configPromise);
-export const OPTIONS = REST_OPTIONS(configPromise);
+export const GET = REST_GET(payloadConfigPromise);
+export const POST = REST_POST(payloadConfigPromise);
+export const DELETE = REST_DELETE(payloadConfigPromise);
+export const PATCH = REST_PATCH(payloadConfigPromise);
+export const PUT = REST_PUT(payloadConfigPromise);
+export const OPTIONS = REST_OPTIONS(payloadConfigPromise);
