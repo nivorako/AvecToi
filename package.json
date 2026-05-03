@@ -6,7 +6,10 @@
         "dev": "next dev --webpack",
         "build": "next build",
         "start": "next start",
-        "lint": "eslint"
+        "lint": "eslint",
+        "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --forceExit",
+        "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch --forceExit",
+        "test:debug": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --detectOpenHandles --runInBand"
     },
     "dependencies": {
         "@payloadcms/db-mongodb": "^3.84.1",
@@ -21,12 +24,17 @@
     },
     "devDependencies": {
         "@tailwindcss/postcss": "^4",
+        "@types/jest": "^30.0.0",
         "@types/node": "^20",
         "@types/react": "^19",
         "@types/react-dom": "^19",
+        "cross-env": "^10.1.0",
         "eslint": "^9",
         "eslint-config-next": "16.2.4",
+        "jest": "^30.3.0",
+        "mongodb-memory-server": "^11.1.0",
         "tailwindcss": "^4",
+        "ts-jest": "^29.4.9",
         "typescript": "^5"
     }
 }
