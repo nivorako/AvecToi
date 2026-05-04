@@ -732,6 +732,49 @@ export default buildConfig({
                 careGroup: true,
                 patient: true,
             },
+            hooks: {
+                beforeValidate: [
+                    async ({ req, data }) => {
+                        if (!data?.patient) return data;
+
+                        const patientID =
+                            typeof data.patient === "string" ||
+                            typeof data.patient === "number"
+                                ? data.patient
+                                : ((
+                                      data.patient as {
+                                          id?: string | number;
+                                          value?: string | number;
+                                      }
+                                  ).id ??
+                                  (
+                                      data.patient as {
+                                          id?: string | number;
+                                          value?: string | number;
+                                      }
+                                  ).value);
+
+                        if (!patientID) {
+                            throw new Error("Invalid patient relationship");
+                        }
+
+                        const relatedPatient = await req.payload.findByID({
+                            collection: "patients",
+                            id: patientID,
+                            depth: 0,
+                        });
+
+                        if (!relatedPatient?.careGroup) {
+                            throw new Error("Patient has no careGroup");
+                        }
+
+                        return {
+                            ...data,
+                            careGroup: relatedPatient.careGroup,
+                        };
+                    },
+                ],
+            },
             access: {
                 create: async ({ req, data }) => {
                     if (!req.user) return false;
