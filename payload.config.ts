@@ -63,6 +63,51 @@ export default buildConfig({
             hasMore = page < result.totalPages;
             page += 1;
         }
+
+        page = 1;
+        hasMore = true;
+        while (hasMore) {
+            const result = await payload.find({
+                collection: "users",
+                depth: 0,
+                limit,
+                page,
+                where: {
+                    or: [
+                        {
+                            name: {
+                                exists: false,
+                            },
+                        },
+                        {
+                            name: {
+                                equals: "",
+                            },
+                        },
+                    ],
+                },
+            });
+
+            if (!result.docs.length) break;
+
+            for (const doc of result.docs) {
+                const email = typeof doc.email === "string" ? doc.email : "";
+                const derivedName = email.split("@")[0]?.trim();
+                if (!derivedName) continue;
+
+                await payload.update({
+                    collection: "users",
+                    id: doc.id,
+                    data: {
+                        name: derivedName,
+                    },
+                    depth: 0,
+                });
+            }
+
+            hasMore = page < result.totalPages;
+            page += 1;
+        }
     },
 
     // Collections define your data model (schema), admin UI, and API endpoints.
@@ -79,9 +124,122 @@ export default buildConfig({
         {
             slug: "users",
             admin: {
-                useAsTitle: "name",
+                useAsTitle: "email",
             },
             auth: true,
+            access: {
+                create: async ({ req }) => {
+                    if (!req.user) return false;
+
+                    const ownerMemberships = await req.payload.find({
+                        collection: "memberships",
+                        depth: 0,
+                        limit: 1,
+                        pagination: false,
+                        where: {
+                            and: [
+                                {
+                                    user: {
+                                        equals: req.user.id,
+                                    },
+                                },
+                                {
+                                    role: {
+                                        equals: "owner",
+                                    },
+                                },
+                            ],
+                        },
+                    });
+
+                    return ownerMemberships.docs.length > 0;
+                },
+                read: async ({ req }) => {
+                    if (!req.user) return false;
+
+                    const ownerMemberships = await req.payload.find({
+                        collection: "memberships",
+                        depth: 0,
+                        limit: 1,
+                        pagination: false,
+                        where: {
+                            and: [
+                                {
+                                    user: {
+                                        equals: req.user.id,
+                                    },
+                                },
+                                {
+                                    role: {
+                                        equals: "owner",
+                                    },
+                                },
+                            ],
+                        },
+                    });
+
+                    if (ownerMemberships.docs.length > 0) return true;
+
+                    const myMemberships = await req.payload.find({
+                        collection: "memberships",
+                        depth: 0,
+                        limit: 100,
+                        pagination: false,
+                        where: {
+                            user: {
+                                equals: req.user.id,
+                            },
+                        },
+                    });
+
+                    const careGroupIDs = myMemberships.docs
+                        .map((m) => m.careGroup)
+                        .filter(Boolean);
+
+                    if (!careGroupIDs.length) {
+                        return {
+                            id: {
+                                equals: req.user.id,
+                            },
+                        };
+                    }
+
+                    const membershipsInMyCareGroups = await req.payload.find({
+                        collection: "memberships",
+                        depth: 0,
+                        limit: 1000,
+                        pagination: false,
+                        where: {
+                            careGroup: {
+                                in: careGroupIDs,
+                            },
+                        },
+                    });
+
+                    const userIDs = Array.from(
+                        new Set(
+                            membershipsInMyCareGroups.docs
+                                .map((m) => m.user)
+                                .filter(Boolean),
+                        ),
+                    );
+
+                    return {
+                        id: {
+                            in: userIDs,
+                        },
+                    };
+                },
+                update: ({ req }) => {
+                    if (!req.user) return false;
+                    return {
+                        id: {
+                            equals: req.user.id,
+                        },
+                    };
+                },
+                delete: () => false,
+            },
             fields: [
                 {
                     name: "name",
@@ -285,32 +443,35 @@ export default buildConfig({
             access: {
                 create: async ({ req, data }) => {
                     if (!req.user) return false;
-                    if (!data?.careGroup) return false;
 
-                    // Only owners can add new members to their CareGroup.
+                    const andConditions: Where[] = [
+                        {
+                            user: {
+                                equals: req.user.id,
+                            },
+                        },
+                        {
+                            role: {
+                                equals: "owner",
+                            },
+                        },
+                    ];
+
+                    if (data?.careGroup) {
+                        andConditions.push({
+                            careGroup: {
+                                equals: data.careGroup,
+                            },
+                        });
+                    }
+
                     const ownerMemberships = await req.payload.find({
                         collection: "memberships",
                         depth: 0,
                         limit: 1,
                         pagination: false,
                         where: {
-                            and: [
-                                {
-                                    user: {
-                                        equals: req.user.id,
-                                    },
-                                },
-                                {
-                                    careGroup: {
-                                        equals: data.careGroup,
-                                    },
-                                },
-                                {
-                                    role: {
-                                        equals: "owner",
-                                    },
-                                },
-                            ],
+                            and: andConditions,
                         },
                     });
 

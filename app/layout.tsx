@@ -32,6 +32,9 @@ export default function RootLayout({
 }: Readonly<{
     children: ReactNode;
 }>) {
+    // App root layout:
+    // - global CSS + fonts
+    // - wraps the app with Payload's Next.js RootLayout (admin + server functions wiring)
     return (
         <PayloadRootLayout
             config={payloadConfigPromise}

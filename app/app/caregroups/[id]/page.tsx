@@ -27,24 +27,31 @@ export default async function CareGroupPage({
 }: {
     params: Promise<{ id: string }>;
 }) {
+    // Route: /app/caregroups/:id
+    // Displays a caregroup dashboard (patients, cases, tasks).
     const { id } = await params;
 
+    // Protected page: redirect to login when user is not authenticated.
     const user = await getCurrentUser();
     if (!user) redirect("/login");
 
+    // Basic caregroup info.
     const careGroup = await payloadREST<CareGroup>(
         `/api/caregroups/${id}?depth=0`,
     );
 
+    // Patients belonging to this caregroup.
     const patients = await payloadREST<{ docs: Patient[] }>(
         `/api/patients?where[careGroup][equals]=${encodeURIComponent(id)}&limit=100&depth=0`,
     );
 
     // Cases and tasks are filtered by Payload access control.
+    // The UI can safely show what the API returns for the current user.
     const cases = await payloadREST<{ docs: Case[] }>(
         `/api/cases?where[careGroup][equals]=${encodeURIComponent(id)}&limit=20&depth=0`,
     );
 
+    // Latest tasks for this caregroup.
     const tasks = await payloadREST<{ docs: Task[] }>(
         `/api/tasks?where[careGroup][equals]=${encodeURIComponent(id)}&limit=20&depth=0`,
     );

@@ -18,18 +18,24 @@ export default async function CasePage({
 }: {
     params: Promise<{ id: string }>;
 }) {
+    // Route: /app/cases/:id
+    // Displays a case details page with its tasks.
     const { id } = await params;
 
+    // Protected page: redirect to login when user is not authenticated.
     const user = await getCurrentUser();
     if (!user) redirect("/login");
 
+    // Case data (depth=1 to populate relationships like careGroup).
     const caseDoc = await payloadREST<CaseDoc>(`/api/cases/${id}?depth=1`);
 
+    // Used to render a "Retour caregroup" link when available.
     const careGroupID =
         typeof caseDoc?.careGroup === "string"
             ? caseDoc.careGroup
             : caseDoc?.careGroup?.id;
 
+    // Tasks belonging to this case.
     const tasks = await payloadREST<{ docs: Task[] }>(
         `/api/tasks?where[case][equals]=${encodeURIComponent(id)}&limit=50&depth=0`,
     );

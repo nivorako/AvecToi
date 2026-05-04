@@ -8,14 +8,17 @@ export default function LogoutButton() {
     const [loading, setLoading] = useState(false);
 
     async function logout() {
+        // Client-side logout:
+        // 1) Ask Payload to clear any session cookies.
+        // 2) Clear our HttpOnly JWT cookie.
+        // 3) Navigate back to the login page.
         setLoading(true);
         try {
-            await fetch("/api/users/logout", {
+            await fetch("/api/auth/logout", {
                 method: "POST",
                 credentials: "include",
             });
         } finally {
-            document.cookie = "avectoi-token=; Path=/; Max-Age=0; SameSite=Lax";
             router.replace("/login");
             setLoading(false);
         }

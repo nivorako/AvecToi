@@ -5,9 +5,11 @@ import LogoutButton from "./LogoutButton";
 import { findCareGroups, getCurrentUser } from "@/lib/payloadRest";
 
 export default async function AppHomePage() {
+    // Protected page: requires an authenticated Payload user.
     const user = await getCurrentUser();
     if (!user) redirect("/login");
 
+    // Fetch the caregroups the user is allowed to see (access control enforced by Payload).
     const caregroups = await findCareGroups();
 
     return (
@@ -27,6 +29,7 @@ export default async function AppHomePage() {
             <main className="mx-auto w-full max-w-4xl px-6 py-8">
                 <h1 className="text-2xl font-semibold">Mes caregroups</h1>
 
+                {/* Simple navigation list to the caregroup details pages. */}
                 <div className="mt-6 grid grid-cols-1 gap-3">
                     {caregroups.docs.map((cg) => (
                         <Link
@@ -34,7 +37,9 @@ export default async function AppHomePage() {
                             href={`/app/caregroups/${cg.id}`}
                             className="rounded-lg border border-zinc-200 bg-white p-4 hover:bg-zinc-50"
                         >
-                            <div className="font-medium">{cg.name ?? cg.id}</div>
+                            <div className="font-medium">
+                                {cg.name ?? cg.id}
+                            </div>
                         </Link>
                     ))}
                 </div>

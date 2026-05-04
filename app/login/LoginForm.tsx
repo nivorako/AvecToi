@@ -11,12 +11,15 @@ export default function LoginForm() {
     const [loading, setLoading] = useState(false);
 
     async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+        // Client-side login:
+        // - call a Next.js route handler that logs into Payload and sets a HttpOnly cookie
+        // - redirect to /app
         e.preventDefault();
         setError(null);
         setLoading(true);
 
         try {
-            const res = await fetch("/api/users/login", {
+            const res = await fetch("/api/auth/login", {
                 method: "POST",
                 headers: {
                     "content-type": "application/json",
@@ -31,11 +34,6 @@ export default function LoginForm() {
             if (!res.ok) {
                 setError("Identifiants invalides");
                 return;
-            }
-
-            const json = (await res.json()) as { token?: string };
-            if (json.token) {
-                document.cookie = `avectoi-token=${encodeURIComponent(json.token)}; Path=/; SameSite=Lax`;
             }
 
             router.replace("/app");
