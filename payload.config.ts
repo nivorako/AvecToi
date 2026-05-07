@@ -111,10 +111,19 @@ export default buildConfig({
     },
 
     // Collections define your data model (schema), admin UI, and API endpoints.
-    // In this project we implement multi-tenancy via:
-    // - `caregroups`: the tenant boundary / shared space
-    // - `memberships`: joins users to caregroups with a role
+    //
+    // Multi-tenancy model (MVP):
+    // - `caregroups`: tenant boundary / shared space
+    // - `memberships`: joins users to caregroups with a role (owner/family/professional)
     // - `patients`: belongs to a caregroup
+    // - `cases`: belongs to a patient + caregroup, and has a type (medical/custom)
+    // - `tasks`: belongs to a case
+    //
+    // Access control strategy:
+    // - Most reads are filtered by `careGroup` membership.
+    // - Professionals can only see medical content.
+    // - We duplicate some derived fields (ex: tasks.careGroup/tasks.caseType) to enforce ACL
+    //   without doing joins at query time.
     collections: [
         // ---------------------------------------------------------------------
         // Users
@@ -618,6 +627,233 @@ export default buildConfig({
                             value: "professional",
                         },
                     ],
+                },
+            ],
+        },
+
+        {
+            slug: "invitations",
+            access: {
+                create: async ({ req, data }) => {
+                    if (!req.user) return false;
+                    const careGroupID =
+                        typeof data?.careGroup === "string"
+                            ? data.careGroup
+                            : (data?.careGroup as { id?: string } | undefined)
+                                  ?.id;
+
+                    if (!careGroupID) return false;
+
+                    const ownerMemberships = await req.payload.find({
+                        collection: "memberships",
+                        depth: 0,
+                        limit: 1,
+                        pagination: false,
+                        where: {
+                            and: [
+                                {
+                                    user: {
+                                        equals: req.user.id,
+                                    },
+                                },
+                                {
+                                    careGroup: {
+                                        equals: careGroupID,
+                                    },
+                                },
+                                {
+                                    role: {
+                                        equals: "owner",
+                                    },
+                                },
+                            ],
+                        },
+                    });
+
+                    return ownerMemberships.docs.length > 0;
+                },
+                read: async ({ req }) => {
+                    if (!req.user) return false;
+
+                    const ownerMemberships = await req.payload.find({
+                        collection: "memberships",
+                        depth: 0,
+                        limit: 100,
+                        pagination: false,
+                        where: {
+                            and: [
+                                {
+                                    user: {
+                                        equals: req.user.id,
+                                    },
+                                },
+                                {
+                                    role: {
+                                        equals: "owner",
+                                    },
+                                },
+                            ],
+                        },
+                    });
+
+                    const ownerCareGroupIDs = ownerMemberships.docs
+                        .map((m) =>
+                            typeof m.careGroup === "string"
+                                ? m.careGroup
+                                : (m.careGroup as { id?: string } | undefined)
+                                      ?.id,
+                        )
+                        .filter((id): id is string => Boolean(id));
+
+                    const or: Where[] = [];
+                    if (req.user.email) {
+                        or.push({
+                            email: {
+                                equals: req.user.email,
+                            },
+                        });
+                    }
+
+                    or.push({
+                        careGroup: {
+                            in: ownerCareGroupIDs.length
+                                ? ownerCareGroupIDs
+                                : ["__none__"],
+                        },
+                    });
+
+                    return { or };
+                },
+                update: async ({ req }) => {
+                    if (!req.user) return false;
+
+                    const ownerMemberships = await req.payload.find({
+                        collection: "memberships",
+                        depth: 0,
+                        limit: 100,
+                        pagination: false,
+                        where: {
+                            and: [
+                                {
+                                    user: {
+                                        equals: req.user.id,
+                                    },
+                                },
+                                {
+                                    role: {
+                                        equals: "owner",
+                                    },
+                                },
+                            ],
+                        },
+                    });
+
+                    const careGroupIDs = ownerMemberships.docs
+                        .map((m) => m.careGroup)
+                        .filter(Boolean);
+
+                    if (!careGroupIDs.length) return false;
+
+                    return {
+                        careGroup: {
+                            in: careGroupIDs,
+                        },
+                    };
+                },
+                delete: async ({ req }) => {
+                    if (!req.user) return false;
+
+                    const ownerMemberships = await req.payload.find({
+                        collection: "memberships",
+                        depth: 0,
+                        limit: 100,
+                        pagination: false,
+                        where: {
+                            and: [
+                                {
+                                    user: {
+                                        equals: req.user.id,
+                                    },
+                                },
+                                {
+                                    role: {
+                                        equals: "owner",
+                                    },
+                                },
+                            ],
+                        },
+                    });
+
+                    const careGroupIDs = ownerMemberships.docs
+                        .map((m) => m.careGroup)
+                        .filter(Boolean);
+
+                    if (!careGroupIDs.length) return false;
+
+                    return {
+                        careGroup: {
+                            in: careGroupIDs,
+                        },
+                    };
+                },
+            },
+            fields: [
+                {
+                    name: "careGroup",
+                    type: "relationship",
+                    relationTo: "caregroups",
+                    required: true,
+                },
+                {
+                    name: "email",
+                    type: "email",
+                    required: true,
+                },
+                {
+                    name: "role",
+                    type: "select",
+                    required: true,
+                    options: [
+                        {
+                            label: "Family",
+                            value: "family",
+                        },
+                        {
+                            label: "Professional",
+                            value: "professional",
+                        },
+                    ],
+                },
+                {
+                    name: "token",
+                    type: "text",
+                    required: true,
+                    unique: true,
+                },
+                {
+                    name: "status",
+                    type: "select",
+                    required: true,
+                    defaultValue: "pending",
+                    options: [
+                        {
+                            label: "Pending",
+                            value: "pending",
+                        },
+                        {
+                            label: "Accepted",
+                            value: "accepted",
+                        },
+                        {
+                            label: "Revoked",
+                            value: "revoked",
+                        },
+                    ],
+                },
+                {
+                    name: "expiresAt",
+                    type: "date",
+                    required: true,
                 },
             ],
         },
@@ -1197,6 +1433,11 @@ export default buildConfig({
         // A Task is linked to a Case.
         // We store derived fields (`careGroup`, `patient`, `caseType`) so access control can be
         // implemented without doing joins at query time.
+        //
+        // Role rules (MVP):
+        // - owner/family: can read and create tasks in their caregroups
+        // - professional: can read tasks only when caseType is medical
+        // - professional: can create tasks only when the related case is medical
         {
             slug: "tasks",
             admin: {
@@ -1212,31 +1453,64 @@ export default buildConfig({
                 create: async ({ req, data }) => {
                     if (!req.user) return false;
 
-                    // Admin UI may check create permission without data.
-                    // Allow button if user is in at least one caregroup.
-                    const myMemberships = await req.payload.find({
+                    const caseID =
+                        typeof data?.case === "string" ||
+                        typeof data?.case === "number"
+                            ? data.case
+                            : ((
+                                  data?.case as {
+                                      id?: string | number;
+                                      value?: string | number;
+                                  }
+                              )?.id ??
+                              (
+                                  data?.case as {
+                                      id?: string | number;
+                                      value?: string | number;
+                                  }
+                              )?.value);
+
+                    if (!caseID) return false;
+
+                    const relatedCase = await req.payload.findByID({
+                        collection: "cases",
+                        id: caseID,
+                        depth: 0,
+                    });
+
+                    const careGroupID =
+                        typeof relatedCase?.careGroup === "string" ||
+                        typeof relatedCase?.careGroup === "number"
+                            ? relatedCase.careGroup
+                            : (
+                                  relatedCase?.careGroup as {
+                                      id?: string | number;
+                                  }
+                              )?.id;
+
+                    if (!careGroupID) return false;
+
+                    const membership = await req.payload.find({
                         collection: "memberships",
                         depth: 0,
                         limit: 1,
                         pagination: false,
                         where: {
-                            user: {
-                                equals: req.user.id,
-                            },
+                            and: [
+                                { user: { equals: req.user.id } },
+                                { careGroup: { equals: careGroupID } },
+                            ],
                         },
                     });
 
-                    if (myMemberships.docs.length === 0) return false;
+                    const role = membership.docs[0]?.role;
+                    if (role === "owner" || role === "family") return true;
 
-                    // If we already know the caseType at access time, enforce professional rule.
-                    if (data?.caseType === "custom") {
-                        const hasProfessional = myMemberships.docs.some(
-                            (m) => m.role === "professional",
-                        );
-                        if (hasProfessional) return false;
+                    if (role === "professional") {
+                        return relatedCase?.type === "medical";
                     }
 
-                    return true;
+                    return false;
                 },
                 read: async ({ req }) => {
                     if (!req.user) return false;

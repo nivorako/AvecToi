@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+// App-level JWT cookie used by Next.js Server Components.
 const COOKIE_NAME = "avectoi-token";
 
 const PAYLOAD_COOKIE_NAMES = [
@@ -10,6 +11,11 @@ const PAYLOAD_COOKIE_NAMES = [
 ];
 
 export async function POST() {
+    // Custom logout endpoint used by the app.
+    //
+    // Flow:
+    // - Best-effort call to Payload logout (to invalidate admin/session cookies)
+    // - Always clear Payload cookies + our app JWT cookie (client is logged out regardless)
     const baseURL =
         process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3000";
 

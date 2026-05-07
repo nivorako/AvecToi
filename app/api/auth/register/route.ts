@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 
-// App-level JWT cookie used by Next.js Server Components to authenticate against Payload.
-// This is separate from Payload's own admin cookies; we forward both so /admin and /app stay in sync.
+import { getPayload } from "payload";
+
+import config from "@/payload.config";
+
 const COOKIE_NAME = "avectoi-token";
 
 function getSetCookieHeaders(res: Response): string[] {
@@ -17,23 +19,51 @@ function getSetCookieHeaders(res: Response): string[] {
 }
 
 export async function POST(req: Request) {
-    // Custom login endpoint used by the /login page.
-    //
-    // Flow:
-    // - Call Payload's REST login endpoint (/api/users/login)
-    // - Forward any Set-Cookie headers returned by Payload (admin session cookies)
-    // - Set our own HttpOnly cookie containing the JWT token for app auth
-    const { email, password } = (await req.json()) as {
+    const { email, password, name } = (await req.json()) as {
         email?: string;
         password?: string;
+        name?: string;
     };
 
-    if (!email || !password) {
+    const normalizedEmail = (email || "").trim().toLowerCase();
+
+    if (!normalizedEmail || !password) {
         return NextResponse.json({ ok: false }, { status: 400 });
     }
 
-    const baseURL =
-        process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3000";
+    const payload = await getPayload({ config });
+
+    const existing = await payload.find({
+        collection: "users",
+        depth: 0,
+        limit: 1,
+        pagination: false,
+        where: {
+            email: {
+                equals: normalizedEmail,
+            },
+        },
+        overrideAccess: true,
+    });
+
+    if (existing.docs.length > 0) {
+        return NextResponse.json(
+            { ok: false, message: "Email déjà utilisé" },
+            { status: 409 },
+        );
+    }
+
+    await payload.create({
+        collection: "users",
+        data: {
+            email: normalizedEmail,
+            password,
+            name: name || normalizedEmail,
+        },
+        overrideAccess: true,
+    });
+
+    const baseURL = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3000";
 
     const res = await fetch(`${baseURL}/api/users/login`, {
         method: "POST",
@@ -41,7 +71,7 @@ export async function POST(req: Request) {
             "content-type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: normalizedEmail, password }),
         cache: "no-store",
     });
 

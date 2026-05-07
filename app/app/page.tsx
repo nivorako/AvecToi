@@ -1,13 +1,12 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 import LogoutButton from "./LogoutButton";
-import { findCareGroups, getCurrentUser } from "@/lib/payloadRest";
+import { requireUser } from "@/lib/requireUser";
+import { findCareGroups } from "@/lib/payloadRest";
 
 export default async function AppHomePage() {
     // Protected page: requires an authenticated Payload user.
-    const user = await getCurrentUser();
-    if (!user) redirect("/login");
+    const user = await requireUser();
 
     // Fetch the caregroups the user is allowed to see (access control enforced by Payload).
     const caregroups = await findCareGroups();
@@ -27,7 +26,7 @@ export default async function AppHomePage() {
             </header>
 
             <main className="mx-auto w-full max-w-4xl px-6 py-8">
-                <h1 className="text-2xl font-semibold">Mes caregroups</h1>
+                <h1 className="text-2xl font-semibold">Groupe de soins</h1>
 
                 {/* Simple navigation list to the caregroup details pages. */}
                 <div className="mt-6 grid grid-cols-1 gap-3">

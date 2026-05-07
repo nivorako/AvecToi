@@ -1,26 +1,72 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+    --background: #f7f8fb;
+    --foreground: #101828;
+    --card: #ffffff;
+    --muted: #667085;
+    --border: #eaecf0;
+
+    --primary: #2a8cbe;
+    --primary-foreground: #ffffff;
+
+    --danger: #e5484d;
+    --danger-foreground: #ffffff;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-muted: var(--muted);
+    --color-border: var(--border);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-danger: var(--danger);
+    --color-danger-foreground: var(--danger-foreground);
+
+    --font-sans: var(--font-geist-sans);
+    --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+    :root {
+        --background: #0b1220;
+        --foreground: #f2f4f7;
+        --card: #111a2e;
+        --muted: #98a2b3;
+        --border: #1f2a44;
+
+        --primary: #47b2e7;
+        --primary-foreground: #06293a;
+
+        --danger: #fb7185;
+        --danger-foreground: #1b0b11;
+    }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer components {
+    .btn-primary {
+        @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90;
+    }
+
+    .btn-secondary {
+        @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-50 bg-card text-foreground ring-1 ring-border hover:bg-white/70;
+    }
+
+    .btn-danger {
+        @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-50 bg-danger text-danger-foreground hover:bg-danger/90;
+    }
+
+    .input {
+        @apply w-full rounded-2xl bg-card px-3 py-2 text-sm text-foreground ring-1 ring-border placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary;
+    }
 }

@@ -1,7 +1,11 @@
 import { headers } from "next/headers";
 
 // Minimal server-side REST helper for calling Payload endpoints from Server Components.
-// It forwards cookies and (optionally) a JWT token stored in the `avectoi-token` cookie.
+//
+// Key points:
+// - Auth for the app uses an HttpOnly cookie (`avectoi-token`) containing a Payload JWT.
+// - We also forward the raw `cookie` header so Payload's own session cookies (admin) keep working.
+// - Requests are `cache: "no-store"` because responses depend on the current user/session.
 
 type PayloadMeResponse = {
     user?: {
