@@ -17,11 +17,13 @@ export function PendingInvitesList({
     invitations: Invitation[];
     onDelete: (invitationID: string) => Promise<void>;
 }) {
+    // Client component because we need browser-only APIs (clipboard) + local UI state.
     const [copiedID, setCopiedID] = useState<string | null>(null);
     const [deletingID, setDeletingID] = useState<string | null>(null);
 
     async function copy(invite: Invitation) {
         if (!invite.token) return;
+        // Use the current origin to generate a clickable invite URL.
         const origin = window.location.origin;
         const url = `${origin}/invite/${invite.token}`;
         await navigator.clipboard.writeText(url);
@@ -70,6 +72,7 @@ export function PendingInvitesList({
                                 className="btn-danger"
                                 disabled={deletingID === invite.id}
                                 onClick={async () => {
+                                    // Optimistic UI: disable only the row being deleted.
                                     setDeletingID(invite.id);
                                     try {
                                         await onDelete(invite.id);

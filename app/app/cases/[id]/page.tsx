@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
+import { CaseAttachmentsUploader } from "./CaseAttachmentsUploader";
+
 type Membership = {
     id: string;
     role?: "owner" | "family" | "professional";
@@ -21,6 +23,14 @@ type CaseDoc = {
 
 type Task = { id: string; title?: string; status?: string; dueDate?: string };
 
+type CaseAttachment = {
+    id: string;
+    filename?: string;
+    mimeType?: string;
+    url?: string;
+    description?: string;
+};
+
 async function createTask(formData: FormData) {
     "use server";
 
@@ -30,6 +40,8 @@ async function createTask(formData: FormData) {
     // - owner/family: can create tasks for the case
     // - professional: can create tasks only when the case is medical
 
+    // Read values from the form.
+    // Note: everything is treated as untrusted input and re-validated on the server.
     const caseID = String(formData.get("case") ?? "");
     const careGroup = String(formData.get("careGroup") ?? "");
     const caseType = String(formData.get("caseType") ?? "");
@@ -41,6 +53,7 @@ async function createTask(formData: FormData) {
     if (!caseID || !careGroup || !title) return;
     if (caseType !== "medical" && caseType !== "custom") return;
 
+    // Determine the caller role inside the caregroup to decide if task creation is allowed.
     const membership = await payloadREST<{ docs: Membership[] }>(
         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
     ).then((r) => r.docs[0]);
@@ -64,6 +77,58 @@ async function createTask(formData: FormData) {
                 title,
                 status: "todo",
                 ...(dueDate ? { dueDate } : {}),
+            }),
+        });
+    } catch {
+        return;
+    }
+
+    // Refresh this case page so the task list updates after the mutation.
+    revalidatePath(`/app/cases/${caseID}`);
+}
+
+async function updateCaseDescription(formData: FormData) {
+    "use server";
+
+    const caseID = String(formData.get("case") ?? "");
+    const careGroup = String(formData.get("careGroup") ?? "");
+    const description = String(formData.get("description") ?? "");
+
+    const user = await requireUser();
+
+    if (!caseID || !careGroup) return;
+
+    const membership = await payloadREST<{ docs: Membership[] }>(
+        `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
+    ).then((r) => r.docs[0]);
+
+    const role = membership?.role;
+    if (!role) return;
+
+    const caseDoc = await payloadREST<CaseDoc>(
+        `/api/cases/${encodeURIComponent(caseID)}?depth=0`,
+    );
+
+    const normalizedCaseType =
+        caseDoc?.type === "medical" || caseDoc?.type === "custom"
+            ? caseDoc.type
+            : "";
+
+    const canUpdate =
+        role === "owner" ||
+        role === "family" ||
+        (role === "professional" && normalizedCaseType === "medical");
+
+    if (!canUpdate) return;
+
+    try {
+        await payloadREST(`/api/cases/${encodeURIComponent(caseID)}`, {
+            method: "PATCH",
+            headers: {
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({
+                description,
             }),
         });
     } catch {
@@ -100,6 +165,7 @@ export default async function CasePage({
         `/api/tasks?where[case][equals]=${encodeURIComponent(id)}&limit=50&depth=0`,
     );
 
+    // Membership is optional here (case might not have a caregroup populated in edge cases).
     const membership = careGroupID
         ? await payloadREST<{ docs: Membership[] }>(
               `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroupID)}&limit=1&depth=0`,
@@ -115,6 +181,12 @@ export default async function CasePage({
         role === "owner" ||
         role === "family" ||
         (role === "professional" && normalizedCaseType === "medical");
+
+    const canUpdateCase = canCreateTask;
+
+    const attachments = await payloadREST<{ docs: CaseAttachment[] }>(
+        `/api/case-attachments?where[case][equals]=${encodeURIComponent(id)}&limit=50&depth=0`,
+    );
 
     return (
         <div className="min-h-screen bg-background">
@@ -155,6 +227,88 @@ export default async function CasePage({
                         {caseDoc.description}
                     </div>
                 ) : null}
+
+                <section className="mt-8 rounded-2xl border border-border bg-card p-5 shadow-sm">
+                    <h2 className="text-base font-semibold">
+                        Description du dossier
+                    </h2>
+
+                    {canUpdateCase ? (
+                        <form
+                            action={updateCaseDescription}
+                            className="mt-4 flex flex-col gap-2"
+                        >
+                            <input type="hidden" name="case" value={id} />
+                            <input
+                                type="hidden"
+                                name="careGroup"
+                                value={careGroupID ?? ""}
+                            />
+                            <textarea
+                                name="description"
+                                className="input min-h-28"
+                                defaultValue={caseDoc?.description ?? ""}
+                                placeholder="Décris ce dossier (contexte, objectifs, infos importantes...)"
+                            />
+                            <button type="submit" className="btn-primary">
+                                Enregistrer
+                            </button>
+                        </form>
+                    ) : (
+                        <div className="mt-4 text-sm text-muted">
+                            Tu n’as pas les droits pour modifier la description.
+                        </div>
+                    )}
+                </section>
+
+                <section className="mt-8 rounded-2xl border border-border bg-card p-5 shadow-sm">
+                    <h2 className="text-base font-semibold">
+                        Documents & photos
+                    </h2>
+
+                    {canUpdateCase ? (
+                        <CaseAttachmentsUploader caseID={id} />
+                    ) : (
+                        <div className="mt-4 text-sm text-muted">
+                            Tu n’as pas les droits pour ajouter des documents.
+                        </div>
+                    )}
+
+                    <div className="mt-4 flex flex-col gap-2">
+                        {attachments.docs.length ? (
+                            attachments.docs.map((a) => (
+                                <div
+                                    key={a.id}
+                                    className="rounded-2xl border border-border bg-card px-3 py-2 text-sm"
+                                >
+                                    <div className="font-medium">
+                                        {a.url ? (
+                                            <a
+                                                href={a.url}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="underline"
+                                            >
+                                                {a.filename ?? a.id}
+                                            </a>
+                                        ) : (
+                                            (a.filename ?? a.id)
+                                        )}
+                                    </div>
+                                    {a.description ? (
+                                        <div className="mt-1 text-xs text-muted">
+                                            {a.description}
+                                        </div>
+                                    ) : null}
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-sm text-muted">
+                                Aucun document.
+                            </div>
+                        )}
+                    </div>
+                </section>
 
                 <section className="mt-8 rounded-2xl border border-border bg-card p-5 shadow-sm">
                     <h2 className="text-base font-semibold">Tasks</h2>

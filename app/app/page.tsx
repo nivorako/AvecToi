@@ -5,6 +5,9 @@ import { requireUser } from "@/lib/requireUser";
 import { findCareGroups } from "@/lib/payloadRest";
 
 export default async function AppHomePage() {
+    // Server Component (async): the initial dashboard is rendered on the server.
+    // This keeps access control + data fetching on the backend and avoids exposing tokens.
+
     // Protected page: requires an authenticated Payload user.
     const user = await requireUser();
 
@@ -29,6 +32,7 @@ export default async function AppHomePage() {
                 <h1 className="text-2xl font-semibold">Groupe de soins</h1>
 
                 {/* Simple navigation list to the caregroup details pages. */}
+                {/* Each link targets the caregroup dashboard: patients + cases + tasks. */}
                 <div className="mt-6 grid grid-cols-1 gap-3">
                     {caregroups.docs.map((cg) => (
                         <Link

@@ -47,6 +47,7 @@ async function deleteInvitation(invitationID: string, careGroupID: string) {
 
     if (!invitationID) return;
 
+    // Only owners can revoke invitations for their caregroup.
     const myMembership = await payloadREST<{ docs: Membership[] }>(
         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroupID)}&limit=1&depth=0`,
     ).then((r) => r.docs[0]);
@@ -79,6 +80,7 @@ async function inviteMember(prevState: InviteState, formData: FormData) {
         return { ok: false, message: "Rôle invalide." };
     }
 
+    // Security gate: only owners can invite new members.
     const myMembership = await payloadREST<{ docs: Membership[] }>(
         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
     ).then((r) => r.docs[0]);
@@ -90,6 +92,7 @@ async function inviteMember(prevState: InviteState, formData: FormData) {
         };
     }
 
+    // If the user already exists and already has a membership, we refuse the invite.
     const users = await payloadREST<{ docs: UserDoc[] }>(
         `/api/users?where[email][equals]=${encodeURIComponent(email)}&limit=1&depth=0`,
     );
@@ -105,6 +108,7 @@ async function inviteMember(prevState: InviteState, formData: FormData) {
         }
     }
 
+    // Avoid sending multiple pending invites to the same email for the same caregroup.
     const existingInvite = await payloadREST<{ docs: Invitation[] }>(
         `/api/invitations?where[careGroup][equals]=${encodeURIComponent(careGroup)}&where[email][equals]=${encodeURIComponent(email)}&where[status][equals]=pending&limit=1&depth=0`,
     );
@@ -151,11 +155,15 @@ export default async function CareGroupMembersPage({
 
     const user = await requireUser();
 
+    // Access gate:
+    // - owner: can manage (invite + revoke + list)
+    // - family: can view list
+    // - professional: no access (MVP)
     const myMembership = await payloadREST<{ docs: Membership[] }>(
         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(id)}&limit=1&depth=0`,
     ).then((r) => r.docs[0]);
 
-    if (myMembership?.role !== "owner") {
+    if (myMembership?.role !== "owner" && myMembership?.role !== "family") {
         return (
             <div className="min-h-screen bg-background">
                 <header className="border-b border-border bg-card">
@@ -175,7 +183,7 @@ export default async function CareGroupMembersPage({
                 <main className="mx-auto w-full max-w-5xl px-6 py-8">
                     <h1 className="text-2xl font-semibold">Membres</h1>
                     <div className="mt-4 rounded-2xl border border-border bg-card p-5 shadow-sm text-sm text-muted">
-                        Seul un owner peut gérer les membres.
+                        Tu n’as pas accès à cette page.
                     </div>
                 </main>
             </div>
@@ -186,9 +194,12 @@ export default async function CareGroupMembersPage({
         `/api/memberships?where[careGroup][equals]=${encodeURIComponent(id)}&limit=50&depth=1`,
     );
 
-    const invitations = await payloadREST<{ docs: Invitation[] }>(
-        `/api/invitations?where[careGroup][equals]=${encodeURIComponent(id)}&where[status][equals]=pending&limit=50&depth=0`,
-    );
+    const invitations =
+        myMembership?.role === "owner"
+            ? await payloadREST<{ docs: Invitation[] }>(
+                  `/api/invitations?where[careGroup][equals]=${encodeURIComponent(id)}&where[status][equals]=pending&limit=50&depth=0`,
+              )
+            : { docs: [] as Invitation[] };
 
     return (
         <div className="min-h-screen bg-background">
@@ -209,28 +220,37 @@ export default async function CareGroupMembersPage({
             <main className="mx-auto w-full max-w-5xl px-6 py-8">
                 <h1 className="text-2xl font-semibold">Membres</h1>
 
-                <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
-                    <h2 className="text-base font-semibold">
-                        Inviter un membre
-                    </h2>
-                    <InviteMemberForm careGroupID={id} action={inviteMember} />
-                </section>
-
-                <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
-                    <h2 className="text-base font-semibold">
-                        Invitations en attente
-                    </h2>
-
-                    <div className="mt-4">
-                        <PendingInvitesList
-                            invitations={invitations.docs}
-                            onDelete={async (invitationID: string) => {
-                                "use server";
-                                await deleteInvitation(invitationID, id);
-                            }}
+                {myMembership?.role === "owner" ? (
+                    <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
+                        <h2 className="text-base font-semibold">
+                            Inviter un membre
+                        </h2>
+                        <InviteMemberForm
+                            careGroupID={id}
+                            action={inviteMember}
                         />
-                    </div>
-                </section>
+                    </section>
+                ) : null}
+
+                {myMembership?.role === "owner" ? (
+                    <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
+                        <h2 className="text-base font-semibold">
+                            Invitations en attente
+                        </h2>
+
+                        <div className="mt-4">
+                            <PendingInvitesList
+                                invitations={invitations.docs}
+                                onDelete={async (invitationID: string) => {
+                                    "use server";
+                                    // Bridge: UI stays client-side (copy button, loading state)
+                                    // while the actual delete happens on the server.
+                                    await deleteInvitation(invitationID, id);
+                                }}
+                            />
+                        </div>
+                    </section>
+                ) : null}
 
                 <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
                     <h2 className="text-base font-semibold">Membres actuels</h2>

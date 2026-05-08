@@ -41,6 +41,7 @@ export default function RootLayout({
             htmlProps={{
                 lang: "en",
                 className: `${geistSans.variable} ${geistMono.variable} h-full antialiased`,
+                suppressHydrationWarning: true,
             }}
             importMap={importMap}
             serverFunction={payloadServerFunction}

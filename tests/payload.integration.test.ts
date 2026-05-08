@@ -93,7 +93,9 @@ describe("Payload integration (ACL + hooks)", () => {
         if (!payload) return;
 
         const collections = [
+            "case-attachments",
             "tasks",
+            "invitations",
             "cases",
             "patients",
             "memberships",
@@ -160,6 +162,18 @@ describe("Payload integration (ACL + hooks)", () => {
             user: args.owner,
             overrideAccess: false,
         });
+
+        const patients = await payload.find({
+            collection: "patients",
+            where: {
+                careGroup: {
+                    equals: created.id,
+                },
+            },
+            depth: 0,
+        });
+
+        expect(patients.docs.length).toBeGreaterThanOrEqual(1);
 
         return { id: created.id };
     }
@@ -253,6 +267,32 @@ describe("Payload integration (ACL + hooks)", () => {
             patient: created.patient,
             caseType: created.caseType,
         };
+    }
+
+    async function createInvitation(args: {
+        actingUser: CreatedUser;
+        careGroupID: string;
+        email: string;
+        role: "family" | "professional";
+    }): Promise<{ id: string; token: string }> {
+        const token = `token-${Math.random().toString(16).slice(2)}`;
+        const created = await payload.create({
+            collection: "invitations",
+            data: {
+                careGroup: args.careGroupID,
+                email: args.email,
+                role: args.role,
+                token,
+                status: "pending",
+                expiresAt: new Date(
+                    Date.now() + 7 * 24 * 60 * 60 * 1000,
+                ).toISOString(),
+            },
+            user: args.actingUser,
+            overrideAccess: false,
+        });
+
+        return { id: created.id, token };
     }
 
     it("computes and persists patients.fullName on create", async () => {
@@ -431,6 +471,202 @@ describe("Payload integration (ACL + hooks)", () => {
                 careGroupID: careGroup.id,
                 userID: pro.id,
                 role: "professional",
+            }),
+        ).rejects.toBeTruthy();
+    });
+
+    it("lets owner create an invitation and lets invited email read it", async () => {
+        const owner = await createUser({
+            email: "owner-invite@example.com",
+            password: "password",
+            name: "Owner",
+        });
+
+        const invited = await createUser({
+            email: "invited@example.com",
+            password: "password",
+            name: "Invited",
+        });
+
+        const other = await createUser({
+            email: "other@example.com",
+            password: "password",
+            name: "Other",
+        });
+
+        const careGroup = await createCareGroupAsOwner({ owner, name: "CG" });
+
+        const invitation = await createInvitation({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            email: invited.email,
+            role: "family",
+        });
+
+        const invitedRead = await payload.find({
+            collection: "invitations",
+            depth: 0,
+            limit: 10,
+            pagination: false,
+            user: invited,
+            overrideAccess: false,
+            where: {
+                id: {
+                    equals: invitation.id,
+                },
+            },
+        });
+
+        expect(invitedRead.docs).toHaveLength(1);
+
+        const otherRead = await payload.find({
+            collection: "invitations",
+            depth: 0,
+            limit: 10,
+            pagination: false,
+            user: other,
+            overrideAccess: false,
+            where: {
+                id: {
+                    equals: invitation.id,
+                },
+            },
+        });
+
+        expect(otherRead.docs).toHaveLength(0);
+    });
+
+    it("denies deleting invitations unless acting user is owner of that caregroup", async () => {
+        const owner = await createUser({
+            email: "owner-invite-delete@example.com",
+            password: "password",
+            name: "Owner",
+        });
+
+        const family = await createUser({
+            email: "family-invite-delete@example.com",
+            password: "password",
+            name: "Family",
+        });
+
+        const careGroup = await createCareGroupAsOwner({ owner, name: "CG" });
+
+        await addMembership({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            userID: family.id,
+            role: "family",
+        });
+
+        const invitation = await createInvitation({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            email: "someone@example.com",
+            role: "family",
+        });
+
+        await expect(
+            payload.delete({
+                collection: "invitations",
+                id: invitation.id,
+                user: family,
+                overrideAccess: false,
+                depth: 0,
+            }),
+        ).rejects.toBeTruthy();
+
+        await payload.delete({
+            collection: "invitations",
+            id: invitation.id,
+            user: owner,
+            overrideAccess: false,
+            depth: 0,
+        });
+
+        const readBack = await payload.find({
+            collection: "invitations",
+            depth: 0,
+            limit: 10,
+            pagination: false,
+            user: owner,
+            overrideAccess: false,
+            where: {
+                id: {
+                    equals: invitation.id,
+                },
+            },
+        });
+
+        expect(readBack.docs).toHaveLength(0);
+    });
+
+    it("lets family create cases but denies professionals creating cases", async () => {
+        const owner = await createUser({
+            email: "owner-case-create@example.com",
+            password: "password",
+            name: "Owner",
+        });
+
+        const family = await createUser({
+            email: "family-case-create@example.com",
+            password: "password",
+            name: "Family",
+        });
+
+        const professional = await createUser({
+            email: "pro-case-create@example.com",
+            password: "password",
+            name: "Pro",
+        });
+
+        const careGroup = await createCareGroupAsOwner({ owner, name: "CG" });
+
+        await addMembership({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            userID: family.id,
+            role: "family",
+        });
+
+        await addMembership({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            userID: professional.id,
+            role: "professional",
+        });
+
+        const patient = await createPatient({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            firstName: "A",
+            lastName: "B",
+        });
+
+        const familyCase = await payload.create({
+            collection: "cases",
+            data: {
+                careGroup: careGroup.id,
+                patient: patient.id,
+                title: "Family case",
+                type: "custom",
+            },
+            user: family,
+            overrideAccess: false,
+        });
+
+        expect(familyCase.id).toBeTruthy();
+
+        await expect(
+            payload.create({
+                collection: "cases",
+                data: {
+                    careGroup: careGroup.id,
+                    patient: patient.id,
+                    title: "Pro case",
+                    type: "medical",
+                },
+                user: professional,
+                overrideAccess: false,
             }),
         ).rejects.toBeTruthy();
     });

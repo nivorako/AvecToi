@@ -30,6 +30,7 @@ async function createTask(formData: FormData) {
     // - owner/family: can create tasks for any case in the caregroup
     // - professional: can create tasks only for medical cases
 
+    // Form values (untrusted input): validate again on the server.
     const careGroup = String(formData.get("careGroup") ?? "");
     const caseID = String(formData.get("case") ?? "");
     const title = String(formData.get("title") ?? "");
@@ -37,6 +38,7 @@ async function createTask(formData: FormData) {
 
     const user = await requireUser();
 
+    // Get caller role in this caregroup.
     const membership = await payloadREST<{ docs: Membership[] }>(
         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
     ).then((r) => r.docs[0]);
@@ -50,6 +52,7 @@ async function createTask(formData: FormData) {
         type?: "medical" | "custom";
         careGroup?: string | { id: string };
     };
+    // Fetch the target case to validate it belongs to this caregroup (anti-tampering guard).
     const relatedCase = await payloadREST<CaseDoc>(
         `/api/cases/${encodeURIComponent(caseID)}?depth=0`,
     );
@@ -59,6 +62,7 @@ async function createTask(formData: FormData) {
             ? relatedCase.careGroup
             : relatedCase?.careGroup?.id;
 
+    // Prevent creating a task for a case outside of the current caregroup.
     if (!relatedCaseCareGroup || relatedCaseCareGroup !== careGroup) return;
 
     const canCreate =
@@ -85,14 +89,15 @@ async function createTask(formData: FormData) {
         return;
     }
 
+    // Refresh the caregroup dashboard so the task list updates.
     revalidatePath(`/app/caregroups/${careGroup}`);
 }
 
 async function createCase(formData: FormData) {
     "use server";
 
+    // Only owner/family can create cases in the caregroup.
     const careGroup = String(formData.get("careGroup") ?? "");
-    const patient = String(formData.get("patient") ?? "");
     const title = String(formData.get("title") ?? "");
     const type = String(formData.get("type") ?? "");
 
@@ -103,7 +108,32 @@ async function createCase(formData: FormData) {
     ).then((r) => r.docs[0]);
 
     if (membership?.role !== "owner" && membership?.role !== "family") return;
-    if (!patient || !title || (type !== "medical" && type !== "custom")) return;
+    if (!title || (type !== "medical" && type !== "custom")) return;
+
+    let defaultPatientID = await payloadREST<{ docs: Patient[] }>(
+        `/api/patients?where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
+    ).then((r) => r.docs[0]?.id);
+
+    if (!defaultPatientID && membership?.role === "owner") {
+        try {
+            const created = await payloadREST<{ id: string }>("/api/patients", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                },
+                body: JSON.stringify({
+                    careGroup,
+                    firstName: "Patient",
+                    lastName: "",
+                }),
+            });
+            defaultPatientID = created?.id;
+        } catch {
+            return;
+        }
+    }
+
+    if (!defaultPatientID) return;
 
     try {
         await payloadREST("/api/cases", {
@@ -113,7 +143,7 @@ async function createCase(formData: FormData) {
             },
             body: JSON.stringify({
                 careGroup,
-                patient,
+                patient: defaultPatientID,
                 title,
                 type,
             }),
@@ -122,40 +152,7 @@ async function createCase(formData: FormData) {
         return;
     }
 
-    revalidatePath(`/app/caregroups/${careGroup}`);
-}
-
-async function createPatient(formData: FormData) {
-    "use server";
-
-    const careGroup = String(formData.get("careGroup") ?? "");
-    const firstName = String(formData.get("firstName") ?? "");
-    const lastName = String(formData.get("lastName") ?? "");
-
-    const user = await requireUser();
-
-    const membership = await payloadREST<{ docs: Membership[] }>(
-        `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
-    ).then((r) => r.docs[0]);
-
-    if (membership?.role !== "owner") return;
-
-    try {
-        await payloadREST("/api/patients", {
-            method: "POST",
-            headers: {
-                "content-type": "application/json",
-            },
-            body: JSON.stringify({
-                careGroup,
-                firstName,
-                lastName,
-            }),
-        });
-    } catch {
-        return;
-    }
-
+    // Refresh to show the newly created case.
     revalidatePath(`/app/caregroups/${careGroup}`);
 }
 
@@ -181,6 +178,7 @@ export default async function CareGroupPage({
     // Protected page: redirect to login when user is not authenticated.
     const user = await requireUser();
 
+    // Used for both permissions (which forms/actions to show) and basic navigation (Members page).
     const membership = await payloadREST<{ docs: Membership[] }>(
         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(id)}&limit=1&depth=0`,
     ).then((r) => r.docs[0]);
@@ -191,10 +189,6 @@ export default async function CareGroupPage({
     );
 
     // Patients belonging to this caregroup.
-    const patients = await payloadREST<{ docs: Patient[] }>(
-        `/api/patients?where[careGroup][equals]=${encodeURIComponent(id)}&limit=100&depth=0`,
-    );
-
     // Cases and tasks are filtered by Payload access control.
     // The UI can safely show what the API returns for the current user.
     const cases = await payloadREST<{ docs: Case[] }>(
@@ -214,7 +208,8 @@ export default async function CareGroupPage({
                         Avec Toi
                     </Link>
                     <div className="flex items-center gap-3">
-                        {membership?.role === "owner" ? (
+                        {membership?.role === "owner" ||
+                        membership?.role === "family" ? (
                             <Link
                                 href={`/app/caregroups/${id}/members`}
                                 className="btn-secondary"
@@ -234,58 +229,7 @@ export default async function CareGroupPage({
                     {careGroup?.name ?? careGroup?.id ?? id}
                 </h1>
 
-                <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-                        <h2 className="text-base font-semibold">Patients</h2>
-
-                        {membership?.role === "owner" ? (
-                            <form
-                                action={createPatient}
-                                className="mt-4 flex flex-col gap-2"
-                            >
-                                <input
-                                    type="hidden"
-                                    name="careGroup"
-                                    value={id}
-                                />
-                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                    <input
-                                        name="firstName"
-                                        placeholder="Prénom"
-                                        className="input"
-                                        required
-                                    />
-                                    <input
-                                        name="lastName"
-                                        placeholder="Nom"
-                                        className="input"
-                                        required
-                                    />
-                                </div>
-                                <button type="submit" className="btn-primary">
-                                    Ajouter patient
-                                </button>
-                            </form>
-                        ) : (
-                            <div className="mt-4 text-sm text-muted">
-                                Seul un owner peut ajouter un patient.
-                            </div>
-                        )}
-
-                        <div className="mt-4 flex flex-col gap-2">
-                            {patients.docs.map((p) => (
-                                <div
-                                    key={p.id}
-                                    className="rounded-2xl border border-border bg-card px-3 py-2 text-sm"
-                                >
-                                    {(p.fullName ??
-                                        `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim()) ||
-                                        p.id}
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-
+                <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
                     <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
                         <h2 className="text-base font-semibold">
                             Dossiers (filtrés par rôle)
@@ -317,22 +261,6 @@ export default async function CareGroupPage({
                                     >
                                         <option value="medical">Medical</option>
                                         <option value="custom">Custom</option>
-                                    </select>
-                                    <select
-                                        name="patient"
-                                        className="input"
-                                        required
-                                        defaultValue={
-                                            patients.docs[0]?.id ?? ""
-                                        }
-                                    >
-                                        {patients.docs.map((p) => (
-                                            <option key={p.id} value={p.id}>
-                                                {(p.fullName ??
-                                                    `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim()) ||
-                                                    p.id}
-                                            </option>
-                                        ))}
                                     </select>
                                 </div>
                                 <button type="submit" className="btn-primary">
