@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
 import { CaseAttachmentsUploader } from "./CaseAttachmentsUploader";
+import { CaseAttachmentRow } from "./CaseAttachmentRow";
 
 type Membership = {
     id: string;
@@ -26,6 +27,7 @@ type Task = { id: string; title?: string; status?: string; dueDate?: string };
 type CaseAttachment = {
     id: string;
     filename?: string;
+    displayName?: string;
     mimeType?: string;
     url?: string;
     description?: string;
@@ -275,32 +277,21 @@ export default async function CasePage({
                     )}
 
                     <div className="mt-4 flex flex-col gap-2">
+                        {/* Each row is a Client Component to support the inline menu (rename/delete).
+                        We trigger mutations through Next API routes because Server Components cannot
+                        pass event handlers to Client Components. */}
                         {attachments.docs.length ? (
                             attachments.docs.map((a) => (
-                                <div
+                                <CaseAttachmentRow
                                     key={a.id}
-                                    className="rounded-2xl border border-border bg-card px-3 py-2 text-sm"
-                                >
-                                    <div className="font-medium">
-                                        {a.url ? (
-                                            <a
-                                                href={a.url}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="underline"
-                                            >
-                                                {a.filename ?? a.id}
-                                            </a>
-                                        ) : (
-                                            (a.filename ?? a.id)
-                                        )}
-                                    </div>
-                                    {a.description ? (
-                                        <div className="mt-1 text-xs text-muted">
-                                            {a.description}
-                                        </div>
-                                    ) : null}
-                                </div>
+                                    attachmentID={a.id}
+                                    href={`/api/case-attachments/${encodeURIComponent(a.id)}/file`}
+                                    label={a.displayName ?? a.filename ?? a.id}
+                                    description={a.description}
+                                    canManage={
+                                        role === "owner" || role === "family"
+                                    }
+                                />
                             ))
                         ) : (
                             <div className="text-sm text-muted">

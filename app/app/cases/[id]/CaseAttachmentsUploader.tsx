@@ -24,7 +24,9 @@ export function CaseAttachmentsUploader({ caseID }: { caseID: string }) {
 
         try {
             const res = await fetch(
-                `/api/case-attachments?case=${encodeURIComponent(caseID)}`,
+                // Uploads are multipart. We go through a Next.js API route so the server can attach
+                // Authorization from the HttpOnly `avectoi-token` cookie.
+                `/api/case-attachments/upload?case=${encodeURIComponent(caseID)}`,
                 {
                     method: "POST",
                     body,
@@ -32,8 +34,27 @@ export function CaseAttachmentsUploader({ caseID }: { caseID: string }) {
             );
 
             if (!res.ok) {
+                const contentType = res.headers.get("content-type") ?? "";
+                if (contentType.includes("application/json")) {
+                    const json = (await res.json().catch(() => null)) as
+                        | { errors?: Array<{ message?: string }> }
+                        | { message?: string }
+                        | null;
+
+                    const msg =
+                        (json && "errors" in json && Array.isArray(json.errors)
+                            ? json.errors
+                                  .map((e) => e?.message)
+                                  .filter(Boolean)
+                                  .join("\n")
+                            : (json as { message?: string } | null)?.message) ??
+                        "Upload failed";
+
+                    throw new Error(`${res.status} ${msg}`);
+                }
+
                 const text = await res.text().catch(() => "");
-                throw new Error(text || `Upload failed: ${res.status}`);
+                throw new Error(`${res.status} ${text || "Upload failed"}`);
             }
 
             setFile(null);

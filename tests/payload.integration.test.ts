@@ -269,6 +269,50 @@ describe("Payload integration (ACL + hooks)", () => {
         };
     }
 
+    async function createCaseAttachment(args: {
+        actingUser: CreatedUser;
+        caseID: string;
+        description?: string;
+        filename?: string;
+    }): Promise<{
+        id: string;
+        careGroup?: unknown;
+        patient?: unknown;
+        caseType?: unknown;
+        description?: unknown;
+        displayName?: unknown;
+        filename?: unknown;
+    }> {
+        const fileName = args.filename ?? "test.pdf";
+        const fileBuffer = Buffer.from("%PDF-1.4 test");
+
+        const created = await payload.create({
+            collection: "case-attachments",
+            data: {
+                case: args.caseID,
+                ...(args.description ? { description: args.description } : {}),
+            },
+            file: {
+                data: fileBuffer,
+                mimetype: "application/pdf",
+                name: fileName,
+                size: fileBuffer.length,
+            },
+            user: args.actingUser,
+            overrideAccess: false,
+        });
+
+        return {
+            id: created.id,
+            careGroup: created.careGroup,
+            patient: created.patient,
+            caseType: created.caseType,
+            description: created.description,
+            displayName: created.displayName,
+            filename: created.filename,
+        };
+    }
+
     async function createInvitation(args: {
         actingUser: CreatedUser;
         careGroupID: string;
@@ -831,6 +875,127 @@ describe("Payload integration (ACL + hooks)", () => {
         const ids = res.docs.map((d) => d.id);
         expect(ids).toContain(medicalTask.id);
         expect(ids).not.toContain(customTask.id);
+    });
+
+    it("owner can upload an attachment and derived fields are populated", async () => {
+        const owner = await createUser({
+            email: "owner-attachments@example.com",
+            password: "password",
+            name: "Owner",
+        });
+
+        const careGroup = await createCareGroupAsOwner({ owner, name: "CG" });
+
+        const patient = await createPatient({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            firstName: "Pat",
+            lastName: "One",
+        });
+
+        const caseDoc = await createCase({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            patientID: patient.id,
+            title: "Case",
+            type: "custom",
+        });
+
+        const attachment = await createCaseAttachment({
+            actingUser: owner,
+            caseID: caseDoc.id,
+            description: "Doc important",
+            filename: "owner.pdf",
+        });
+
+        expect(relationshipToID(attachment.careGroup)).toBe(careGroup.id);
+        expect(relationshipToID(attachment.patient)).toBe(patient.id);
+        expect(attachment.caseType).toBe("custom");
+        expect(attachment.description).toBe("Doc important");
+        expect(typeof attachment.filename).toBe("string");
+    });
+
+    it("family can upload, rename (displayName), and delete an attachment", async () => {
+        const owner = await createUser({
+            email: "owner-attachments-family@example.com",
+            password: "password",
+            name: "Owner",
+        });
+
+        const family = await createUser({
+            email: "family-attachments@example.com",
+            password: "password",
+            name: "Family",
+        });
+
+        const careGroup = await createCareGroupAsOwner({ owner, name: "CG" });
+
+        await addMembership({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            userID: family.id,
+            role: "family",
+        });
+
+        const patient = await createPatient({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            firstName: "Pat",
+            lastName: "Two",
+        });
+
+        const caseDoc = await createCase({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            patientID: patient.id,
+            title: "Case",
+            type: "custom",
+        });
+
+        const attachment = await createCaseAttachment({
+            actingUser: family,
+            caseID: caseDoc.id,
+            description: "Family upload",
+            filename: "family.pdf",
+        });
+
+        expect(relationshipToID(attachment.careGroup)).toBe(careGroup.id);
+
+        const renamed = await payload.update({
+            collection: "case-attachments",
+            id: attachment.id,
+            data: {
+                displayName: "Nouveau nom",
+            },
+            user: family,
+            overrideAccess: false,
+        });
+
+        expect(renamed.displayName).toBe("Nouveau nom");
+
+        await payload.delete({
+            collection: "case-attachments",
+            id: attachment.id,
+            user: family,
+            overrideAccess: false,
+            depth: 0,
+        });
+
+        const remaining = await payload.find({
+            collection: "case-attachments",
+            where: {
+                case: {
+                    equals: caseDoc.id,
+                },
+            },
+            depth: 0,
+            limit: 10,
+            pagination: false,
+            user: owner,
+            overrideAccess: false,
+        });
+
+        expect(remaining.docs.length).toBe(0);
     });
 
     it("forces case.careGroup from patient.careGroup on create (option 2)", async () => {

@@ -442,7 +442,7 @@ export default buildConfig({
                             data: {
                                 careGroup: doc.id,
                                 firstName: "Patient",
-                                lastName: "",
+                                lastName: "Care",
                             },
                         });
                     },
@@ -879,6 +879,9 @@ export default buildConfig({
                 create: async ({ req, data }) => {
                     if (!req.user) return false;
 
+                    // Uploads are multipart/form-data. In Payload, `data` / `req.body` can be empty
+                    // at access-control time. We therefore accept the case id from the query string
+                    // as a reliable fallback: /api/case-attachments?case=<id>
                     const rawCase =
                         (data as { case?: unknown } | undefined)?.case ??
                         (req.body as { case?: unknown } | undefined)?.case ??
@@ -955,6 +958,10 @@ export default buildConfig({
                         membershipCount: membership.docs.length,
                         role,
                     });
+
+                    // Same permissions as cases/tasks:
+                    // - owner/family: can always attach docs within their caregroup
+                    // - professional: can attach docs only to medical cases
                     if (role === "owner" || role === "family") return true;
                     if (role === "professional") {
                         return relatedCase?.type === "medical";
@@ -1099,6 +1106,9 @@ export default buildConfig({
             hooks: {
                 beforeValidate: [
                     async ({ req, data }) => {
+                        // For multipart uploads, required relationship fields are often missing.
+                        // We derive them from the related case so the document validates and ACL can
+                        // reliably filter by careGroup/patient/caseType.
                         const rawCase =
                             (data as { case?: unknown } | undefined)?.case ??
                             (req.body as { case?: unknown } | undefined)
@@ -1106,6 +1116,22 @@ export default buildConfig({
                             (req.query as { case?: unknown } | undefined)?.case;
 
                         if (!rawCase) return data;
+
+                        const baseData: Record<string, unknown> =
+                            data && typeof data === "object"
+                                ? (data as Record<string, unknown>)
+                                : {};
+
+                        const rawDescription =
+                            (data as { description?: unknown } | undefined)
+                                ?.description ??
+                            (req.body as { description?: unknown } | undefined)
+                                ?.description;
+
+                        const description =
+                            typeof rawDescription === "string"
+                                ? rawDescription
+                                : undefined;
 
                         const caseID =
                             typeof rawCase === "string" ||
@@ -1124,11 +1150,14 @@ export default buildConfig({
                         });
 
                         return {
-                            ...(data ?? {}),
+                            ...baseData,
                             case: caseID,
                             careGroup: relatedCase.careGroup,
                             patient: relatedCase.patient,
                             caseType: relatedCase.type,
+                            ...(description !== undefined
+                                ? { description }
+                                : {}),
                         };
                     },
                 ],
@@ -1143,6 +1172,11 @@ export default buildConfig({
                         readOnly: true,
                         position: "sidebar",
                     },
+                },
+                {
+                    name: "displayName",
+                    type: "text",
+                    required: false,
                 },
                 {
                     name: "patient",
