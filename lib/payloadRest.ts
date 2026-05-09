@@ -32,6 +32,18 @@ function getTokenFromCookieHeader(cookieHeader: string): string | null {
     }
 }
 
+async function getCookieHeaderFromNextCookies(): Promise<string> {
+    try {
+        const cookieStore = await cookies();
+        const all = cookieStore.getAll();
+        return all
+            .map(({ name, value }) => `${name}=${encodeURIComponent(value)}`)
+            .join("; ");
+    } catch {
+        return "";
+    }
+}
+
 function getServerURL(): string {
     const vercelURL = process.env.VERCEL_URL;
     if (vercelURL) return `https://${vercelURL}`;
@@ -63,10 +75,10 @@ function getVercelBypassHeaders(): Record<string, string> {
 
 export async function payloadREST<T>(
     path: string,
-    init?: Omit<RequestInit, "headers"> & { headers?: HeadersInit },
+    init?: RequestInit,
 ): Promise<T> {
     // Read incoming request cookies (server-side) so we can forward session context.
-    const cookieHeader = (await headers()).get("cookie") ?? "";
+    const cookieHeader = await getCookieHeaderFromNextCookies();
     const token = getTokenFromCookieHeader(cookieHeader);
 
     const res = await fetch(`${getServerURL()}${path}`, {
