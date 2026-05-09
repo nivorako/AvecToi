@@ -1,4 +1,4 @@
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 
 // Minimal server-side REST helper for calling Payload endpoints from Server Components.
 //
@@ -33,25 +33,11 @@ function getTokenFromCookieHeader(cookieHeader: string): string | null {
 }
 
 function getServerURL(): string {
-    // On Vercel we want to call back into the *current* deployment (same host),
-    // otherwise we can accidentally hit a preview deployment and get redirect loops.
-    if (process.env.VERCEL === "1") {
-        try {
-            const h = headers();
-            const host = h.get("x-forwarded-host") ?? h.get("host");
-            const proto = h.get("x-forwarded-proto") ?? "https";
-            if (host) return `${proto}://${host}`;
-        } catch {
-            // headers() can throw outside of a request context; fall back to env-based URLs.
-        }
-    }
-
-    // Payload + Next can run on the same origin. We keep this configurable for non-Vercel deployments.
-    const serverURL = process.env.NEXT_PUBLIC_SERVER_URL;
-    if (serverURL) return serverURL;
-
     const vercelURL = process.env.VERCEL_URL;
     if (vercelURL) return `https://${vercelURL}`;
+
+    const serverURL = process.env.NEXT_PUBLIC_SERVER_URL;
+    if (serverURL) return serverURL;
 
     return "http://localhost:3000";
 }
