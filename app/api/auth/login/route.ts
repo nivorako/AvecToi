@@ -28,7 +28,9 @@ export async function POST(req: Request) {
         password?: string;
     };
 
-    if (!email || !password) {
+    const normalizedEmail = (email || "").trim().toLowerCase();
+
+    if (!normalizedEmail || !password) {
         return NextResponse.json({ ok: false }, { status: 400 });
     }
 
@@ -43,11 +45,16 @@ export async function POST(req: Request) {
             "content-type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: normalizedEmail, password }),
         cache: "no-store",
     });
 
     if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        console.error(
+            "Payload login failed",
+            JSON.stringify({ status: res.status, body: text }),
+        );
         return NextResponse.json({ ok: false }, { status: 401 });
     }
 
