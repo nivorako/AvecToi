@@ -20,6 +20,15 @@ function withVercelProtectionBypass(url: string): string {
     return u.toString();
 }
 
+function getVercelBypassHeaders(): Record<string, string> {
+    const bypass = process.env.VERCEL_PROTECTION_BYPASS;
+    if (!bypass) return {};
+    return {
+        "x-vercel-protection-bypass": bypass,
+        "x-vercel-set-bypass-cookie": "true",
+    };
+}
+
 export async function POST() {
     // Custom logout endpoint used by the app.
     //
@@ -32,11 +41,18 @@ export async function POST() {
     const logoutURL = withVercelProtectionBypass(`${origin}/api/users/logout`);
 
     try {
-        await fetch(logoutURL, {
-            method: "POST",
-            credentials: "include",
-            cache: "no-store",
-        });
+        try {
+            await fetch(logoutURL, {
+                method: "POST",
+                headers: {
+                    ...getVercelBypassHeaders(),
+                },
+                credentials: "include",
+                cache: "no-store",
+            });
+        } catch {
+            // Ignore logout errors; we always clear our app cookie.
+        }
     } catch {
         // Ignore logout errors; we always clear our app cookie.
     }

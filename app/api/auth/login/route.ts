@@ -14,6 +14,15 @@ function withVercelProtectionBypass(url: string): string {
     return u.toString();
 }
 
+function getVercelBypassHeaders(): Record<string, string> {
+    const bypass = process.env.VERCEL_PROTECTION_BYPASS;
+    if (!bypass) return {};
+    return {
+        "x-vercel-protection-bypass": bypass,
+        "x-vercel-set-bypass-cookie": "true",
+    };
+}
+
 function getSetCookieHeaders(res: Response): string[] {
     const anyHeaders = res.headers as unknown as {
         getSetCookie?: () => string[];
@@ -51,6 +60,7 @@ export async function POST(req: Request) {
         method: "POST",
         headers: {
             "content-type": "application/json",
+            ...getVercelBypassHeaders(),
         },
         credentials: "include",
         body: JSON.stringify({ email: normalizedEmail, password }),

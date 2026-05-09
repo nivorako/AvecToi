@@ -53,6 +53,15 @@ function withVercelProtectionBypass(url: string): string {
     return u.toString();
 }
 
+function getVercelBypassHeaders(): Record<string, string> {
+    const bypass = process.env.VERCEL_PROTECTION_BYPASS;
+    if (!bypass) return {};
+    return {
+        "x-vercel-protection-bypass": bypass,
+        "x-vercel-set-bypass-cookie": "true",
+    };
+}
+
 export async function payloadREST<T>(
     path: string,
     init?: Omit<RequestInit, "headers"> & { headers?: HeadersInit },
@@ -69,6 +78,7 @@ export async function payloadREST<T>(
             cookie: cookieHeader,
             // Also forward explicit Authorization header when a token is present.
             ...(token ? { Authorization: `JWT ${token}` } : {}),
+            ...getVercelBypassHeaders(),
         },
         // These endpoints are user-specific; avoid caching across requests/users.
         cache: "no-store",
@@ -86,6 +96,7 @@ export async function payloadREST<T>(
                     ...(init?.headers ?? {}),
                     cookie: cookieHeader,
                     ...(token ? { Authorization: `JWT ${token}` } : {}),
+                    ...getVercelBypassHeaders(),
                 },
                 cache: "no-store",
             },
