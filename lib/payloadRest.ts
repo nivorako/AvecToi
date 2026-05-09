@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 // Minimal server-side REST helper for calling Payload endpoints from Server Components.
 //
@@ -44,6 +44,18 @@ async function getCookieHeaderFromNextCookies(): Promise<string> {
     }
 }
 
+async function getRequestOriginFromNextHeaders(): Promise<string | null> {
+    try {
+        const h = await headers();
+        const host = h.get("x-forwarded-host") ?? h.get("host");
+        if (!host) return null;
+        const proto = h.get("x-forwarded-proto") ?? "https";
+        return `${proto}://${host}`;
+    } catch {
+        return null;
+    }
+}
+
 function getServerURL(): string {
     const vercelURL = process.env.VERCEL_URL;
     if (vercelURL) return `https://${vercelURL}`;
@@ -77,11 +89,14 @@ export async function payloadREST<T>(
     path: string,
     init?: RequestInit,
 ): Promise<T> {
+    const requestOrigin = await getRequestOriginFromNextHeaders();
+    const baseURL = requestOrigin ?? getServerURL();
+
     // Read incoming request cookies (server-side) so we can forward session context.
     const cookieHeader = await getCookieHeaderFromNextCookies();
     const token = getTokenFromCookieHeader(cookieHeader);
 
-    const res = await fetch(`${getServerURL()}${path}`, {
+    const res = await fetch(`${baseURL}${path}`, {
         ...init,
         headers: {
             ...(init?.headers ?? {}),
@@ -100,7 +115,7 @@ export async function payloadREST<T>(
     // We retry with bypass parameters when configured.
     if (!res.ok && process.env.VERCEL_PROTECTION_BYPASS) {
         const retry = await fetch(
-            withVercelProtectionBypass(`${getServerURL()}${path}`),
+            withVercelProtectionBypass(`${baseURL}${path}`),
             {
                 ...init,
                 headers: {
