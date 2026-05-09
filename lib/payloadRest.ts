@@ -73,8 +73,19 @@ export async function payloadREST<T>(
 
 export async function getCurrentUser() {
     // Used as a guard for protected pages (redirect to /login when null).
-    const me = await payloadREST<PayloadMeResponse>("/api/users/me");
-    return me.user ?? null;
+    try {
+        const me = await payloadREST<PayloadMeResponse>("/api/users/me");
+        return me.user ?? null;
+    } catch (err) {
+        if (
+            err instanceof Error &&
+            err.message.includes("Payload REST error 401")
+        ) {
+            return null;
+        }
+
+        throw err;
+    }
 }
 
 export async function findCareGroups() {
