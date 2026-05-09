@@ -17,7 +17,9 @@ export async function POST() {
     // - Best-effort call to Payload logout (to invalidate admin/session cookies)
     // - Always clear Payload cookies + our app JWT cookie (client is logged out regardless)
     const baseURL =
-        process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3000";
+        process.env.NEXT_PUBLIC_SERVER_URL ||
+        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+        "http://localhost:3000";
 
     try {
         await fetch(`${baseURL}/api/users/logout`, {

@@ -35,8 +35,12 @@ function getTokenFromCookieHeader(cookieHeader: string): string | null {
 function getServerURL(): string {
     // Payload + Next can run on the same origin. We keep this configurable for deployments.
     const serverURL = process.env.NEXT_PUBLIC_SERVER_URL;
-    if (!serverURL) return "http://localhost:3000";
-    return serverURL;
+    if (serverURL) return serverURL;
+
+    const vercelURL = process.env.VERCEL_URL;
+    if (vercelURL) return `https://${vercelURL}`;
+
+    return "http://localhost:3000";
 }
 
 export async function payloadREST<T>(
