@@ -4,6 +4,16 @@ import { NextResponse } from "next/server";
 // This is separate from Payload's own admin cookies; we forward both so /admin and /app stay in sync.
 const COOKIE_NAME = "avectoi-token";
 
+function withVercelProtectionBypass(url: string): string {
+    const bypass = process.env.VERCEL_PROTECTION_BYPASS;
+    if (!bypass) return url;
+
+    const u = new URL(url);
+    u.searchParams.set("x-vercel-protection-bypass", bypass);
+    u.searchParams.set("x-vercel-set-bypass-cookie", "true");
+    return u.toString();
+}
+
 function getSetCookieHeaders(res: Response): string[] {
     const anyHeaders = res.headers as unknown as {
         getSetCookie?: () => string[];
@@ -34,12 +44,10 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: false }, { status: 400 });
     }
 
-    const baseURL =
-        process.env.NEXT_PUBLIC_SERVER_URL ||
-        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-        "http://localhost:3000";
+    const baseURL = new URL(req.url).origin;
+    const loginURL = withVercelProtectionBypass(`${baseURL}/api/users/login`);
 
-    const res = await fetch(`${baseURL}/api/users/login`, {
+    const res = await fetch(loginURL, {
         method: "POST",
         headers: {
             "content-type": "application/json",

@@ -43,6 +43,16 @@ function getServerURL(): string {
     return "http://localhost:3000";
 }
 
+function withVercelProtectionBypass(url: string): string {
+    const bypass = process.env.VERCEL_PROTECTION_BYPASS;
+    if (!bypass) return url;
+
+    const u = new URL(url);
+    u.searchParams.set("x-vercel-protection-bypass", bypass);
+    u.searchParams.set("x-vercel-set-bypass-cookie", "true");
+    return u.toString();
+}
+
 export async function payloadREST<T>(
     path: string,
     init?: Omit<RequestInit, "headers"> & { headers?: HeadersInit },
@@ -63,6 +73,28 @@ export async function payloadREST<T>(
         // These endpoints are user-specific; avoid caching across requests/users.
         cache: "no-store",
     });
+
+    // If Deployment Protection is enabled on Vercel, server-side fetches to the public URL can be
+    // blocked unless a bypass token is provided.
+    // We retry with bypass parameters when configured.
+    if (!res.ok && process.env.VERCEL_PROTECTION_BYPASS) {
+        const retry = await fetch(
+            withVercelProtectionBypass(`${getServerURL()}${path}`),
+            {
+                ...init,
+                headers: {
+                    ...(init?.headers ?? {}),
+                    cookie: cookieHeader,
+                    ...(token ? { Authorization: `JWT ${token}` } : {}),
+                },
+                cache: "no-store",
+            },
+        );
+
+        if (retry.ok) {
+            return (await retry.json()) as T;
+        }
+    }
 
     if (!res.ok) {
         throw new Error(`Payload REST error ${res.status} on ${path}`);

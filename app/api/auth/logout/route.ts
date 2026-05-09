@@ -10,19 +10,29 @@ const PAYLOAD_COOKIE_NAMES = [
     "payload-refresh-token.sig",
 ];
 
+function withVercelProtectionBypass(url: string): string {
+    const bypass = process.env.VERCEL_PROTECTION_BYPASS;
+    if (!bypass) return url;
+
+    const u = new URL(url);
+    u.searchParams.set("x-vercel-protection-bypass", bypass);
+    u.searchParams.set("x-vercel-set-bypass-cookie", "true");
+    return u.toString();
+}
+
 export async function POST() {
     // Custom logout endpoint used by the app.
     //
     // Flow:
     // - Best-effort call to Payload logout (to invalidate admin/session cookies)
     // - Always clear Payload cookies + our app JWT cookie (client is logged out regardless)
-    const baseURL =
-        process.env.NEXT_PUBLIC_SERVER_URL ||
-        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-        "http://localhost:3000";
+    const baseURL = process.env.NEXT_PUBLIC_SERVER_URL || "";
+    const origin =
+        baseURL || new URL("http://localhost", "http://localhost").origin;
+    const logoutURL = withVercelProtectionBypass(`${origin}/api/users/logout`);
 
     try {
-        await fetch(`${baseURL}/api/users/logout`, {
+        await fetch(logoutURL, {
             method: "POST",
             credentials: "include",
             cache: "no-store",
