@@ -57,7 +57,9 @@ export async function POST(req: Request) {
         depth: 0,
         overrideAccess: true,
         disableTransaction: true,
-    })) as { careGroup?: unknown; type?: unknown };
+    } as unknown as Parameters<
+        Awaited<ReturnType<typeof getPayload>>["findByID"]
+    >[0])) as { careGroup?: unknown; type?: unknown };
 
     const careGroupID =
         typeof relatedCase?.careGroup === "string" ||
@@ -83,7 +85,9 @@ export async function POST(req: Request) {
         },
         overrideAccess: true,
         disableTransaction: true,
-    });
+    } as unknown as Parameters<
+        Awaited<ReturnType<typeof getPayload>>["find"]
+    >[0]);
 
     const role = (membership.docs[0] as { role?: string } | undefined)?.role;
     const caseType = relatedCase?.type;
@@ -124,7 +128,9 @@ export async function POST(req: Request) {
         },
         overrideAccess: true,
         disableTransaction: true,
-    });
+    } as unknown as Parameters<
+        Awaited<ReturnType<typeof getPayload>>["create"]
+    >[0]);
 
     return Response.json(created);
 }

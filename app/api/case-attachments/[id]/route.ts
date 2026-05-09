@@ -47,7 +47,9 @@ async function canManageAttachment(args: {
         depth: 0,
         overrideAccess: true,
         disableTransaction: true,
-    })) as { careGroup?: unknown };
+    } as unknown as Parameters<
+        Awaited<ReturnType<typeof getPayload>>["findByID"]
+    >[0])) as { careGroup?: unknown };
 
     const careGroupID =
         typeof attachment?.careGroup === "string" ||
@@ -73,7 +75,9 @@ async function canManageAttachment(args: {
         },
         overrideAccess: true,
         disableTransaction: true,
-    });
+    } as unknown as Parameters<
+        Awaited<ReturnType<typeof getPayload>>["find"]
+    >[0]);
 
     const role = (membership.docs[0] as { role?: string } | undefined)?.role;
 
@@ -113,7 +117,9 @@ export async function PATCH(
         },
         overrideAccess: true,
         disableTransaction: true,
-    });
+    } as unknown as Parameters<
+        Awaited<ReturnType<typeof getPayload>>["update"]
+    >[0]);
 
     return Response.json(updated);
 }
@@ -135,7 +141,9 @@ export async function DELETE(
         id,
         overrideAccess: true,
         disableTransaction: true,
-    });
+    } as unknown as Parameters<
+        Awaited<ReturnType<typeof getPayload>>["delete"]
+    >[0]);
 
     return Response.json(deleted);
 }
