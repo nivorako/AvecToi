@@ -44,13 +44,26 @@ async function getCookieHeaderFromNextCookies(): Promise<string> {
     }
 }
 
+export function buildOriginFromForwardedHeaders(input: {
+    host?: string | null;
+    xForwardedHost?: string | null;
+    xForwardedProto?: string | null;
+}): string | null {
+    const host = input.xForwardedHost ?? input.host;
+    if (!host) return null;
+
+    const proto = input.xForwardedProto ?? "https";
+    return `${proto}://${host}`;
+}
+
 async function getRequestOriginFromNextHeaders(): Promise<string | null> {
     try {
         const h = await headers();
-        const host = h.get("x-forwarded-host") ?? h.get("host");
-        if (!host) return null;
-        const proto = h.get("x-forwarded-proto") ?? "https";
-        return `${proto}://${host}`;
+        return buildOriginFromForwardedHeaders({
+            host: h.get("host"),
+            xForwardedHost: h.get("x-forwarded-host"),
+            xForwardedProto: h.get("x-forwarded-proto"),
+        });
     } catch {
         return null;
     }
