@@ -3,14 +3,10 @@ import { getPayload } from "payload";
 
 import config from "@/payload.config";
 
-function getServerURL(): string {
-    const serverURL = process.env.NEXT_PUBLIC_SERVER_URL;
-    if (serverURL) return serverURL;
+export const runtime = "nodejs";
 
-    const vercelURL = process.env.VERCEL_URL;
-    if (vercelURL) return `https://${vercelURL}`;
-
-    return "http://localhost:3000";
+function getOriginFromRequestURL(requestURL: string): string {
+    return new URL(requestURL).origin;
 }
 
 type PayloadMeResponse = {
@@ -31,7 +27,9 @@ export async function POST(req: Request) {
         return new Response("Missing case", { status: 400 });
     }
 
-    const meRes = await fetch(`${getServerURL()}/api/users/me`, {
+    const origin = getOriginFromRequestURL(req.url);
+
+    const meRes = await fetch(`${origin}/api/users/me`, {
         headers: {
             Authorization: `JWT ${token}`,
         },

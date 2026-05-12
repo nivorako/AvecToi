@@ -139,7 +139,10 @@ export async function GET(
     }
 
     // `doc.url` can be absolute or relative depending on configuration.
-    const fileURL = new URL(doc.url, origin).toString();
+    // Additionally, uploads created in another environment may have an absolute URL pointing
+    // to localhost or a previous deployment host. We always rebase to the current origin.
+    const rawURL = new URL(doc.url, origin);
+    const fileURL = new URL(rawURL.pathname + rawURL.search, origin).toString();
 
     const fileRes = await fetch(fileURL, {
         headers: {

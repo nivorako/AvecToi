@@ -3,24 +3,23 @@ import { getPayload } from "payload";
 
 import config from "@/payload.config";
 
-function getServerURL(): string {
-    const serverURL = process.env.NEXT_PUBLIC_SERVER_URL;
-    if (serverURL) return serverURL;
+export const runtime = "nodejs";
 
-    const vercelURL = process.env.VERCEL_URL;
-    if (vercelURL) return `https://${vercelURL}`;
-
-    return "http://localhost:3000";
+function getOriginFromRequestURL(requestURL: string): string {
+    return new URL(requestURL).origin;
 }
 
 type PayloadMeResponse = {
     user?: { id: string } | null;
 };
 
-async function getUserIDFromToken(token: string): Promise<string | null> {
-    const meRes = await fetch(`${getServerURL()}/api/users/me`, {
+async function getUserIDFromTokenWithOrigin(args: {
+    token: string;
+    origin: string;
+}): Promise<string | null> {
+    const meRes = await fetch(`${args.origin}/api/users/me`, {
         headers: {
-            Authorization: `JWT ${token}`,
+            Authorization: `JWT ${args.token}`,
         },
         cache: "no-store",
     });
@@ -34,13 +33,17 @@ async function getUserIDFromToken(token: string): Promise<string | null> {
 async function canManageAttachment(args: {
     token: string;
     attachmentID: string;
+    origin: string;
 }): Promise<
     | { ok: true; payload: Awaited<ReturnType<typeof getPayload>> }
     | { ok: false; status: number; message: string }
 > {
     // These endpoints are called from a Client Component (menu actions). We can't use Server
     // Actions here without passing event handlers across the server/client boundary.
-    const userID = await getUserIDFromToken(args.token);
+    const userID = await getUserIDFromTokenWithOrigin({
+        token: args.token,
+        origin: args.origin,
+    });
     if (!userID) return { ok: false, status: 401, message: "Unauthorized" };
 
     const payload = await getPayload({ config });
@@ -103,7 +106,13 @@ export async function PATCH(
 
     const { id } = await params;
 
-    const auth = await canManageAttachment({ token, attachmentID: id });
+    const origin = getOriginFromRequestURL(req.url);
+
+    const auth = await canManageAttachment({
+        token,
+        attachmentID: id,
+        origin,
+    });
     if (!auth.ok) return new Response(auth.message, { status: auth.status });
 
     const json = (await req.json().catch(() => null)) as {
@@ -129,7 +138,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-    _req: Request,
+    req: Request,
     { params }: { params: Promise<{ id: string }> },
 ) {
     const token = (await cookies()).get("avectoi-token")?.value;
@@ -137,7 +146,13 @@ export async function DELETE(
 
     const { id } = await params;
 
-    const auth = await canManageAttachment({ token, attachmentID: id });
+    const origin = getOriginFromRequestURL(req.url);
+
+    const auth = await canManageAttachment({
+        token,
+        attachmentID: id,
+        origin,
+    });
     if (!auth.ok) return new Response(auth.message, { status: auth.status });
 
     const deleted = await auth.payload.delete({
