@@ -9,14 +9,11 @@ import config from "@/payload.config";
 
 export const runtime = "nodejs";
 
-function getServerURL(): string {
-    const serverURL = process.env.NEXT_PUBLIC_SERVER_URL;
-    if (serverURL) return serverURL;
-
-    const vercelURL = process.env.VERCEL_URL;
-    if (vercelURL) return `https://${vercelURL}`;
-
-    return "http://localhost:3000";
+function getOriginFromRequestURL(requestURL: string): string {
+    // On Vercel, environment variables like NEXT_PUBLIC_SERVER_URL can be misconfigured
+    // (e.g. left as http://localhost:3000). For internal calls, always prefer the actual
+    // origin that served this request.
+    return new URL(requestURL).origin;
 }
 
 type PayloadMeResponse = {
@@ -31,10 +28,13 @@ type CaseAttachmentDoc = {
     caseType?: unknown;
 };
 
-async function getUserIDFromToken(token: string): Promise<string | null> {
-    const meRes = await fetch(`${getServerURL()}/api/users/me`, {
+async function getUserIDFromTokenWithOrigin(args: {
+    token: string;
+    origin: string;
+}): Promise<string | null> {
+    const meRes = await fetch(`${args.origin}/api/users/me`, {
         headers: {
-            Authorization: `JWT ${token}`,
+            Authorization: `JWT ${args.token}`,
         },
         cache: "no-store",
     });
@@ -46,7 +46,7 @@ async function getUserIDFromToken(token: string): Promise<string | null> {
 }
 
 export async function GET(
-    _req: Request,
+    req: Request,
     { params }: { params: Promise<{ id: string }> },
 ) {
     // We proxy downloads through Next.js so we can attach Authorization from the HttpOnly
@@ -62,7 +62,9 @@ export async function GET(
 
     console.info("case-attachments.file", { id });
 
-    const userID = await getUserIDFromToken(token);
+    const origin = getOriginFromRequestURL(req.url);
+
+    const userID = await getUserIDFromTokenWithOrigin({ token, origin });
     if (!userID) {
         return new Response("Unauthorized", { status: 401 });
     }
@@ -137,7 +139,7 @@ export async function GET(
     }
 
     // `doc.url` can be absolute or relative depending on configuration.
-    const fileURL = new URL(doc.url, getServerURL()).toString();
+    const fileURL = new URL(doc.url, origin).toString();
 
     const fileRes = await fetch(fileURL, {
         headers: {
