@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { getPayload } from "payload";
+import { ObjectId } from "mongodb";
 
 import config from "@/payload.config";
 
@@ -185,6 +186,35 @@ export async function DELETE(
         console.error("case-attachments.delete.error", { id, err });
         const errorMessage = err instanceof Error ? err.message : String(err);
         const errorName = err instanceof Error ? err.name : "UnknownError";
+
+        if (errorName === "ErrorDeletingFile") {
+            try {
+                const dbCollection = auth.payload.db.collections[
+                    "case-attachments"
+                ] as unknown as {
+                    deleteOne: (filter: { _id: ObjectId }) => Promise<{
+                        deletedCount?: number;
+                    }>;
+                };
+
+                const res = await dbCollection.deleteOne({
+                    _id: new ObjectId(id),
+                });
+                if ((res.deletedCount ?? 0) > 0) {
+                    return Response.json({
+                        id,
+                        deleted: true,
+                        fileDeleted: false,
+                    });
+                }
+            } catch (fallbackErr) {
+                console.error("case-attachments.delete.fallback_error", {
+                    id,
+                    fallbackErr,
+                });
+            }
+        }
+
         return Response.json(
             {
                 error: "Failed to delete attachment",
