@@ -122,19 +122,30 @@ export async function PATCH(
     const displayName =
         typeof json?.displayName === "string" ? json.displayName.trim() : "";
 
-    const updated = await auth.payload.update({
-        collection: "case-attachments",
-        id,
-        data: {
-            displayName,
-        },
-        overrideAccess: true,
-        disableTransaction: true,
-    } as unknown as Parameters<
-        Awaited<ReturnType<typeof getPayload>>["update"]
-    >[0]);
+    try {
+        const updated = await auth.payload.update({
+            collection: "case-attachments",
+            id,
+            data: {
+                displayName,
+            },
+            overrideAccess: true,
+            disableTransaction: true,
+        } as unknown as Parameters<
+            Awaited<ReturnType<typeof getPayload>>["update"]
+        >[0]);
 
-    return Response.json(updated);
+        return Response.json(updated);
+    } catch (err) {
+        console.error("case-attachments.patch.error", { id, err });
+        return Response.json(
+            {
+                error: "Failed to update attachment",
+                id,
+            },
+            { status: 500 },
+        );
+    }
 }
 
 export async function DELETE(
@@ -155,14 +166,25 @@ export async function DELETE(
     });
     if (!auth.ok) return new Response(auth.message, { status: auth.status });
 
-    const deleted = await auth.payload.delete({
-        collection: "case-attachments",
-        id,
-        overrideAccess: true,
-        disableTransaction: true,
-    } as unknown as Parameters<
-        Awaited<ReturnType<typeof getPayload>>["delete"]
-    >[0]);
+    try {
+        const deleted = await auth.payload.delete({
+            collection: "case-attachments",
+            id,
+            overrideAccess: true,
+            disableTransaction: true,
+        } as unknown as Parameters<
+            Awaited<ReturnType<typeof getPayload>>["delete"]
+        >[0]);
 
-    return Response.json(deleted);
+        return Response.json(deleted);
+    } catch (err) {
+        console.error("case-attachments.delete.error", { id, err });
+        return Response.json(
+            {
+                error: "Failed to delete attachment",
+                id,
+            },
+            { status: 500 },
+        );
+    }
 }
