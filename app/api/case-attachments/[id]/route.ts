@@ -138,10 +138,14 @@ export async function PATCH(
         return Response.json(updated);
     } catch (err) {
         console.error("case-attachments.patch.error", { id, err });
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        const errorName = err instanceof Error ? err.name : "UnknownError";
         return Response.json(
             {
                 error: "Failed to update attachment",
                 id,
+                errorName,
+                errorMessage,
             },
             { status: 500 },
         );
@@ -179,10 +183,14 @@ export async function DELETE(
         return Response.json(deleted);
     } catch (err) {
         console.error("case-attachments.delete.error", { id, err });
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        const errorName = err instanceof Error ? err.name : "UnknownError";
         return Response.json(
             {
                 error: "Failed to delete attachment",
                 id,
+                errorName,
+                errorMessage,
             },
             { status: 500 },
         );
