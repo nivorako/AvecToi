@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { getPayload } from "payload";
-import { ObjectId } from "mongodb";
 
 import config from "@/payload.config";
 
@@ -189,17 +188,28 @@ export async function DELETE(
 
         if (errorName === "ErrorDeletingFile") {
             try {
-                const dbCollection = auth.payload.db.collections[
-                    "case-attachments"
-                ] as unknown as {
-                    deleteOne: (filter: { _id: ObjectId }) => Promise<{
-                        deletedCount?: number;
-                    }>;
-                };
+                const collections = auth.payload.db
+                    .collections as unknown as Record<
+                    string,
+                    {
+                        collection?: { collectionName?: string };
+                        deleteOne?: (filter: { _id: string }) => Promise<{
+                            deletedCount?: number;
+                        }>;
+                    }
+                >;
 
-                const res = await dbCollection.deleteOne({
-                    _id: new ObjectId(id),
-                });
+                const model =
+                    collections["case-attachments"] ??
+                    Object.values(collections).find(
+                        (m) =>
+                            m?.collection?.collectionName ===
+                                "case-attachments" ||
+                            m?.collection?.collectionName ===
+                                "case-attachments" + "s",
+                    );
+
+                const res = await model?.deleteOne?.({ _id: id });
                 if ((res.deletedCount ?? 0) > 0) {
                     return Response.json({
                         id,
