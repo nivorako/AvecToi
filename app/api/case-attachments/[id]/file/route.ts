@@ -23,6 +23,14 @@ type PayloadMeResponse = {
     user?: { id: string } | null;
 };
 
+type CaseAttachmentDoc = {
+    url?: string;
+    filename?: string;
+    mimeType?: string;
+    careGroup?: unknown;
+    caseType?: unknown;
+};
+
 async function getUserIDFromToken(token: string): Promise<string | null> {
     const meRes = await fetch(`${getServerURL()}/api/users/me`, {
         headers: {
@@ -61,13 +69,7 @@ export async function GET(
 
     const payload = await getPayload({ config });
 
-    let doc: {
-        url?: string;
-        filename?: string;
-        mimeType?: string;
-        careGroup?: unknown;
-        caseType?: unknown;
-    } | null = null;
+    let doc: CaseAttachmentDoc | null = null;
 
     try {
         doc = (await payload.findByID({
@@ -78,7 +80,7 @@ export async function GET(
             disableTransaction: true,
         } as unknown as Parameters<
             Awaited<ReturnType<typeof getPayload>>["findByID"]
-        >[0])) as typeof doc;
+        >[0])) as unknown as CaseAttachmentDoc;
     } catch (err) {
         console.warn("case-attachments.file.doc_missing", {
             id,
