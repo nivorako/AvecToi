@@ -210,7 +210,7 @@ export async function DELETE(
                     );
 
                 const res = await model?.deleteOne?.({ _id: id });
-                if ((res.deletedCount ?? 0) > 0) {
+                if ((res?.deletedCount ?? 0) > 0) {
                     return Response.json({
                         id,
                         deleted: true,
