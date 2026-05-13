@@ -165,27 +165,20 @@ export default async function CareGroupMembersPage({
 
     if (myMembership?.role !== "owner" && myMembership?.role !== "family") {
         return (
-            <div className="min-h-screen bg-background">
-                <header className="border-b border-border bg-card">
-                    <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
-                        <Link
-                            href={`/app/caregroups/${id}`}
-                            className="text-sm font-semibold"
-                        >
-                            Retour caregroup
-                        </Link>
-                        <div className="text-sm text-muted">
-                            {user.name ?? user.email ?? user.id}
-                        </div>
-                    </div>
-                </header>
-
-                <main className="mx-auto w-full max-w-5xl px-6 py-8">
+            <div>
+                <div className="flex items-center justify-between gap-4">
                     <h1 className="text-2xl font-semibold">Membres</h1>
-                    <div className="mt-4 rounded-2xl border border-border bg-card p-5 shadow-sm text-sm text-muted">
-                        Tu n’as pas accès à cette page.
-                    </div>
-                </main>
+                    <Link
+                        href={`/app/caregroups/${id}`}
+                        className="btn-secondary"
+                    >
+                        Retour caregroup
+                    </Link>
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-border bg-card p-5 text-sm text-muted shadow-sm">
+                    Tu n’as pas accès à cette page.
+                </div>
             </div>
         );
     }
@@ -202,83 +195,69 @@ export default async function CareGroupMembersPage({
             : { docs: [] as Invitation[] };
 
     return (
-        <div className="min-h-screen bg-background">
-            <header className="border-b border-border bg-card">
-                <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
-                    <Link
-                        href={`/app/caregroups/${id}`}
-                        className="text-sm font-semibold"
-                    >
-                        Retour caregroup
-                    </Link>
-                    <div className="text-sm text-muted">
-                        {user.name ?? user.email ?? user.id}
-                    </div>
-                </div>
-            </header>
-
-            <main className="mx-auto w-full max-w-5xl px-6 py-8">
+        <div>
+            <div className="flex items-center justify-between gap-4">
                 <h1 className="text-2xl font-semibold">Membres</h1>
+                <Link href={`/app/caregroups/${id}`} className="btn-secondary">
+                    Retour caregroup
+                </Link>
+            </div>
 
-                {myMembership?.role === "owner" ? (
-                    <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
-                        <h2 className="text-base font-semibold">
-                            Inviter un membre
-                        </h2>
-                        <InviteMemberForm
-                            careGroupID={id}
-                            action={inviteMember}
-                        />
-                    </section>
-                ) : null}
-
-                {myMembership?.role === "owner" ? (
-                    <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
-                        <h2 className="text-base font-semibold">
-                            Invitations en attente
-                        </h2>
-
-                        <div className="mt-4">
-                            <PendingInvitesList
-                                invitations={invitations.docs}
-                                onDelete={async (invitationID: string) => {
-                                    "use server";
-                                    // Bridge: UI stays client-side (copy button, loading state)
-                                    // while the actual delete happens on the server.
-                                    await deleteInvitation(invitationID, id);
-                                }}
-                            />
-                        </div>
-                    </section>
-                ) : null}
-
+            {myMembership?.role === "owner" ? (
                 <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
-                    <h2 className="text-base font-semibold">Membres actuels</h2>
+                    <h2 className="text-base font-semibold">
+                        Inviter un membre
+                    </h2>
+                    <InviteMemberForm careGroupID={id} action={inviteMember} />
+                </section>
+            ) : null}
 
-                    <div className="mt-4 flex flex-col gap-2">
-                        {memberships.docs.map((m) => {
-                            const userDoc =
-                                typeof m.user === "string" ? null : m.user;
-                            const label =
-                                userDoc?.name ??
-                                userDoc?.email ??
-                                (typeof m.user === "string" ? m.user : m.id);
+            {myMembership?.role === "owner" ? (
+                <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
+                    <h2 className="text-base font-semibold">
+                        Invitations en attente
+                    </h2>
 
-                            return (
-                                <div
-                                    key={m.id}
-                                    className="rounded-2xl border border-border bg-card px-3 py-2 text-sm"
-                                >
-                                    <div className="font-medium">{label}</div>
-                                    <div className="text-xs text-muted">
-                                        {m.role}
-                                    </div>
-                                </div>
-                            );
-                        })}
+                    <div className="mt-4">
+                        <PendingInvitesList
+                            invitations={invitations.docs}
+                            onDelete={async (invitationID: string) => {
+                                "use server";
+                                // Bridge: UI stays client-side (copy button, loading state)
+                                // while the actual delete happens on the server.
+                                await deleteInvitation(invitationID, id);
+                            }}
+                        />
                     </div>
                 </section>
-            </main>
+            ) : null}
+
+            <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
+                <h2 className="text-base font-semibold">Membres actuels</h2>
+
+                <div className="mt-4 flex flex-col gap-2">
+                    {memberships.docs.map((m) => {
+                        const userDoc =
+                            typeof m.user === "string" ? null : m.user;
+                        const label =
+                            userDoc?.name ??
+                            userDoc?.email ??
+                            (typeof m.user === "string" ? m.user : m.id);
+
+                        return (
+                            <div
+                                key={m.id}
+                                className="rounded-2xl border border-border bg-card px-3 py-2 text-sm"
+                            >
+                                <div className="font-medium">{label}</div>
+                                <div className="text-xs text-muted">
+                                    {m.role}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </section>
         </div>
     );
 }

@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
+import AddCaseAttachmentPanel from "@/components/case/AddCaseAttachmentPanel";
+import AddCaseTaskPanel from "@/components/case/AddCaseTaskPanel";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
@@ -22,7 +27,28 @@ type CaseDoc = {
     careGroup?: string | { id: string; name?: string };
 };
 
-type Task = { id: string; title?: string; status?: string; dueDate?: string };
+type Task = {
+    id: string;
+    title?: string;
+    status?: string;
+    dueDate?: string;
+};
+
+function formatDateFR(iso: string) {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    return new Intl.DateTimeFormat("fr-FR", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+    }).format(d);
+}
+
+function statusBadgeVariant(status: string | undefined) {
+    if (status === "done") return "primary" as const;
+    if (status === "cancelled") return "danger" as const;
+    return "muted" as const;
+}
 
 type CaseAttachment = {
     id: string;
@@ -190,174 +216,234 @@ export default async function CasePage({
         `/api/case-attachments?where[case][equals]=${encodeURIComponent(id)}&limit=50&depth=0`,
     );
 
+    const upcomingTasks = tasks.docs
+        .filter((t) => t.status !== "done")
+        .sort((a, b) => {
+            const aDue = a.dueDate
+                ? new Date(a.dueDate).getTime()
+                : Number.POSITIVE_INFINITY;
+            const bDue = b.dueDate
+                ? new Date(b.dueDate).getTime()
+                : Number.POSITIVE_INFINITY;
+            if (aDue !== bDue) return aDue - bDue;
+            return String(a.title ?? a.id).localeCompare(
+                String(b.title ?? b.id),
+            );
+        });
+    const doneTasks = tasks.docs
+        .filter((t) => t.status === "done")
+        .sort((a, b) => {
+            const aDue = a.dueDate
+                ? new Date(a.dueDate).getTime()
+                : Number.POSITIVE_INFINITY;
+            const bDue = b.dueDate
+                ? new Date(b.dueDate).getTime()
+                : Number.POSITIVE_INFINITY;
+            if (aDue !== bDue) return aDue - bDue;
+            return String(a.title ?? a.id).localeCompare(
+                String(b.title ?? b.id),
+            );
+        });
+
     return (
-        <div className="min-h-screen bg-background">
-            <header className="border-b border-border bg-card">
-                <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
-                    <Link href="/app" className="text-sm font-semibold">
-                        Avec Toi
+        <div>
+            <div className="flex items-start justify-between gap-6">
+                <div>
+                    <h1 className="text-2xl font-semibold">
+                        {caseDoc?.title ?? caseDoc?.id ?? id}
+                    </h1>
+                    <div className="mt-1 text-sm text-muted">
+                        {caseDoc?.type}
+                    </div>
+                </div>
+
+                {careGroupID ? (
+                    <Link href={`/app/caregroups/${careGroupID}`}>
+                        <Button variant="secondary">Retour caregroup</Button>
                     </Link>
-                    <div className="text-sm text-muted">
-                        {user.name ?? user.email ?? user.id}
-                    </div>
-                </div>
-            </header>
-
-            <main className="mx-auto w-full max-w-5xl px-6 py-8">
-                <div className="flex items-start justify-between gap-6">
-                    <div>
-                        <h1 className="text-2xl font-semibold">
-                            {caseDoc?.title ?? caseDoc?.id ?? id}
-                        </h1>
-                        <div className="mt-1 text-sm text-zinc-600">
-                            {caseDoc?.type}
-                        </div>
-                    </div>
-
-                    {careGroupID ? (
-                        <Link
-                            href={`/app/caregroups/${careGroupID}`}
-                            className="btn-secondary"
-                        >
-                            Retour caregroup
-                        </Link>
-                    ) : null}
-                </div>
-
-                {caseDoc?.description ? (
-                    <div className="mt-6 rounded-2xl border border-border bg-card p-5 text-sm shadow-sm">
-                        {caseDoc.description}
-                    </div>
                 ) : null}
+            </div>
 
-                <section className="mt-8 rounded-2xl border border-border bg-card p-5 shadow-sm">
-                    <h2 className="text-base font-semibold">
-                        Description du dossier
-                    </h2>
-
-                    {canUpdateCase ? (
-                        <form
-                            action={updateCaseDescription}
-                            className="mt-4 flex flex-col gap-2"
-                        >
-                            <input type="hidden" name="case" value={id} />
-                            <input
-                                type="hidden"
-                                name="careGroup"
-                                value={careGroupID ?? ""}
-                            />
-                            <textarea
-                                name="description"
-                                className="input min-h-28"
-                                defaultValue={caseDoc?.description ?? ""}
-                                placeholder="Décris ce dossier (contexte, objectifs, infos importantes...)"
-                            />
-                            <button type="submit" className="btn-primary">
-                                Enregistrer
-                            </button>
-                        </form>
-                    ) : (
-                        <div className="mt-4 text-sm text-muted">
-                            Tu n’as pas les droits pour modifier la description.
+            <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <Card>
+                    <CardHeader title="Tâches du dossier" />
+                    <CardContent>
+                        <div>
+                            <div className="text-sm font-semibold">À venir</div>
+                            <div className="mt-3 flex flex-col gap-2">
+                                {upcomingTasks.length ? (
+                                    upcomingTasks.map((t) => (
+                                        <div
+                                            key={t.id}
+                                            className="rounded-2xl border border-border bg-card px-3 py-2 text-sm"
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <div className="font-medium">
+                                                        {t.title ?? t.id}
+                                                    </div>
+                                                    <div className="text-xs text-muted">
+                                                        {t.dueDate
+                                                            ? `Échéance: ${formatDateFR(t.dueDate)}`
+                                                            : ""}
+                                                    </div>
+                                                </div>
+                                                <Badge
+                                                    variant={statusBadgeVariant(
+                                                        t.status,
+                                                    )}
+                                                    className="shrink-0"
+                                                >
+                                                    {t.status ?? ""}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="mt-2 text-sm text-muted">
+                                        Aucune tâche à venir.
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    )}
-                </section>
 
-                <section className="mt-8 rounded-2xl border border-border bg-card p-5 shadow-sm">
-                    <h2 className="text-base font-semibold">
-                        Documents & photos
-                    </h2>
-
-                    {canUpdateCase ? (
-                        <CaseAttachmentsUploader caseID={id} />
-                    ) : (
-                        <div className="mt-4 text-sm text-muted">
-                            Tu n’as pas les droits pour ajouter des documents.
+                        <div className="mt-6">
+                            <div className="text-sm font-semibold">
+                                Historique
+                            </div>
+                            <div className="mt-3 flex flex-col gap-2">
+                                {doneTasks.length ? (
+                                    doneTasks.map((t) => (
+                                        <div
+                                            key={t.id}
+                                            className="rounded-2xl border border-border bg-card px-3 py-2 text-sm"
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <div className="font-medium">
+                                                        {t.title ?? t.id}
+                                                    </div>
+                                                    <div className="text-xs text-muted">
+                                                        {t.dueDate
+                                                            ? `Échéance: ${formatDateFR(t.dueDate)}`
+                                                            : ""}
+                                                    </div>
+                                                </div>
+                                                <Badge
+                                                    variant={statusBadgeVariant(
+                                                        t.status,
+                                                    )}
+                                                    className="shrink-0"
+                                                >
+                                                    {t.status ?? ""}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="mt-2 text-sm text-muted">
+                                        Aucune tâche effectuée.
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    )}
 
-                    <div className="mt-4 flex flex-col gap-2">
-                        {/* Each row is a Client Component to support the inline menu (rename/delete).
-                        We trigger mutations through Next API routes because Server Components cannot
-                        pass event handlers to Client Components. */}
-                        {attachments.docs.length ? (
-                            attachments.docs.map((a) => (
-                                <CaseAttachmentRow
-                                    key={a.id}
-                                    attachmentID={a.id}
-                                    href={`/api/case-attachments/${encodeURIComponent(a.id)}/file`}
-                                    label={a.displayName ?? a.filename ?? a.id}
-                                    description={a.description}
-                                    canManage={
-                                        role === "owner" || role === "family"
-                                    }
-                                />
-                            ))
+                        {canCreateTask ? (
+                            <AddCaseTaskPanel
+                                careGroupId={careGroupID ?? ""}
+                                caseId={id}
+                                caseType={normalizedCaseType}
+                                action={createTask}
+                            />
                         ) : (
-                            <div className="text-sm text-muted">
-                                Aucun document.
+                            <div className="mt-4 text-sm text-muted">
+                                Tu n’as pas les droits pour ajouter une task.
                             </div>
                         )}
-                    </div>
-                </section>
+                    </CardContent>
+                </Card>
 
-                <section className="mt-8 rounded-2xl border border-border bg-card p-5 shadow-sm">
-                    <h2 className="text-base font-semibold">Tasks</h2>
-
-                    {canCreateTask ? (
-                        <form
-                            action={createTask}
-                            className="mt-4 flex flex-col gap-2"
-                        >
-                            <input type="hidden" name="case" value={id} />
-                            <input
-                                type="hidden"
-                                name="careGroup"
-                                value={careGroupID ?? ""}
-                            />
-                            <input
-                                type="hidden"
-                                name="caseType"
-                                value={normalizedCaseType}
-                            />
-                            <input
-                                name="title"
-                                placeholder="Titre"
-                                className="input"
-                                required
-                            />
-                            <input
-                                type="date"
-                                name="dueDate"
-                                className="input"
-                            />
-                            <button type="submit" className="btn-primary">
-                                Ajouter task
-                            </button>
-                        </form>
-                    ) : (
-                        <div className="mt-4 text-sm text-muted">
-                            Tu n’as pas les droits pour ajouter une task.
-                        </div>
-                    )}
-
-                    <div className="mt-4 flex flex-col gap-2">
-                        {tasks.docs.map((t) => (
-                            <div
-                                key={t.id}
-                                className="rounded-2xl border border-border bg-card px-3 py-2 text-sm"
-                            >
-                                <div className="font-medium">
-                                    {t.title ?? t.id}
-                                </div>
-                                <div className="text-xs text-muted">
-                                    {t.status}
-                                </div>
+                <Card>
+                    <CardHeader title="Documents & photos" />
+                    <CardContent>
+                        {canUpdateCase ? (
+                            <AddCaseAttachmentPanel canAdd={true}>
+                                <CaseAttachmentsUploader caseID={id} />
+                            </AddCaseAttachmentPanel>
+                        ) : (
+                            <div className="mt-4 text-sm text-muted">
+                                Tu n’as pas les droits pour ajouter des
+                                documents.
                             </div>
-                        ))}
-                    </div>
-                </section>
-            </main>
+                        )}
+
+                        <div className="mt-4 flex flex-col gap-2">
+                            {/* Each row is a Client Component to support the inline menu (rename/delete).
+                                We trigger mutations through Next API routes because Server Components cannot
+                                pass event handlers to Client Components. */}
+                            {attachments.docs.length ? (
+                                attachments.docs.map((a) => (
+                                    <CaseAttachmentRow
+                                        key={a.id}
+                                        attachmentID={a.id}
+                                        href={`/api/case-attachments/${encodeURIComponent(a.id)}/file`}
+                                        label={
+                                            a.displayName ?? a.filename ?? a.id
+                                        }
+                                        description={a.description}
+                                        canManage={
+                                            role === "owner" ||
+                                            role === "family"
+                                        }
+                                    />
+                                ))
+                            ) : (
+                                <div className="text-sm text-muted">
+                                    Aucun document.
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="mt-6">
+                <Card>
+                    <CardHeader title="Notes partagées" />
+                    <CardContent>
+                        {canUpdateCase ? (
+                            <form
+                                action={updateCaseDescription}
+                                className="flex flex-col gap-2"
+                            >
+                                <input type="hidden" name="case" value={id} />
+                                <input
+                                    type="hidden"
+                                    name="careGroup"
+                                    value={careGroupID ?? ""}
+                                />
+                                <textarea
+                                    name="description"
+                                    className="input min-h-28"
+                                    defaultValue={caseDoc?.description ?? ""}
+                                    placeholder="Idées, infos utiles, prochaines étapes..."
+                                />
+                                <Button
+                                    type="submit"
+                                    size="lg"
+                                    className="w-full sm:w-auto"
+                                >
+                                    Enregistrer
+                                </Button>
+                            </form>
+                        ) : (
+                            <div className="text-sm text-muted">
+                                Tu n’as pas les droits pour modifier les notes.
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 }

@@ -2,6 +2,11 @@ import Link from "next/link";
 
 import { revalidatePath } from "next/cache";
 
+import AddDossierPanel from "@/components/caregroup/AddDossierPanel";
+import AddTaskPanel from "@/components/caregroup/AddTaskPanel";
+import Button from "@/components/ui/Button";
+import Badge from "@/components/ui/Badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
@@ -166,6 +171,67 @@ type Task = {
     case?: string | { id: string; title?: string };
 };
 
+function formatDateFR(iso: string) {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    return new Intl.DateTimeFormat("fr-FR", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+    }).format(d);
+}
+
+function statusBadgeVariant(status: string | undefined) {
+    if (status === "done") return "primary" as const;
+    if (status === "cancelled") return "danger" as const;
+    return "muted" as const;
+}
+
+function hashToIndex(input: string, modulo: number) {
+    let h = 0;
+    for (let i = 0; i < input.length; i += 1) {
+        h = (h * 31 + input.charCodeAt(i)) >>> 0;
+    }
+    return h % modulo;
+}
+
+function caseAccentClasses(caseId: string) {
+    const palette = [
+        {
+            border: "border-l-sky-300",
+            dot: "bg-sky-400",
+            dotRing: "ring-sky-200",
+        },
+        {
+            border: "border-l-emerald-300",
+            dot: "bg-emerald-400",
+            dotRing: "ring-emerald-200",
+        },
+        {
+            border: "border-l-violet-300",
+            dot: "bg-violet-400",
+            dotRing: "ring-violet-200",
+        },
+        {
+            border: "border-l-amber-300",
+            dot: "bg-amber-400",
+            dotRing: "ring-amber-200",
+        },
+        {
+            border: "border-l-rose-300",
+            dot: "bg-rose-400",
+            dotRing: "ring-rose-200",
+        },
+        {
+            border: "border-l-teal-300",
+            dot: "bg-teal-400",
+            dotRing: "ring-teal-200",
+        },
+    ] as const;
+
+    return palette[hashToIndex(caseId, palette.length)];
+}
+
 export default async function CareGroupPage({
     params,
 }: {
@@ -183,12 +249,16 @@ export default async function CareGroupPage({
         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(id)}&limit=1&depth=0`,
     ).then((r) => r.docs[0]);
 
-    // Basic caregroup info.
+    // Caregroup data (depth=0 is enough here).
     const careGroup = await payloadREST<CareGroup>(
         `/api/caregroups/${id}?depth=0`,
     );
 
     // Patients belonging to this caregroup.
+    const patient = await payloadREST<{ docs: Patient[] }>(
+        `/api/patients?where[careGroup][equals]=${encodeURIComponent(id)}&limit=1&depth=0`,
+    ).then((r) => r.docs[0]);
+
     // Cases and tasks are filtered by Payload access control.
     // The UI can safely show what the API returns for the current user.
     const cases = await payloadREST<{ docs: Case[] }>(
@@ -200,169 +270,214 @@ export default async function CareGroupPage({
         `/api/tasks?where[careGroup][equals]=${encodeURIComponent(id)}&limit=20&depth=0`,
     );
 
+    const casesById = new Map(cases.docs.map((c) => [c.id, c] as const));
+
+    const sortedTasks = [...tasks.docs].sort((a, b) => {
+        const aDone = a.status === "done";
+        const bDone = b.status === "done";
+        if (aDone !== bDone) return aDone ? 1 : -1;
+
+        const aDue = a.dueDate
+            ? new Date(a.dueDate).getTime()
+            : Number.POSITIVE_INFINITY;
+        const bDue = b.dueDate
+            ? new Date(b.dueDate).getTime()
+            : Number.POSITIVE_INFINITY;
+
+        if (aDue !== bDue) return aDue - bDue;
+        return String(a.title ?? a.id).localeCompare(String(b.title ?? b.id));
+    });
+
     return (
-        <div className="min-h-screen bg-background">
-            <header className="border-b border-border bg-card">
-                <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
-                    <Link href="/app" className="text-sm font-semibold">
-                        Avec Toi
-                    </Link>
-                    <div className="flex items-center gap-3">
-                        {membership?.role === "owner" ||
-                        membership?.role === "family" ? (
-                            <Link
-                                href={`/app/caregroups/${id}/members`}
-                                className="btn-secondary"
-                            >
-                                Membres
-                            </Link>
-                        ) : null}
-                        <div className="text-sm text-muted">
-                            {user.name ?? user.email ?? user.id}
-                        </div>
-                    </div>
+        <div>
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+                <div className="text-base font-semibold">
+                    Bonjour, {user.name ?? user.email ?? user.id}
                 </div>
-            </header>
+                <div className="mt-1 text-sm text-muted">
+                    Bienvenue dans le groupe de soins {patient?.fullName ?? ""}
+                </div>
+            </div>
 
-            <main className="mx-auto w-full max-w-5xl px-6 py-8">
-                <h1 className="text-2xl font-semibold">
-                    {careGroup?.name ?? careGroup?.id ?? id}
-                </h1>
+            <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <Card>
+                    <CardHeader
+                        title="Prochaines tâches"
+                        action={
+                            <Link
+                                href={`/app/caregroups/${id}/history`}
+                                className="text-sm font-semibold text-primary"
+                            >
+                                Voir tout
+                            </Link>
+                        }
+                    />
 
-                <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-                    <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-                        <h2 className="text-base font-semibold">
-                            Dossiers (filtrés par rôle)
-                        </h2>
+                    <CardContent>
+                        <div className="mt-4 flex flex-col gap-2">
+                            {sortedTasks.length ? (
+                                sortedTasks.map((t) => {
+                                    const caseId =
+                                        typeof t.case === "string"
+                                            ? t.case
+                                            : t.case?.id;
+                                    const relatedCase = caseId
+                                        ? casesById.get(caseId)
+                                        : undefined;
+                                    const accent = caseId
+                                        ? caseAccentClasses(caseId)
+                                        : undefined;
+
+                                    return (
+                                        <div
+                                            key={t.id}
+                                            className={`rounded-2xl border border-border bg-card px-3 py-2 text-sm ${accent ? `border-l-4 ${accent.border}` : ""}`}
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <div className="font-medium">
+                                                        {t.title ?? t.id}
+                                                    </div>
+                                                    <div className="text-xs text-muted">
+                                                        {t.dueDate
+                                                            ? `Échéance: ${formatDateFR(t.dueDate)}`
+                                                            : ""}
+                                                    </div>
+                                                    {relatedCase ? (
+                                                        <div className="mt-1 flex items-center gap-2 text-xs text-muted">
+                                                            <span
+                                                                className={`h-2.5 w-2.5 rounded-full ${accent?.dot ?? "bg-muted"} ring-2 ${accent?.dotRing ?? "ring-border"}`}
+                                                            />
+                                                            <span className="truncate">
+                                                                {relatedCase.title ??
+                                                                    relatedCase.id}
+                                                            </span>
+                                                        </div>
+                                                    ) : null}
+                                                </div>
+                                                <Badge
+                                                    variant={statusBadgeVariant(
+                                                        t.status,
+                                                    )}
+                                                    className="shrink-0"
+                                                >
+                                                    {t.status ?? ""}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="mt-2 text-sm text-muted">
+                                    Aucune tâche.
+                                </div>
+                            )}
+                        </div>
+
+                        {membership?.role &&
+                        ["owner", "family", "professional"].includes(
+                            membership.role,
+                        ) ? (
+                            <AddTaskPanel
+                                careGroupId={id}
+                                defaultCaseId={cases.docs[0]?.id ?? ""}
+                                cases={cases.docs}
+                                action={createTask}
+                            />
+                        ) : (
+                            <div className="mt-4 text-sm text-muted">
+                                Tu n’as pas les droits pour ajouter une task.
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader
+                        title="Dossiers récents"
+                        action={
+                            <Link
+                                href={`/app/caregroups/${id}/dossiers`}
+                                className="text-sm font-semibold text-primary"
+                            >
+                                Voir tout
+                            </Link>
+                        }
+                    />
+
+                    <CardContent>
+                        <div className="mt-4 flex flex-col gap-2">
+                            {cases.docs.length ? (
+                                cases.docs.map((c) => {
+                                    const accent = caseAccentClasses(c.id);
+
+                                    return (
+                                        <Link
+                                            key={c.id}
+                                            href={`/app/cases/${c.id}`}
+                                            className={`rounded-2xl border border-border bg-card px-3 py-2 text-sm hover:bg-white/70 border-l-4 ${accent.border}`}
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <div className="flex items-center gap-2 font-medium">
+                                                        <span
+                                                            className={`h-2.5 w-2.5 rounded-full ${accent.dot} ring-2 ${accent.dotRing}`}
+                                                        />
+                                                        <span className="truncate">
+                                                            {c.title ?? c.id}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="text-xs text-muted">
+                                                {c.type}
+                                            </div>
+                                        </Link>
+                                    );
+                                })
+                            ) : (
+                                <div className="mt-2 text-sm text-muted">
+                                    Aucun dossier.
+                                </div>
+                            )}
+                        </div>
 
                         {membership?.role === "owner" ||
                         membership?.role === "family" ? (
-                            <form
+                            <AddDossierPanel
+                                careGroupId={id}
                                 action={createCase}
-                                className="mt-4 flex flex-col gap-2"
-                            >
-                                <input
-                                    type="hidden"
-                                    name="careGroup"
-                                    value={id}
-                                />
-                                <input
-                                    name="title"
-                                    placeholder="Titre"
-                                    className="input"
-                                    required
-                                />
-                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                    <select
-                                        name="type"
-                                        className="input"
-                                        required
-                                        defaultValue="medical"
-                                    >
-                                        <option value="medical">Medical</option>
-                                        <option value="custom">Custom</option>
-                                    </select>
-                                </div>
-                                <button type="submit" className="btn-primary">
-                                    Ajouter dossier
-                                </button>
-                            </form>
+                            />
                         ) : (
                             <div className="mt-4 text-sm text-muted">
                                 Seul un owner ou un membre famille peut ajouter
                                 un dossier.
                             </div>
                         )}
+                    </CardContent>
+                </Card>
+            </div>
 
-                        <div className="mt-4 flex flex-col gap-2">
-                            {cases.docs.map((c) => (
-                                <Link
-                                    key={c.id}
-                                    href={`/app/cases/${c.id}`}
-                                    className="rounded-2xl border border-border bg-card px-3 py-2 text-sm hover:bg-white/70"
-                                >
-                                    <div className="font-medium">
-                                        {c.title ?? c.id}
-                                    </div>
-                                    <div className="text-xs text-muted">
-                                        {c.type}
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    </section>
-
-                    <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-                        <h2 className="text-base font-semibold">
-                            Tâches (filtrées par rôle)
-                        </h2>
-
-                        {membership?.role &&
-                        ["owner", "family", "professional"].includes(
-                            membership.role,
-                        ) ? (
-                            <form
-                                action={createTask}
-                                className="mt-4 flex flex-col gap-2"
+            <div className="mt-6">
+                <Card>
+                    <CardHeader
+                        title="Messages récents"
+                        action={
+                            <Link
+                                href={`/app/caregroups/${id}/messages`}
+                                className="text-sm font-semibold text-primary"
                             >
-                                <input
-                                    type="hidden"
-                                    name="careGroup"
-                                    value={id}
-                                />
-                                <input
-                                    name="title"
-                                    placeholder="Titre"
-                                    className="input"
-                                    required
-                                />
-                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                    <select
-                                        name="case"
-                                        className="input"
-                                        required
-                                        defaultValue={cases.docs[0]?.id ?? ""}
-                                    >
-                                        {cases.docs.map((c) => (
-                                            <option key={c.id} value={c.id}>
-                                                {c.title ?? c.id}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <input
-                                        type="date"
-                                        name="dueDate"
-                                        className="input"
-                                    />
-                                </div>
-                                <button type="submit" className="btn-primary">
-                                    Ajouter task
-                                </button>
-                            </form>
-                        ) : (
-                            <div className="mt-4 text-sm text-muted">
-                                Tu n’as pas les droits pour ajouter une task.
-                            </div>
-                        )}
-
-                        <div className="mt-4 flex flex-col gap-2">
-                            {tasks.docs.map((t) => (
-                                <div
-                                    key={t.id}
-                                    className="rounded-2xl border border-border bg-card px-3 py-2 text-sm"
-                                >
-                                    <div className="font-medium">
-                                        {t.title ?? t.id}
-                                    </div>
-                                    <div className="text-xs text-muted">
-                                        {t.status}
-                                    </div>
-                                </div>
-                            ))}
+                                Voir tout
+                            </Link>
+                        }
+                    />
+                    <CardContent>
+                        <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
+                            À venir.
                         </div>
-                    </section>
-                </div>
-            </main>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 }
