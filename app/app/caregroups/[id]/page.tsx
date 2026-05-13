@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import AddDossierPanel from "@/components/caregroup/AddDossierPanel";
 import AddTaskPanel from "@/components/caregroup/AddTaskPanel";
+import CareGroupBanner from "@/components/caregroup/CareGroupBanner";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
@@ -254,11 +255,6 @@ export default async function CareGroupPage({
         `/api/caregroups/${id}?depth=0`,
     );
 
-    // Patients belonging to this caregroup.
-    const patient = await payloadREST<{ docs: Patient[] }>(
-        `/api/patients?where[careGroup][equals]=${encodeURIComponent(id)}&limit=1&depth=0`,
-    ).then((r) => r.docs[0]);
-
     // Cases and tasks are filtered by Payload access control.
     // The UI can safely show what the API returns for the current user.
     const cases = await payloadREST<{ docs: Case[] }>(
@@ -290,14 +286,7 @@ export default async function CareGroupPage({
 
     return (
         <div>
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-                <div className="text-base font-semibold">
-                    Bonjour, {user.name ?? user.email ?? user.id}
-                </div>
-                <div className="mt-1 text-sm text-muted">
-                    Bienvenue dans le groupe de soins {patient?.fullName ?? ""}
-                </div>
-            </div>
+            <CareGroupBanner careGroupId={id} />
 
             <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <Card>

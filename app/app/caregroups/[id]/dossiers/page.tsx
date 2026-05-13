@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import Button from "@/components/ui/Button";
+import CareGroupBanner from "@/components/caregroup/CareGroupBanner";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
@@ -49,18 +50,7 @@ export default async function CareGroupDossiersPage({
 
     return (
         <div>
-            <div className="flex items-start justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-semibold">Dossiers</h1>
-                    <div className="mt-1 text-sm text-muted">
-                        Liste complète des dossiers
-                    </div>
-                </div>
-
-                <Link href={`/app/caregroups/${id}`}>
-                    <Button variant="secondary">Retour dashboard</Button>
-                </Link>
-            </div>
+            <CareGroupBanner careGroupId={id} />
 
             <Card className="mt-6">
                 <CardHeader title="Filtres" />

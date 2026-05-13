@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
+import CareGroupBanner from "@/components/caregroup/CareGroupBanner";
 
 type Case = { id: string; title?: string };
 
@@ -89,7 +90,7 @@ export default async function CareGroupHistoryPage({
 
     return (
         <div>
-            <h1 className="text-2xl font-semibold">Historique</h1>
+            <CareGroupBanner careGroupId={id} />
 
             <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
                 <h2 className="text-base font-semibold">À venir</h2>

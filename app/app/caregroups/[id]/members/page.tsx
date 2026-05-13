@@ -1,9 +1,8 @@
-import Link from "next/link";
-
 import { randomUUID } from "crypto";
 
 import { revalidatePath } from "next/cache";
 
+import CareGroupBanner from "@/components/caregroup/CareGroupBanner";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
@@ -166,15 +165,7 @@ export default async function CareGroupMembersPage({
     if (myMembership?.role !== "owner" && myMembership?.role !== "family") {
         return (
             <div>
-                <div className="flex items-center justify-between gap-4">
-                    <h1 className="text-2xl font-semibold">Membres</h1>
-                    <Link
-                        href={`/app/caregroups/${id}`}
-                        className="btn-secondary"
-                    >
-                        Retour caregroup
-                    </Link>
-                </div>
+                <CareGroupBanner careGroupId={id} />
 
                 <div className="mt-4 rounded-2xl border border-border bg-card p-5 text-sm text-muted shadow-sm">
                     Tu n’as pas accès à cette page.
@@ -196,12 +187,7 @@ export default async function CareGroupMembersPage({
 
     return (
         <div>
-            <div className="flex items-center justify-between gap-4">
-                <h1 className="text-2xl font-semibold">Membres</h1>
-                <Link href={`/app/caregroups/${id}`} className="btn-secondary">
-                    Retour caregroup
-                </Link>
-            </div>
+            <CareGroupBanner careGroupId={id} />
 
             {myMembership?.role === "owner" ? (
                 <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
