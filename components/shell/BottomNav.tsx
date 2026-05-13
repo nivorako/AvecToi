@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 type Item = {
     href: string;
@@ -14,30 +15,108 @@ function getCareGroupIdFromPathname(pathname: string | null) {
     return match?.[1] ?? null;
 }
 
+function getCaseIdFromPathname(pathname: string | null) {
+    if (!pathname) return null;
+    const match = pathname.match(/^\/app\/cases\/([^/]+)(?:\/|$)/);
+    return match?.[1] ?? null;
+}
+
 export default function BottomNav() {
     const pathname = usePathname();
 
     const careGroupId = getCareGroupIdFromPathname(pathname);
-    const isEnabled = Boolean(careGroupId);
+    const caseId = getCaseIdFromPathname(pathname);
+    const [careGroupIdFromCase, setCareGroupIdFromCase] = useState<
+        string | null
+    >(null);
+    const isEnabled = pathname !== "/app";
 
-    const items: Item[] = careGroupId
+    const careGroupIdFromStorage = useMemo(() => {
+        if (!isEnabled) return null;
+
+        try {
+            return window.localStorage.getItem("avectoi:lastCareGroupId");
+        } catch {
+            return null;
+        }
+    }, [isEnabled]);
+
+    useEffect(() => {
+        if (!careGroupId) return;
+
+        try {
+            window.localStorage.setItem("avectoi:lastCareGroupId", careGroupId);
+        } catch {
+            // ignore
+        }
+    }, [careGroupId]);
+
+    useEffect(() => {
+        if (careGroupId) return;
+
+        if (!caseId) return;
+
+        const controller = new AbortController();
+
+        (async () => {
+            try {
+                const res = await fetch(`/api/cases/${caseId}?depth=0`, {
+                    signal: controller.signal,
+                });
+
+                if (!res.ok) return;
+                const data: { careGroup?: string | { id?: string } } =
+                    await res.json();
+
+                const resolved =
+                    typeof data?.careGroup === "string"
+                        ? data.careGroup
+                        : data?.careGroup?.id;
+
+                setCareGroupIdFromCase(resolved ?? null);
+
+                if (resolved) {
+                    try {
+                        window.localStorage.setItem(
+                            "avectoi:lastCareGroupId",
+                            resolved,
+                        );
+                    } catch {
+                        // ignore
+                    }
+                }
+            } catch {
+                if (!controller.signal.aborted) setCareGroupIdFromCase(null);
+            }
+        })();
+
+        return () => controller.abort();
+    }, [careGroupId, caseId]);
+
+    const effectiveCareGroupId =
+        careGroupId ?? careGroupIdFromCase ?? careGroupIdFromStorage;
+
+    const items: Item[] = effectiveCareGroupId
         ? [
-              { href: `/app/caregroups/${careGroupId}`, label: "Dashboard" },
               {
-                  href: `/app/caregroups/${careGroupId}/calendar`,
-                  label: "Calendrier",
+                  href: `/app/caregroups/${effectiveCareGroupId}`,
+                  label: "Dashboard",
               },
               {
-                  href: `/app/caregroups/${careGroupId}/messages`,
-                  label: "Messages",
+                  href: `/app/caregroups/${effectiveCareGroupId}/dossiers`,
+                  label: "Dossiers",
               },
               {
-                  href: `/app/caregroups/${careGroupId}/history`,
+                  href: `/app/caregroups/${effectiveCareGroupId}/history`,
                   label: "Historique",
               },
               {
-                  href: `/app/caregroups/${careGroupId}/dossiers`,
-                  label: "Dossiers",
+                  href: `/app/caregroups/${effectiveCareGroupId}/messages`,
+                  label: "Messages",
+              },
+              {
+                  href: `/app/caregroups/${effectiveCareGroupId}/calendar`,
+                  label: "Calendrier",
               },
           ]
         : [
@@ -53,7 +132,7 @@ export default function BottomNav() {
             className={
                 isEnabled
                     ? "mx-auto grid w-full max-w-5xl grid-cols-5 gap-1 px-2 py-2"
-                    : "mx-auto grid w-full max-w-5xl grid-cols-5 gap-1 px-2 py-2 opacity-60 blur-[0.2px]"
+                    : "mx-auto grid w-full max-w-5xl grid-cols-5 gap-1 px-2 py-2 opacity-60"
             }
         >
             {items.map((item) => {

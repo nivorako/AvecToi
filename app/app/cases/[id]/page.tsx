@@ -250,12 +250,11 @@ export default async function CasePage({
             {careGroupID ? <CareGroupBanner careGroupId={careGroupID} /> : null}
 
             <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <Card>
-                    <CardHeader title="Tâches du dossier" />
-                    <CardContent>
-                        <div>
-                            <div className="text-sm font-semibold">À venir</div>
-                            <div className="mt-3 flex flex-col gap-2">
+                <div className="flex flex-col gap-6">
+                    <Card>
+                        <CardHeader title="Tâches à faire" />
+                        <CardContent>
+                            <div className="flex flex-col gap-2">
                                 {upcomingTasks.length ? (
                                     upcomingTasks.map((t) => (
                                         <div
@@ -285,18 +284,32 @@ export default async function CasePage({
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="mt-2 text-sm text-muted">
-                                        Aucune tâche à venir.
+                                    <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
+                                        Aucune tâche à faire.
                                     </div>
                                 )}
                             </div>
-                        </div>
 
-                        <div className="mt-6">
-                            <div className="text-sm font-semibold">
-                                Historique
-                            </div>
-                            <div className="mt-3 flex flex-col gap-2">
+                            {canCreateTask ? (
+                                <AddCaseTaskPanel
+                                    careGroupId={careGroupID ?? ""}
+                                    caseId={id}
+                                    caseType={normalizedCaseType}
+                                    action={createTask}
+                                />
+                            ) : (
+                                <div className="mt-4 text-sm text-muted">
+                                    Tu n’as pas les droits pour ajouter une
+                                    task.
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader title="Tâches archivées" />
+                        <CardContent>
+                            <div className="flex flex-col gap-2">
                                 {doneTasks.length ? (
                                     doneTasks.map((t) => (
                                         <div
@@ -326,42 +339,18 @@ export default async function CasePage({
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="mt-2 text-sm text-muted">
-                                        Aucune tâche effectuée.
+                                    <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
+                                        Aucune tâche archivée.
                                     </div>
                                 )}
                             </div>
-                        </div>
-
-                        {canCreateTask ? (
-                            <AddCaseTaskPanel
-                                careGroupId={careGroupID ?? ""}
-                                caseId={id}
-                                caseType={normalizedCaseType}
-                                action={createTask}
-                            />
-                        ) : (
-                            <div className="mt-4 text-sm text-muted">
-                                Tu n’as pas les droits pour ajouter une task.
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                </div>
 
                 <Card>
                     <CardHeader title="Documents & photos" />
                     <CardContent>
-                        {canUpdateCase ? (
-                            <AddCaseAttachmentPanel canAdd={true}>
-                                <CaseAttachmentsUploader caseID={id} />
-                            </AddCaseAttachmentPanel>
-                        ) : (
-                            <div className="mt-4 text-sm text-muted">
-                                Tu n’as pas les droits pour ajouter des
-                                documents.
-                            </div>
-                        )}
-
                         <div className="mt-4 flex flex-col gap-2">
                             {/* Each row is a Client Component to support the inline menu (rename/delete).
                                 We trigger mutations through Next API routes because Server Components cannot
@@ -388,6 +377,17 @@ export default async function CasePage({
                                 </div>
                             )}
                         </div>
+
+                        {canUpdateCase ? (
+                            <AddCaseAttachmentPanel canAdd={true}>
+                                <CaseAttachmentsUploader caseID={id} />
+                            </AddCaseAttachmentPanel>
+                        ) : (
+                            <div className="mt-4 text-sm text-muted">
+                                Tu n’as pas les droits pour ajouter des
+                                documents.
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>

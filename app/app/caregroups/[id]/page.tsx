@@ -258,31 +258,32 @@ export default async function CareGroupPage({
     // Cases and tasks are filtered by Payload access control.
     // The UI can safely show what the API returns for the current user.
     const cases = await payloadREST<{ docs: Case[] }>(
-        `/api/cases?where[careGroup][equals]=${encodeURIComponent(id)}&limit=20&depth=0`,
+        `/api/cases?where[careGroup][equals]=${encodeURIComponent(id)}&limit=3&sort=-createdAt&depth=0`,
     );
 
     // Latest tasks for this caregroup.
     const tasks = await payloadREST<{ docs: Task[] }>(
-        `/api/tasks?where[careGroup][equals]=${encodeURIComponent(id)}&limit=20&depth=0`,
+        `/api/tasks?where[careGroup][equals]=${encodeURIComponent(id)}&limit=50&depth=0`,
     );
 
     const casesById = new Map(cases.docs.map((c) => [c.id, c] as const));
 
-    const sortedTasks = [...tasks.docs].sort((a, b) => {
-        const aDone = a.status === "done";
-        const bDone = b.status === "done";
-        if (aDone !== bDone) return aDone ? 1 : -1;
+    const upcomingTasks = tasks.docs
+        .filter((t) => t.status !== "done")
+        .sort((a, b) => {
+            const aDue = a.dueDate
+                ? new Date(a.dueDate).getTime()
+                : Number.POSITIVE_INFINITY;
+            const bDue = b.dueDate
+                ? new Date(b.dueDate).getTime()
+                : Number.POSITIVE_INFINITY;
 
-        const aDue = a.dueDate
-            ? new Date(a.dueDate).getTime()
-            : Number.POSITIVE_INFINITY;
-        const bDue = b.dueDate
-            ? new Date(b.dueDate).getTime()
-            : Number.POSITIVE_INFINITY;
-
-        if (aDue !== bDue) return aDue - bDue;
-        return String(a.title ?? a.id).localeCompare(String(b.title ?? b.id));
-    });
+            if (aDue !== bDue) return aDue - bDue;
+            return String(a.title ?? a.id).localeCompare(
+                String(b.title ?? b.id),
+            );
+        })
+        .slice(0, 3);
 
     return (
         <div>
@@ -304,8 +305,8 @@ export default async function CareGroupPage({
 
                     <CardContent>
                         <div className="mt-4 flex flex-col gap-2">
-                            {sortedTasks.length ? (
-                                sortedTasks.map((t) => {
+                            {upcomingTasks.length ? (
+                                upcomingTasks.map((t) => {
                                     const caseId =
                                         typeof t.case === "string"
                                             ? t.case

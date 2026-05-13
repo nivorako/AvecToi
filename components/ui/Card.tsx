@@ -24,8 +24,10 @@ export function CardHeader({
     className?: string;
 }) {
     return (
-        <div className={cn("flex items-center justify-between gap-4", className)}>
-            <div className="text-base font-semibold">{title}</div>
+        <div
+            className={cn("flex items-center justify-between gap-4", className)}
+        >
+            <div className="text-lg font-semibold">{title}</div>
             {action ? <div>{action}</div> : null}
         </div>
     );
