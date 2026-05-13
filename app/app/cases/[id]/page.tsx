@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
 import AddCaseAttachmentPanel from "@/components/case/AddCaseAttachmentPanel";
 import AddCaseTaskPanel from "@/components/case/AddCaseTaskPanel";
+import CareGroupBanner from "@/components/caregroup/CareGroupBanner";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
@@ -247,22 +247,7 @@ export default async function CasePage({
 
     return (
         <div>
-            <div className="flex items-start justify-between gap-6">
-                <div>
-                    <h1 className="text-2xl font-semibold">
-                        {caseDoc?.title ?? caseDoc?.id ?? id}
-                    </h1>
-                    <div className="mt-1 text-sm text-muted">
-                        {caseDoc?.type}
-                    </div>
-                </div>
-
-                {careGroupID ? (
-                    <Link href={`/app/caregroups/${careGroupID}`}>
-                        <Button variant="secondary">Retour caregroup</Button>
-                    </Link>
-                ) : null}
-            </div>
+            {careGroupID ? <CareGroupBanner careGroupId={careGroupID} /> : null}
 
             <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <Card>

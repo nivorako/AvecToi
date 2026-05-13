@@ -53,9 +53,32 @@ export default async function CareGroupDossiersPage({
             <CareGroupBanner careGroupId={id} />
 
             <Card className="mt-6">
-                <CardHeader title="Filtres" />
+                <CardHeader title="Tous les dossiers" />
                 <CardContent>
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="flex flex-col gap-2">
+                        {cases.docs.length ? (
+                            cases.docs.map((c) => (
+                                <Link
+                                    key={c.id}
+                                    href={`/app/cases/${c.id}`}
+                                    className="rounded-2xl border border-border bg-card px-3 py-3 text-sm hover:bg-card/70"
+                                >
+                                    <div className="font-medium">
+                                        {c.title ?? c.id}
+                                    </div>
+                                    <div className="text-xs text-muted">
+                                        {c.type}
+                                    </div>
+                                </Link>
+                            ))
+                        ) : (
+                            <div className="rounded-2xl border border-border bg-card p-5 text-sm text-muted">
+                                Aucun dossier.
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="mt-6 flex flex-wrap justify-around gap-2">
                         <Link href={buildHref({ type: "" })}>
                             <Button
                                 variant={!queryType ? "primary" : "secondary"}
@@ -81,34 +104,6 @@ export default async function CareGroupDossiersPage({
                                 Custom
                             </Button>
                         </Link>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card className="mt-6">
-                <CardHeader title="Tous les dossiers" />
-                <CardContent>
-                    <div className="flex flex-col gap-2">
-                        {cases.docs.length ? (
-                            cases.docs.map((c) => (
-                                <Link
-                                    key={c.id}
-                                    href={`/app/cases/${c.id}`}
-                                    className="rounded-2xl border border-border bg-card px-3 py-3 text-sm hover:bg-card/70"
-                                >
-                                    <div className="font-medium">
-                                        {c.title ?? c.id}
-                                    </div>
-                                    <div className="text-xs text-muted">
-                                        {c.type}
-                                    </div>
-                                </Link>
-                            ))
-                        ) : (
-                            <div className="rounded-2xl border border-border bg-card p-5 text-sm text-muted">
-                                Aucun dossier.
-                            </div>
-                        )}
                     </div>
                 </CardContent>
             </Card>
