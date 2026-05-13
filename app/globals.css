@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+    color-scheme: light;
     --background: #f7f8fb;
     --foreground: #101828;
     --card: #ffffff;
@@ -29,22 +30,6 @@
 
     --font-sans: var(--font-geist-sans);
     --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-    :root {
-        --background: #0b1220;
-        --foreground: #f2f4f7;
-        --card: #111a2e;
-        --muted: #98a2b3;
-        --border: #1f2a44;
-
-        --primary: #47b2e7;
-        --primary-foreground: #06293a;
-
-        --danger: #fb7185;
-        --danger-foreground: #1b0b11;
-    }
 }
 
 body {
