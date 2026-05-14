@@ -455,7 +455,11 @@ export default buildConfig({
         // ---------------------------------------------------------------------
         // A Membership defines:
         // - which users belong to which caregroups
-        // - what role they have inside that caregroup (owner/family/professional)
+        // - what role they have inside that caregroup (owner/family/professional/patient)
+        //   - owner: full management inside the caregroup
+        //   - family: can collaborate inside the caregroup
+        //   - professional: read-only on medical content (MVP)
+        //   - patient: read-only access to caregroup content (cases/tasks/attachments), can use messages
         {
             slug: "memberships",
             access: {
@@ -826,6 +830,8 @@ export default buildConfig({
                     name: "role",
                     type: "select",
                     required: true,
+                    // Invitation role controls which membership role will be created when the invite is accepted.
+                    // We support "patient" so an owner can invite a read-only patient account.
                     options: [
                         {
                             label: "Family",
@@ -1222,6 +1228,7 @@ export default buildConfig({
         // In the MVP:
         // - any member can read patients within their caregroup
         // - only owners can create/delete patients
+        // - patient role is read-only (no updates)
         {
             slug: "patients",
             admin: {
@@ -1479,6 +1486,7 @@ export default buildConfig({
         // In the MVP we keep `type` very simple:
         // - medical: accessible to professionals
         // - custom: non-medical (banking, insurance, etc.) -> not accessible to professionals
+        // - patient: can read all cases in their caregroups, but cannot create/update/delete
         {
             slug: "cases",
             admin: {
@@ -1815,7 +1823,7 @@ export default buildConfig({
         // - owner/family: can read and create tasks in their caregroups
         // - professional: can read tasks only when caseType is medical
         // - professional: can create tasks only when the related case is medical
-        // - patient: can read tasks in their caregroup
+        // - patient: can read tasks in their caregroup, but cannot create/update/delete
         {
             slug: "tasks",
             admin: {
@@ -2172,6 +2180,11 @@ export default buildConfig({
                     required: true,
                 },
                 {
+                    name: "responsable",
+                    type: "text",
+                    required: false,
+                },
+                {
                     name: "status",
                     type: "select",
                     required: true,
@@ -2210,7 +2223,10 @@ export default buildConfig({
         // ---------------------------------------------------------------------
         // Simple caregroup-scoped chat.
         // - any member (including patient) can read + create
-        // - only the author or an owner can update/delete
+        // - only the author (self-service edit/delete) or a caregroup owner can update/delete
+        // Implementation notes:
+        // - `beforeValidate` sets `author` from req.user and verifies membership (anti-tampering)
+        // - reads are always filtered by careGroup membership
         {
             slug: "messages",
             admin: {

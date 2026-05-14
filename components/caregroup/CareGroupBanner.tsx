@@ -19,7 +19,7 @@ export default async function CareGroupBanner({
 
     return (
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <div className="text-base font-semibold">
+            <div className="text-2xl font-extrabold tracking-tight text-primary sm:text-3xl">
                 Bonjour, {user.name ?? user.email ?? user.id}
             </div>
             <div className="mt-1 text-sm text-muted">

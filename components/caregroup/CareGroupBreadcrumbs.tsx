@@ -27,7 +27,7 @@ export default function CareGroupBreadcrumbs({
         });
     } else if (pathname.includes(`/app/caregroups/${careGroupId}/history`)) {
         items.push({
-            label: "Historique",
+            label: "Agenda",
             href: `/app/caregroups/${encodeURIComponent(careGroupId)}/history`,
         });
     } else if (pathname.includes(`/app/caregroups/${careGroupId}/messages`)) {
@@ -59,7 +59,10 @@ export default function CareGroupBreadcrumbs({
         <nav aria-label="Fil d'ariane" className="mt-3 text-xs text-muted">
             <ol className="flex flex-wrap items-center gap-1">
                 {items.map((it, idx) => (
-                    <li key={`${it.label}-${idx}`} className="flex items-center gap-1">
+                    <li
+                        key={`${it.label}-${idx}`}
+                        className="flex items-center gap-1"
+                    >
                         {it.href ? (
                             <Link href={it.href} className="underline">
                                 {it.label}

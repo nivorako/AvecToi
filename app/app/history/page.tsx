@@ -5,9 +5,9 @@ export default async function HistoryPage() {
 
     return (
         <div>
-            <h1 className="text-2xl font-semibold">Historique</h1>
+            <h1 className="text-2xl font-semibold">Agenda</h1>
             <div className="mt-4 rounded-2xl border border-border bg-card p-5 text-sm text-muted shadow-sm">
-                À venir.
+                Tâches à faire.
             </div>
         </div>
     );

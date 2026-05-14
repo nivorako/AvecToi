@@ -26,7 +26,7 @@ export default function AddTaskPanel({
                     className="w-full max-w-xs"
                     onClick={() => setOpen(true)}
                 >
-                    Ajouter task
+                    Ajouter une tâche
                 </Button>
             ) : (
                 <div className="w-full rounded-2xl border border-border bg-card p-4">
@@ -41,6 +41,11 @@ export default function AddTaskPanel({
                             placeholder="Titre"
                             className="input"
                             required
+                        />
+                        <input
+                            name="responsable"
+                            placeholder="Responsable (optionnel)"
+                            className="input"
                         />
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                             <select

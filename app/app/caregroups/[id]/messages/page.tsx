@@ -19,6 +19,8 @@ async function createMessage(formData: FormData) {
     const careGroup = String(formData.get("careGroup") ?? "");
     const content = String(formData.get("content") ?? "").trim();
 
+    // Any authenticated caregroup member (including patient) can send messages.
+    // The Payload hook sets the author from the logged-in user and validates membership.
     await requireUser();
 
     if (!careGroup || !content) return;
@@ -48,6 +50,7 @@ export default async function CareGroupMessagesPage({
 }) {
     const { id } = await params;
 
+    // Messages are caregroup-scoped; Payload ACL filters what the current user can read.
     await requireUser();
 
     const messages = await payloadREST<{ docs: Message[] }>(

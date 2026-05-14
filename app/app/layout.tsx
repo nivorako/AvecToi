@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Image from "next/image";
 
 import AppShell from "@/components/shell/AppShell";
 import BottomNav from "@/components/shell/BottomNav";
@@ -14,11 +15,15 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             header={
                 <TopBar
                     left={
-                        <a
-                            href="/app"
-                            className="text-sm font-semibold text-primary"
-                        >
-                            AvecToi
+                        <a href="/app" className="block shrink-0">
+                            <Image
+                                src="/brand/logo-memolien.png"
+                                alt="MémoLien"
+                                width={180}
+                                height={44}
+                                priority
+                                className="h-8 w-auto sm:h-9"
+                            />
                         </a>
                     }
                     right={

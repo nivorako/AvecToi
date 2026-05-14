@@ -14,7 +14,7 @@ function BurgerIcon() {
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
+            className="h-6 w-6"
             aria-hidden="true"
         >
             <path
@@ -41,10 +41,11 @@ export default function UserMenu() {
             <IconButton
                 type="button"
                 variant="ghost"
-                size="md"
+                size="lg"
                 icon={<BurgerIcon />}
                 aria-label="Menu"
                 onClick={() => setOpen((v) => !v)}
+                className="text-primary"
             />
 
             {open ? (

@@ -108,7 +108,7 @@ export default function BottomNav() {
               },
               {
                   href: `/app/caregroups/${effectiveCareGroupId}/history`,
-                  label: "Historique",
+                  label: "Agenda",
               },
               {
                   href: `/app/caregroups/${effectiveCareGroupId}/messages`,
@@ -123,7 +123,7 @@ export default function BottomNav() {
               { href: "/app", label: "Dashboard" },
               { href: "/app", label: "Calendrier" },
               { href: "/app", label: "Messages" },
-              { href: "/app", label: "Historique" },
+              { href: "/app", label: "Agenda" },
               { href: "/app", label: "Dossiers" },
           ];
 

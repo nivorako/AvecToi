@@ -44,9 +44,18 @@ export default function AddCaseTaskPanel({
                             className="input"
                             required
                         />
+                        <input
+                            name="responsable"
+                            placeholder="Responsable (optionnel)"
+                            className="input"
+                        />
                         <input type="date" name="dueDate" className="input" />
                         <div className="mt-2 flex flex-wrap gap-2">
-                            <Button type="submit" size="lg" className="w-full sm:w-auto">
+                            <Button
+                                type="submit"
+                                size="lg"
+                                className="w-full sm:w-auto"
+                            >
                                 Enregistrer
                             </Button>
                             <Button

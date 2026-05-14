@@ -1,11 +1,13 @@
 import { revalidatePath } from "next/cache";
 
+import Link from "next/link";
+
 import AddCaseAttachmentPanel from "@/components/case/AddCaseAttachmentPanel";
 import AddCaseTaskPanel from "@/components/case/AddCaseTaskPanel";
 import CareGroupBanner from "@/components/caregroup/CareGroupBanner";
-import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+import TaskItemRow from "@/components/task/TaskItemRow";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
@@ -30,6 +32,7 @@ type CaseDoc = {
 type Task = {
     id: string;
     title?: string;
+    responsable?: string;
     status?: string;
     dueDate?: string;
 };
@@ -74,6 +77,7 @@ async function createTask(formData: FormData) {
     const careGroup = String(formData.get("careGroup") ?? "");
     const caseType = String(formData.get("caseType") ?? "");
     const title = String(formData.get("title") ?? "");
+    const responsable = String(formData.get("responsable") ?? "");
     const dueDate = String(formData.get("dueDate") ?? "");
 
     const user = await requireUser();
@@ -103,6 +107,7 @@ async function createTask(formData: FormData) {
             body: JSON.stringify({
                 case: caseID,
                 title,
+                ...(responsable ? { responsable } : {}),
                 status: "todo",
                 ...(dueDate ? { dueDate } : {}),
             }),
@@ -168,8 +173,10 @@ async function updateCaseDescription(formData: FormData) {
 
 export default async function CasePage({
     params,
+    searchParams,
 }: {
     params: Promise<{ id: string }>;
+    searchParams: Promise<{ allTodo?: string; allDone?: string }>;
 }) {
     // Route: /app/cases/:id
     // Displays a case details page with its tasks.
@@ -193,6 +200,23 @@ export default async function CasePage({
         `/api/tasks?where[case][equals]=${encodeURIComponent(id)}&limit=50&depth=0`,
     );
 
+    const { allTodo, allDone } = await searchParams;
+    const showAllTodo = allTodo === "1";
+    const showAllDone = allDone === "1";
+    const baseUrl = `/app/cases/${encodeURIComponent(id)}`;
+
+    function buildHref(next: { allTodo?: boolean; allDone?: boolean }) {
+        const parts: string[] = [];
+
+        const nextTodo = next.allTodo ?? showAllTodo;
+        const nextDone = next.allDone ?? showAllDone;
+
+        if (nextTodo) parts.push("allTodo=1");
+        if (nextDone) parts.push("allDone=1");
+
+        return parts.length ? `${baseUrl}?${parts.join("&")}` : baseUrl;
+    }
+
     // Membership is optional here (case might not have a caregroup populated in edge cases).
     const membership = careGroupID
         ? await payloadREST<{ docs: Membership[] }>(
@@ -211,6 +235,10 @@ export default async function CasePage({
         (role === "professional" && normalizedCaseType === "medical");
 
     const canUpdateCase = canCreateTask;
+
+    // UI permissions:
+    // - patients are read-only on dossiers (no tasks creation, no attachments upload, no notes edits)
+    // - we still rely on Payload access control as the real security boundary
 
     const attachments = await payloadREST<{ docs: CaseAttachment[] }>(
         `/api/case-attachments?where[case][equals]=${encodeURIComponent(id)}&limit=50&depth=0`,
@@ -245,6 +273,11 @@ export default async function CasePage({
             );
         });
 
+    const upcomingShown = showAllTodo
+        ? upcomingTasks
+        : upcomingTasks.slice(0, 3);
+    const doneShown = showAllDone ? doneTasks : doneTasks.slice(0, 3);
+
     return (
         <div>
             {careGroupID ? <CareGroupBanner careGroupId={careGroupID} /> : null}
@@ -252,36 +285,45 @@ export default async function CasePage({
             <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <div className="flex flex-col gap-6">
                     <Card>
-                        <CardHeader title="Tâches à faire" />
+                        <CardHeader
+                            title="Tâches à faire"
+                            action={
+                                !showAllTodo && upcomingTasks.length > 3 ? (
+                                    <Link
+                                        href={buildHref({ allTodo: true })}
+                                        className="text-sm font-semibold text-primary"
+                                    >
+                                        Voir plus
+                                    </Link>
+                                ) : showAllTodo ? (
+                                    <Link
+                                        href={buildHref({ allTodo: false })}
+                                        className="text-sm font-semibold text-primary"
+                                    >
+                                        Voir moins
+                                    </Link>
+                                ) : null
+                            }
+                        />
                         <CardContent>
                             <div className="flex flex-col gap-2">
-                                {upcomingTasks.length ? (
-                                    upcomingTasks.map((t) => (
-                                        <div
+                                {upcomingShown.length ? (
+                                    upcomingShown.map((t) => (
+                                        <TaskItemRow
                                             key={t.id}
-                                            className="rounded-2xl border border-border bg-card px-3 py-2 text-sm"
-                                        >
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="min-w-0">
-                                                    <div className="font-medium">
-                                                        {t.title ?? t.id}
-                                                    </div>
-                                                    <div className="text-xs text-muted">
-                                                        {t.dueDate
-                                                            ? `Échéance: ${formatDateFR(t.dueDate)}`
-                                                            : ""}
-                                                    </div>
-                                                </div>
-                                                <Badge
-                                                    variant={statusBadgeVariant(
-                                                        t.status,
-                                                    )}
-                                                    className="shrink-0"
-                                                >
-                                                    {t.status ?? ""}
-                                                </Badge>
-                                            </div>
-                                        </div>
+                                            taskID={t.id}
+                                            title={t.title ?? t.id}
+                                            responsable={t.responsable}
+                                            dueDateLabel={
+                                                t.dueDate
+                                                    ? `Échéance: ${formatDateFR(t.dueDate)}`
+                                                    : ""
+                                            }
+                                            status={t.status}
+                                            badgeVariant={statusBadgeVariant(
+                                                t.status,
+                                            )}
+                                        />
                                     ))
                                 ) : (
                                     <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
@@ -290,6 +332,7 @@ export default async function CasePage({
                                 )}
                             </div>
 
+                            {/* Patients will see tasks but not the create panel (read-only). */}
                             {canCreateTask ? (
                                 <AddCaseTaskPanel
                                     careGroupId={careGroupID ?? ""}
@@ -307,36 +350,45 @@ export default async function CasePage({
                     </Card>
 
                     <Card>
-                        <CardHeader title="Tâches archivées" />
+                        <CardHeader
+                            title="Tâches archivées"
+                            action={
+                                !showAllDone && doneTasks.length > 3 ? (
+                                    <Link
+                                        href={buildHref({ allDone: true })}
+                                        className="text-sm font-semibold text-primary"
+                                    >
+                                        Voir plus
+                                    </Link>
+                                ) : showAllDone ? (
+                                    <Link
+                                        href={buildHref({ allDone: false })}
+                                        className="text-sm font-semibold text-primary"
+                                    >
+                                        Voir moins
+                                    </Link>
+                                ) : null
+                            }
+                        />
                         <CardContent>
                             <div className="flex flex-col gap-2">
-                                {doneTasks.length ? (
-                                    doneTasks.map((t) => (
-                                        <div
+                                {doneShown.length ? (
+                                    doneShown.map((t) => (
+                                        <TaskItemRow
                                             key={t.id}
-                                            className="rounded-2xl border border-border bg-card px-3 py-2 text-sm"
-                                        >
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="min-w-0">
-                                                    <div className="font-medium">
-                                                        {t.title ?? t.id}
-                                                    </div>
-                                                    <div className="text-xs text-muted">
-                                                        {t.dueDate
-                                                            ? `Échéance: ${formatDateFR(t.dueDate)}`
-                                                            : ""}
-                                                    </div>
-                                                </div>
-                                                <Badge
-                                                    variant={statusBadgeVariant(
-                                                        t.status,
-                                                    )}
-                                                    className="shrink-0"
-                                                >
-                                                    {t.status ?? ""}
-                                                </Badge>
-                                            </div>
-                                        </div>
+                                            taskID={t.id}
+                                            title={t.title ?? t.id}
+                                            responsable={t.responsable}
+                                            dueDateLabel={
+                                                t.dueDate
+                                                    ? `Échéance: ${formatDateFR(t.dueDate)}`
+                                                    : ""
+                                            }
+                                            status={t.status}
+                                            badgeVariant={statusBadgeVariant(
+                                                t.status,
+                                            )}
+                                        />
                                     ))
                                 ) : (
                                     <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
@@ -378,6 +430,9 @@ export default async function CasePage({
                             )}
                         </div>
 
+                        {/* Attachments management is restricted to owner/family in the UI.
+                                Payload ACL also enforces write permissions server-side.
+                                Patients are read-only and cannot add documents. */}
                         {canUpdateCase ? (
                             <AddCaseAttachmentPanel canAdd={true}>
                                 <CaseAttachmentsUploader caseID={id} />
@@ -396,6 +451,8 @@ export default async function CasePage({
                 <Card>
                     <CardHeader title="Notes partagées" />
                     <CardContent>
+                        {/* Shared notes are editable only for roles allowed to update the case.
+                            Patients are read-only. */}
                         {canUpdateCase ? (
                             <form
                                 action={updateCaseDescription}

@@ -75,6 +75,7 @@ async function inviteMember(prevState: InviteState, formData: FormData) {
 
     if (!careGroup) return { ok: false, message: "Caregroup invalide." };
     if (!email) return { ok: false, message: "Email requis." };
+    // We also support inviting a "patient" role which grants read-only access.
     if (role !== "family" && role !== "professional" && role !== "patient") {
         return { ok: false, message: "Rôle invalide." };
     }
@@ -157,7 +158,7 @@ export default async function CareGroupMembersPage({
     // Access gate:
     // - owner: can manage (invite + revoke + list)
     // - family: can view list
-    // - patient: can view list
+    // - patient: can view list (read-only)
     // - professional: no access (MVP)
     const myMembership = await payloadREST<{ docs: Membership[] }>(
         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(id)}&limit=1&depth=0`,

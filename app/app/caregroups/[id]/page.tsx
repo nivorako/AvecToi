@@ -5,8 +5,7 @@ import { revalidatePath } from "next/cache";
 import AddDossierPanel from "@/components/caregroup/AddDossierPanel";
 import AddTaskPanel from "@/components/caregroup/AddTaskPanel";
 import CareGroupBanner from "@/components/caregroup/CareGroupBanner";
-import Button from "@/components/ui/Button";
-import Badge from "@/components/ui/Badge";
+import TaskItemRow from "@/components/task/TaskItemRow";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
@@ -40,6 +39,7 @@ async function createTask(formData: FormData) {
     const careGroup = String(formData.get("careGroup") ?? "");
     const caseID = String(formData.get("case") ?? "");
     const title = String(formData.get("title") ?? "");
+    const responsable = String(formData.get("responsable") ?? "");
     const dueDate = String(formData.get("dueDate") ?? "");
 
     const user = await requireUser();
@@ -87,6 +87,7 @@ async function createTask(formData: FormData) {
             body: JSON.stringify({
                 case: caseID,
                 title,
+                ...(responsable ? { responsable } : {}),
                 status: "todo",
                 ...(dueDate ? { dueDate } : {}),
             }),
@@ -167,6 +168,7 @@ type Case = { id: string; title?: string; type?: "medical" | "custom" };
 type Task = {
     id: string;
     title?: string;
+    responsable?: string;
     status?: string;
     dueDate?: string;
     case?: string | { id: string; title?: string };
@@ -245,7 +247,8 @@ export default async function CareGroupPage({
     // Protected page: redirect to login when user is not authenticated.
     const user = await requireUser();
 
-    // Used for both permissions (which forms/actions to show) and basic navigation (Members page).
+    // Used for both UI permissions (which forms/actions to show) and basic navigation (Members page).
+    // Note: Payload ACL is the real security boundary; the UI only hides actions for convenience.
     const membership = await payloadREST<{ docs: Membership[] }>(
         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(id)}&limit=1&depth=0`,
     ).then((r) => r.docs[0]);
@@ -298,7 +301,7 @@ export default async function CareGroupPage({
                                 href={`/app/caregroups/${id}/history`}
                                 className="text-sm font-semibold text-primary"
                             >
-                                Voir tout
+                                Voir plus
                             </Link>
                         }
                     />
@@ -323,37 +326,31 @@ export default async function CareGroupPage({
                                             key={t.id}
                                             className={`rounded-2xl border border-border bg-card px-3 py-2 text-sm ${accent ? `border-l-4 ${accent.border}` : ""}`}
                                         >
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="min-w-0">
-                                                    <div className="font-medium">
-                                                        {t.title ?? t.id}
-                                                    </div>
-                                                    <div className="text-xs text-muted">
-                                                        {t.dueDate
-                                                            ? `Échéance: ${formatDateFR(t.dueDate)}`
-                                                            : ""}
-                                                    </div>
-                                                    {relatedCase ? (
-                                                        <div className="mt-1 flex items-center gap-2 text-xs text-muted">
-                                                            <span
-                                                                className={`h-2.5 w-2.5 rounded-full ${accent?.dot ?? "bg-muted"} ring-2 ${accent?.dotRing ?? "ring-border"}`}
-                                                            />
-                                                            <span className="truncate">
-                                                                {relatedCase.title ??
-                                                                    relatedCase.id}
-                                                            </span>
-                                                        </div>
-                                                    ) : null}
+                                            <TaskItemRow
+                                                taskID={t.id}
+                                                title={t.title ?? t.id}
+                                                responsable={t.responsable}
+                                                dueDateLabel={
+                                                    t.dueDate
+                                                        ? `Échéance: ${formatDateFR(t.dueDate)}`
+                                                        : ""
+                                                }
+                                                status={t.status}
+                                                badgeVariant={statusBadgeVariant(
+                                                    t.status,
+                                                )}
+                                            />
+                                            {relatedCase ? (
+                                                <div className="mt-1 flex items-center gap-2 text-xs text-muted">
+                                                    <span
+                                                        className={`h-2.5 w-2.5 rounded-full ${accent?.dot ?? "bg-muted"} ring-2 ${accent?.dotRing ?? "ring-border"}`}
+                                                    />
+                                                    <span className="truncate">
+                                                        {relatedCase.title ??
+                                                            relatedCase.id}
+                                                    </span>
                                                 </div>
-                                                <Badge
-                                                    variant={statusBadgeVariant(
-                                                        t.status,
-                                                    )}
-                                                    className="shrink-0"
-                                                >
-                                                    {t.status ?? ""}
-                                                </Badge>
-                                            </div>
+                                            ) : null}
                                         </div>
                                     );
                                 })
@@ -364,6 +361,7 @@ export default async function CareGroupPage({
                             )}
                         </div>
 
+                        {/* Patients can view tasks but not create them (read-only). */}
                         {membership?.role &&
                         ["owner", "family", "professional"].includes(
                             membership.role,
@@ -432,6 +430,7 @@ export default async function CareGroupPage({
                             )}
                         </div>
 
+                        {/* Patients can view dossiers but not create them (read-only). */}
                         {membership?.role === "owner" ||
                         membership?.role === "family" ? (
                             <AddDossierPanel

@@ -71,6 +71,286 @@ describe("Payload integration (ACL + hooks)", () => {
         }
     });
 
+    it("patient can read cases in their caregroup (medical + custom)", async () => {
+        const owner = await createUser({
+            email: "owner-patient-cases@example.com",
+            password: "password",
+            name: "Owner",
+        });
+
+        const patientUser = await createUser({
+            email: "patient-cases@example.com",
+            password: "password",
+            name: "Patient",
+        });
+
+        const careGroup = await createCareGroupAsOwner({ owner, name: "CG" });
+
+        await addMembership({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            userID: patientUser.id,
+            role: "patient",
+        });
+
+        const patient = await createPatient({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            firstName: "P",
+            lastName: "T",
+        });
+
+        const medicalCase = await createCase({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            patientID: patient.id,
+            title: "Medical",
+            type: "medical",
+        });
+
+        const customCase = await createCase({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            patientID: patient.id,
+            title: "Custom",
+            type: "custom",
+        });
+
+        const res = await payload.find({
+            collection: "cases",
+            depth: 0,
+            limit: 100,
+            pagination: false,
+            user: patientUser,
+            overrideAccess: false,
+        });
+
+        const ids = res.docs.map((d) => d.id);
+        expect(ids).toContain(medicalCase.id);
+        expect(ids).toContain(customCase.id);
+    });
+
+    it("patient cannot update case description", async () => {
+        const owner = await createUser({
+            email: "owner-patient-case-update@example.com",
+            password: "password",
+            name: "Owner",
+        });
+
+        const patientUser = await createUser({
+            email: "patient-case-update@example.com",
+            password: "password",
+            name: "Patient",
+        });
+
+        const careGroup = await createCareGroupAsOwner({ owner, name: "CG" });
+
+        await addMembership({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            userID: patientUser.id,
+            role: "patient",
+        });
+
+        const patient = await createPatient({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            firstName: "P",
+            lastName: "T",
+        });
+
+        const caseDoc = await createCase({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            patientID: patient.id,
+            title: "Case",
+            type: "custom",
+        });
+
+        await expect(
+            payload.update({
+                collection: "cases",
+                id: caseDoc.id,
+                data: { description: "patient update" },
+                user: patientUser,
+                overrideAccess: false,
+            }),
+        ).rejects.toBeTruthy();
+    });
+
+    it("patient can read tasks in their caregroup but cannot create tasks", async () => {
+        const owner = await createUser({
+            email: "owner-patient-tasks@example.com",
+            password: "password",
+            name: "Owner",
+        });
+
+        const patientUser = await createUser({
+            email: "patient-tasks@example.com",
+            password: "password",
+            name: "Patient",
+        });
+
+        const careGroup = await createCareGroupAsOwner({ owner, name: "CG" });
+
+        await addMembership({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            userID: patientUser.id,
+            role: "patient",
+        });
+
+        const patient = await createPatient({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            firstName: "P",
+            lastName: "T",
+        });
+
+        const caseDoc = await createCase({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            patientID: patient.id,
+            title: "Case",
+            type: "custom",
+        });
+
+        const task = await createTask({
+            actingUser: owner,
+            caseID: caseDoc.id,
+            title: "Owner task",
+        });
+
+        const read = await payload.find({
+            collection: "tasks",
+            depth: 0,
+            limit: 100,
+            pagination: false,
+            user: patientUser,
+            overrideAccess: false,
+        });
+
+        const ids = read.docs.map((d) => d.id);
+        expect(ids).toContain(task.id);
+
+        await expect(
+            payload.create({
+                collection: "tasks",
+                data: {
+                    case: caseDoc.id,
+                    title: "Patient task",
+                    status: "todo",
+                },
+                user: patientUser,
+                overrideAccess: false,
+            }),
+        ).rejects.toBeTruthy();
+    });
+
+    it("patient can create and read messages in their caregroup", async () => {
+        const owner = await createUser({
+            email: "owner-patient-messages@example.com",
+            password: "password",
+            name: "Owner",
+        });
+
+        const patientUser = await createUser({
+            email: "patient-messages@example.com",
+            password: "password",
+            name: "Patient",
+        });
+
+        const careGroup = await createCareGroupAsOwner({ owner, name: "CG" });
+
+        await addMembership({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            userID: patientUser.id,
+            role: "patient",
+        });
+
+        const created = await payload.create({
+            collection: "messages",
+            data: {
+                careGroup: careGroup.id,
+                content: "Bonjour",
+            },
+            user: patientUser,
+            overrideAccess: false,
+        });
+
+        expect(created.id).toBeTruthy();
+        expect(relationshipToID(created.careGroup)).toBe(careGroup.id);
+        expect(relationshipToID(created.author)).toBe(patientUser.id);
+
+        const read = await payload.find({
+            collection: "messages",
+            depth: 0,
+            limit: 100,
+            pagination: false,
+            user: patientUser,
+            overrideAccess: false,
+        });
+
+        expect(read.docs.map((d) => d.id)).toContain(created.id);
+    });
+
+    it("patient cannot edit a message authored by someone else", async () => {
+        const owner = await createUser({
+            email: "owner-patient-message-edit@example.com",
+            password: "password",
+            name: "Owner",
+        });
+
+        const family = await createUser({
+            email: "family-message-edit@example.com",
+            password: "password",
+            name: "Family",
+        });
+
+        const patientUser = await createUser({
+            email: "patient-message-edit@example.com",
+            password: "password",
+            name: "Patient",
+        });
+
+        const careGroup = await createCareGroupAsOwner({ owner, name: "CG" });
+
+        await addMembership({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            userID: family.id,
+            role: "family",
+        });
+
+        await addMembership({
+            actingUser: owner,
+            careGroupID: careGroup.id,
+            userID: patientUser.id,
+            role: "patient",
+        });
+
+        const familyMsg = await payload.create({
+            collection: "messages",
+            data: {
+                careGroup: careGroup.id,
+                content: "Message famille",
+            },
+            user: family,
+            overrideAccess: false,
+        });
+
+        await expect(
+            payload.update({
+                collection: "messages",
+                id: familyMsg.id,
+                data: { content: "hack" },
+                user: patientUser,
+                overrideAccess: false,
+            }),
+        ).rejects.toBeTruthy();
+    });
+
     afterAll(async () => {
         if (payload) {
             if (typeof payload.destroy === "function") {
@@ -95,6 +375,7 @@ describe("Payload integration (ACL + hooks)", () => {
         const collections = [
             "case-attachments",
             "tasks",
+            "messages",
             "invitations",
             "cases",
             "patients",
@@ -182,7 +463,7 @@ describe("Payload integration (ACL + hooks)", () => {
         actingUser: CreatedUser;
         careGroupID: string;
         userID: string;
-        role: "owner" | "family" | "professional";
+        role: "owner" | "family" | "professional" | "patient";
     }): Promise<void> {
         await payload.create({
             collection: "memberships",
@@ -317,7 +598,7 @@ describe("Payload integration (ACL + hooks)", () => {
         actingUser: CreatedUser;
         careGroupID: string;
         email: string;
-        role: "family" | "professional";
+        role: "family" | "professional" | "patient";
     }): Promise<{ id: string; token: string }> {
         const token = `token-${Math.random().toString(16).slice(2)}`;
         const created = await payload.create({
