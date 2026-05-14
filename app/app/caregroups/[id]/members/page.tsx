@@ -11,7 +11,7 @@ import { PendingInvitesList } from "./PendingInvitesList";
 
 type Membership = {
     id: string;
-    role?: "owner" | "family" | "professional";
+    role?: "owner" | "family" | "professional" | "patient";
     user?: string | { id: string; email?: string; name?: string };
     careGroup?: string;
 };
@@ -22,7 +22,7 @@ type Invitation = {
     id: string;
     careGroup?: string;
     email?: string;
-    role?: "family" | "professional";
+    role?: "family" | "professional" | "patient";
     token?: string;
     status?: "pending" | "accepted" | "revoked";
     expiresAt?: string;
@@ -75,7 +75,7 @@ async function inviteMember(prevState: InviteState, formData: FormData) {
 
     if (!careGroup) return { ok: false, message: "Caregroup invalide." };
     if (!email) return { ok: false, message: "Email requis." };
-    if (role !== "family" && role !== "professional") {
+    if (role !== "family" && role !== "professional" && role !== "patient") {
         return { ok: false, message: "Rôle invalide." };
     }
 
@@ -157,12 +157,17 @@ export default async function CareGroupMembersPage({
     // Access gate:
     // - owner: can manage (invite + revoke + list)
     // - family: can view list
+    // - patient: can view list
     // - professional: no access (MVP)
     const myMembership = await payloadREST<{ docs: Membership[] }>(
         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(id)}&limit=1&depth=0`,
     ).then((r) => r.docs[0]);
 
-    if (myMembership?.role !== "owner" && myMembership?.role !== "family") {
+    if (
+        myMembership?.role !== "owner" &&
+        myMembership?.role !== "family" &&
+        myMembership?.role !== "patient"
+    ) {
         return (
             <div>
                 <CareGroupBanner careGroupId={id} />

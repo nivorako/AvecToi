@@ -14,7 +14,7 @@ import { CaseAttachmentRow } from "./CaseAttachmentRow";
 
 type Membership = {
     id: string;
-    role?: "owner" | "family" | "professional";
+    role?: "owner" | "family" | "professional" | "patient";
     user?: string;
     careGroup?: string;
 };
@@ -349,7 +349,7 @@ export default async function CasePage({
                 </div>
 
                 <Card>
-                    <CardHeader title="Documents & photos" />
+                    <CardHeader title="Mediathéque" />
                     <CardContent>
                         <div className="mt-4 flex flex-col gap-2">
                             {/* Each row is a Client Component to support the inline menu (rename/delete).

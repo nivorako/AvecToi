@@ -14,17 +14,10 @@ type Invitation = {
     id: string;
     careGroup?: string;
     email?: string;
-    role?: "family" | "professional";
+    role?: "family" | "professional" | "patient";
     token?: string;
     status?: "pending" | "accepted" | "revoked";
     expiresAt?: string;
-};
-
-type Membership = {
-    id: string;
-    role?: "owner" | "family" | "professional";
-    user?: string;
-    careGroup?: string;
 };
 
 async function acceptInvite(invite: Invitation) {

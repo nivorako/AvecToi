@@ -635,6 +635,10 @@ export default buildConfig({
                             label: "Professional",
                             value: "professional",
                         },
+                        {
+                            label: "Patient",
+                            value: "patient",
+                        },
                     ],
                 },
             ],
@@ -831,6 +835,10 @@ export default buildConfig({
                             label: "Professional",
                             value: "professional",
                         },
+                        {
+                            label: "Patient",
+                            value: "patient",
+                        },
                     ],
                 },
                 {
@@ -901,13 +909,8 @@ export default buildConfig({
                         typeof rawCase === "string" ||
                         typeof rawCase === "number"
                             ? rawCase
-                            : ((rawCase as { id?: string | number } | undefined)
-                                  ?.id ??
-                              (
-                                  rawCase as
-                                      | { value?: string | number }
-                                      | undefined
-                              )?.value);
+                            : ((rawCase as { id?: string | number }).id ??
+                              (rawCase as { value?: string | number }).value);
 
                     if (!caseID) return false;
 
@@ -1075,18 +1078,9 @@ export default buildConfig({
                         limit: 100,
                         pagination: false,
                         where: {
-                            and: [
-                                {
-                                    user: {
-                                        equals: req.user.id,
-                                    },
-                                },
-                                {
-                                    role: {
-                                        in: ["owner", "family"],
-                                    },
-                                },
-                            ],
+                            user: {
+                                equals: req.user.id,
+                            },
                         },
                     });
 
@@ -1315,17 +1309,22 @@ export default buildConfig({
                 update: async ({ req }) => {
                     if (!req.user) return false;
 
-                    // MVP choice: allow any member to update patient data in their caregroups.
-                    // (We can tighten this later if needed.)
+                    // Patient accounts must be read-only.
+                    // Keep update for owner/family/professional only.
                     const myMemberships = await req.payload.find({
                         collection: "memberships",
                         depth: 0,
                         limit: 100,
                         pagination: false,
                         where: {
-                            user: {
-                                equals: req.user.id,
-                            },
+                            and: [
+                                { user: { equals: req.user.id } },
+                                {
+                                    role: {
+                                        in: ["owner", "family", "professional"],
+                                    },
+                                },
+                            ],
                         },
                     });
 
@@ -1601,10 +1600,16 @@ export default buildConfig({
                         .map((m) => m.careGroup)
                         .filter(Boolean);
 
+                    const patientCareGroupIDs = myMemberships.docs
+                        .filter((m) => m.role === "patient")
+                        .map((m) => m.careGroup)
+                        .filter(Boolean);
+
                     // Keep collection visible even if user has no memberships.
                     if (
                         ownerOrFamilyCareGroupIDs.length === 0 &&
-                        professionalCareGroupIDs.length === 0
+                        professionalCareGroupIDs.length === 0 &&
+                        patientCareGroupIDs.length === 0
                     ) {
                         return {
                             id: {
@@ -1615,6 +1620,7 @@ export default buildConfig({
 
                     // owner/family: can read all cases in their caregroups (medical + custom)
                     // professional: can only read medical cases in their caregroups
+                    // patient: can read all cases in their caregroup
                     const or: Where[] = [];
 
                     if (ownerOrFamilyCareGroupIDs.length > 0) {
@@ -1639,6 +1645,14 @@ export default buildConfig({
                                     },
                                 },
                             ],
+                        });
+                    }
+
+                    if (patientCareGroupIDs.length > 0) {
+                        or.push({
+                            careGroup: {
+                                in: patientCareGroupIDs,
+                            },
                         });
                     }
 
@@ -1801,6 +1815,7 @@ export default buildConfig({
         // - owner/family: can read and create tasks in their caregroups
         // - professional: can read tasks only when caseType is medical
         // - professional: can create tasks only when the related case is medical
+        // - patient: can read tasks in their caregroup
         {
             slug: "tasks",
             admin: {
@@ -1825,13 +1840,13 @@ export default buildConfig({
                                       id?: string | number;
                                       value?: string | number;
                                   }
-                              )?.id ??
+                              ).id ??
                               (
                                   data?.case as {
                                       id?: string | number;
                                       value?: string | number;
                                   }
-                              )?.value);
+                              ).value);
 
                     if (!caseID) return false;
 
@@ -1873,6 +1888,11 @@ export default buildConfig({
                         return relatedCase?.type === "medical";
                     }
 
+                    // Patient accounts are read-only (no task creation).
+                    if (role === "patient") {
+                        return false;
+                    }
+
                     return false;
                 },
                 read: async ({ req }) => {
@@ -1902,9 +1922,15 @@ export default buildConfig({
                         .map((m) => m.careGroup)
                         .filter(Boolean);
 
+                    const patientCareGroupIDs = myMemberships.docs
+                        .filter((m) => m.role === "patient")
+                        .map((m) => m.careGroup)
+                        .filter(Boolean);
+
                     if (
                         ownerOrFamilyCareGroupIDs.length === 0 &&
-                        professionalCareGroupIDs.length === 0
+                        professionalCareGroupIDs.length === 0 &&
+                        patientCareGroupIDs.length === 0
                     ) {
                         return {
                             id: {
@@ -1937,6 +1963,14 @@ export default buildConfig({
                                     },
                                 },
                             ],
+                        });
+                    }
+
+                    if (patientCareGroupIDs.length > 0) {
+                        or.push({
+                            careGroup: {
+                                in: patientCareGroupIDs,
+                            },
                         });
                     }
 
@@ -2167,6 +2201,219 @@ export default buildConfig({
                     type: "relationship",
                     relationTo: "users",
                     required: false,
+                },
+            ],
+        },
+
+        // ---------------------------------------------------------------------
+        // Messages
+        // ---------------------------------------------------------------------
+        // Simple caregroup-scoped chat.
+        // - any member (including patient) can read + create
+        // - only the author or an owner can update/delete
+        {
+            slug: "messages",
+            admin: {
+                useAsTitle: "content",
+            },
+            access: {
+                create: async ({ req, data }) => {
+                    if (!req.user) return false;
+
+                    const careGroupID =
+                        typeof (data as { careGroup?: unknown } | undefined)
+                            ?.careGroup === "string"
+                            ? ((data as { careGroup?: string })
+                                  .careGroup as string)
+                            : (
+                                  (data as { careGroup?: { id?: string } })
+                                      ?.careGroup as { id?: string } | undefined
+                              )?.id;
+
+                    if (!careGroupID) return false;
+
+                    const membership = await req.payload.find({
+                        collection: "memberships",
+                        depth: 0,
+                        limit: 1,
+                        pagination: false,
+                        where: {
+                            and: [
+                                { user: { equals: req.user.id } },
+                                { careGroup: { equals: careGroupID } },
+                            ],
+                        },
+                    });
+
+                    return membership.docs.length > 0;
+                },
+                read: async ({ req }) => {
+                    if (!req.user) return false;
+
+                    const myMemberships = await req.payload.find({
+                        collection: "memberships",
+                        depth: 0,
+                        limit: 100,
+                        pagination: false,
+                        where: {
+                            user: {
+                                equals: req.user.id,
+                            },
+                        },
+                    });
+
+                    const careGroupIDs = myMemberships.docs
+                        .map((m) => m.careGroup)
+                        .filter(Boolean);
+
+                    if (!careGroupIDs.length) {
+                        return {
+                            careGroup: {
+                                in: [] as string[],
+                            },
+                        } as Where;
+                    }
+
+                    return {
+                        careGroup: {
+                            in: careGroupIDs,
+                        },
+                    } as Where;
+                },
+                update: async ({ req }) => {
+                    if (!req.user) return false;
+
+                    const myMemberships = await req.payload.find({
+                        collection: "memberships",
+                        depth: 0,
+                        limit: 100,
+                        pagination: false,
+                        where: {
+                            user: {
+                                equals: req.user.id,
+                            },
+                        },
+                    });
+
+                    const ownerCareGroupIDs = myMemberships.docs
+                        .filter((m) => m.role === "owner")
+                        .map((m) => m.careGroup)
+                        .filter(Boolean);
+
+                    return {
+                        or: [
+                            { author: { equals: req.user.id } },
+                            {
+                                careGroup: {
+                                    in: ownerCareGroupIDs.length
+                                        ? ownerCareGroupIDs
+                                        : ["__none__"],
+                                },
+                            },
+                        ],
+                    } as Where;
+                },
+                delete: async ({ req }) => {
+                    if (!req.user) return false;
+
+                    const myMemberships = await req.payload.find({
+                        collection: "memberships",
+                        depth: 0,
+                        limit: 100,
+                        pagination: false,
+                        where: {
+                            user: {
+                                equals: req.user.id,
+                            },
+                        },
+                    });
+
+                    const ownerCareGroupIDs = myMemberships.docs
+                        .filter((m) => m.role === "owner")
+                        .map((m) => m.careGroup)
+                        .filter(Boolean);
+
+                    return {
+                        or: [
+                            { author: { equals: req.user.id } },
+                            {
+                                careGroup: {
+                                    in: ownerCareGroupIDs.length
+                                        ? ownerCareGroupIDs
+                                        : ["__none__"],
+                                },
+                            },
+                        ],
+                    } as Where;
+                },
+            },
+            hooks: {
+                beforeValidate: [
+                    async ({ req, data }) => {
+                        if (!req.user) return data;
+
+                        const rawCareGroup = (
+                            data as { careGroup?: unknown } | undefined
+                        )?.careGroup;
+                        const careGroupID =
+                            typeof rawCareGroup === "string"
+                                ? rawCareGroup
+                                : (rawCareGroup as { id?: string } | undefined)
+                                      ?.id;
+
+                        if (!careGroupID) return data;
+
+                        // Anti-tampering: ensure the user is actually a member of this caregroup.
+                        const membership = await req.payload.find({
+                            collection: "memberships",
+                            depth: 0,
+                            limit: 1,
+                            pagination: false,
+                            where: {
+                                and: [
+                                    { user: { equals: req.user.id } },
+                                    { careGroup: { equals: careGroupID } },
+                                ],
+                            },
+                        });
+
+                        if (!membership.docs.length) {
+                            throw new Error("Not allowed");
+                        }
+
+                        return {
+                            ...data,
+                            careGroup: careGroupID,
+                            author: req.user.id,
+                        };
+                    },
+                ],
+            },
+            fields: [
+                {
+                    name: "careGroup",
+                    type: "relationship",
+                    relationTo: "caregroups",
+                    required: true,
+                    admin: {
+                        readOnly: true,
+                        position: "sidebar",
+                    },
+                },
+                {
+                    name: "author",
+                    type: "relationship",
+                    relationTo: "users",
+                    required: true,
+                    admin: {
+                        readOnly: true,
+                        position: "sidebar",
+                    },
+                },
+                {
+                    name: "content",
+                    type: "textarea",
+                    required: true,
                 },
             ],
         },

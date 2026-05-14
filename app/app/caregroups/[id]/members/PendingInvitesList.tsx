@@ -5,7 +5,7 @@ import { useState } from "react";
 type Invitation = {
     id: string;
     email?: string;
-    role?: "family" | "professional";
+    role?: "family" | "professional" | "patient";
     token?: string;
     expiresAt?: string;
 };

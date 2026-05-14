@@ -22,7 +22,7 @@ type Patient = {
 
 type Membership = {
     id: string;
-    role?: "owner" | "family" | "professional";
+    role?: "owner" | "family" | "professional" | "patient";
     user?: string;
     careGroup?: string;
 };

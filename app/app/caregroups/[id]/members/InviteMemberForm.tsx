@@ -18,7 +18,10 @@ export function InviteMemberForm({
     action,
 }: {
     careGroupID: string;
-    action: (prevState: InviteState, formData: FormData) => Promise<InviteState>;
+    action: (
+        prevState: InviteState,
+        formData: FormData,
+    ) => Promise<InviteState>;
 }) {
     const [state, formAction, pending] = useActionState(action, null);
 
@@ -37,6 +40,7 @@ export function InviteMemberForm({
             <select name="role" className="input" defaultValue="family">
                 <option value="family">Famille</option>
                 <option value="professional">Professionnel</option>
+                <option value="patient">Patient</option>
             </select>
 
             <button type="submit" className="btn-primary" disabled={pending}>
