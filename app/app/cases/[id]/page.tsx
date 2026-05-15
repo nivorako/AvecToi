@@ -32,7 +32,7 @@ type CaseDoc = {
 type Task = {
     id: string;
     title?: string;
-    responsable?: string;
+    createdAt?: string;
     status?: string;
     dueDate?: string;
 };
@@ -45,12 +45,6 @@ function formatDateFR(iso: string) {
         month: "short",
         year: "numeric",
     }).format(d);
-}
-
-function statusBadgeVariant(status: string | undefined) {
-    if (status === "done") return "primary" as const;
-    if (status === "cancelled") return "danger" as const;
-    return "muted" as const;
 }
 
 type CaseAttachment = {
@@ -313,16 +307,11 @@ export default async function CasePage({
                                             key={t.id}
                                             taskID={t.id}
                                             title={t.title ?? t.id}
-                                            responsable={t.responsable}
-                                            dueDateLabel={
-                                                t.dueDate
-                                                    ? `Échéance: ${formatDateFR(t.dueDate)}`
+                                            createdAtLabel={
+                                                t.createdAt
+                                                    ? formatDateFR(t.createdAt)
                                                     : ""
                                             }
-                                            status={t.status}
-                                            badgeVariant={statusBadgeVariant(
-                                                t.status,
-                                            )}
                                         />
                                     ))
                                 ) : (
@@ -378,16 +367,11 @@ export default async function CasePage({
                                             key={t.id}
                                             taskID={t.id}
                                             title={t.title ?? t.id}
-                                            responsable={t.responsable}
-                                            dueDateLabel={
-                                                t.dueDate
-                                                    ? `Échéance: ${formatDateFR(t.dueDate)}`
+                                            createdAtLabel={
+                                                t.createdAt
+                                                    ? formatDateFR(t.createdAt)
                                                     : ""
                                             }
-                                            status={t.status}
-                                            badgeVariant={statusBadgeVariant(
-                                                t.status,
-                                            )}
                                         />
                                     ))
                                 ) : (

@@ -22,7 +22,7 @@ type Membership = {
 type Task = {
     id: string;
     title?: string;
-    responsable?: string;
+    createdAt?: string;
     status?: string;
     dueDate?: string;
     case?: string | { id: string; title?: string };
@@ -82,57 +82,6 @@ function formatDateFR(iso: string) {
     }).format(d);
 }
 
-function statusBadgeVariant(status: string | undefined) {
-    if (status === "done") return "primary" as const;
-    if (status === "cancelled") return "danger" as const;
-    return "muted" as const;
-}
-
-function hashToIndex(input: string, modulo: number) {
-    let h = 0;
-    for (let i = 0; i < input.length; i += 1) {
-        h = (h * 31 + input.charCodeAt(i)) >>> 0;
-    }
-    return h % modulo;
-}
-
-function caseAccentClasses(caseId: string) {
-    const palette = [
-        {
-            border: "border-l-sky-300",
-            dot: "bg-sky-400",
-            dotRing: "ring-sky-200",
-        },
-        {
-            border: "border-l-emerald-300",
-            dot: "bg-emerald-400",
-            dotRing: "ring-emerald-200",
-        },
-        {
-            border: "border-l-violet-300",
-            dot: "bg-violet-400",
-            dotRing: "ring-violet-200",
-        },
-        {
-            border: "border-l-amber-300",
-            dot: "bg-amber-400",
-            dotRing: "ring-amber-200",
-        },
-        {
-            border: "border-l-rose-300",
-            dot: "bg-rose-400",
-            dotRing: "ring-rose-200",
-        },
-        {
-            border: "border-l-teal-300",
-            dot: "bg-teal-400",
-            dotRing: "ring-teal-200",
-        },
-    ] as const;
-
-    return palette[hashToIndex(caseId, palette.length)];
-}
-
 export default async function CareGroupHistoryPage({
     params,
     searchParams,
@@ -158,8 +107,6 @@ export default async function CareGroupHistoryPage({
     const cases = await payloadREST<{ docs: Case[] }>(
         `/api/cases?where[careGroup][equals]=${encodeURIComponent(id)}&limit=100&depth=0`,
     );
-
-    const casesById = new Map(cases.docs.map((c) => [c.id, c] as const));
 
     const done = tasks.docs.filter((t) => t.status === "done");
     const upcoming = tasks.docs.filter((t) => t.status !== "done");
@@ -218,47 +165,18 @@ export default async function CareGroupHistoryPage({
                 <CardContent>
                     <div className="flex flex-col gap-2">
                         {upcomingShown.length ? (
-                            upcomingShown.map((t) => {
-                                const caseId =
-                                    typeof t.case === "string"
-                                        ? t.case
-                                        : t.case?.id;
-                                const relatedCase = caseId
-                                    ? casesById.get(caseId)
-                                    : undefined;
-                                const accent = caseId
-                                    ? caseAccentClasses(caseId)
-                                    : undefined;
-
-                                return (
-                                    <div
-                                        key={t.id}
-                                        className={`rounded-2xl border border-border bg-card px-3 py-2 text-sm ${accent ? `border-l-4 ${accent.border}` : ""}`}
-                                    >
-                                        <TaskItemRow
-                                            taskID={t.id}
-                                            title={t.title ?? t.id}
-                                            responsable={t.responsable}
-                                            dueDateLabel={`${t.status ?? ""}${t.dueDate ? ` • ${formatDateFR(t.dueDate)}` : ""}`}
-                                            status={t.status}
-                                            badgeVariant={statusBadgeVariant(
-                                                t.status,
-                                            )}
-                                        />
-                                        {relatedCase ? (
-                                            <div className="mt-1 flex items-center gap-2 text-xs text-muted">
-                                                <span
-                                                    className={`h-2.5 w-2.5 rounded-full ${accent?.dot ?? "bg-muted"} ring-2 ${accent?.dotRing ?? "ring-border"}`}
-                                                />
-                                                <span className="truncate">
-                                                    {relatedCase.title ??
-                                                        relatedCase.id}
-                                                </span>
-                                            </div>
-                                        ) : null}
-                                    </div>
-                                );
-                            })
+                            upcomingShown.map((t) => (
+                                <TaskItemRow
+                                    key={t.id}
+                                    taskID={t.id}
+                                    title={t.title ?? t.id}
+                                    createdAtLabel={
+                                        t.createdAt
+                                            ? formatDateFR(t.createdAt)
+                                            : ""
+                                    }
+                                />
+                            ))
                         ) : (
                             <div className="text-sm text-muted">
                                 Aucune tâche.
@@ -305,47 +223,18 @@ export default async function CareGroupHistoryPage({
                 <CardContent>
                     <div className="flex flex-col gap-2">
                         {doneShown.length ? (
-                            doneShown.map((t) => {
-                                const caseId =
-                                    typeof t.case === "string"
-                                        ? t.case
-                                        : t.case?.id;
-                                const relatedCase = caseId
-                                    ? casesById.get(caseId)
-                                    : undefined;
-                                const accent = caseId
-                                    ? caseAccentClasses(caseId)
-                                    : undefined;
-
-                                return (
-                                    <div
-                                        key={t.id}
-                                        className={`rounded-2xl border border-border bg-card px-3 py-2 text-sm ${accent ? `border-l-4 ${accent.border}` : ""}`}
-                                    >
-                                        <TaskItemRow
-                                            taskID={t.id}
-                                            title={t.title ?? t.id}
-                                            responsable={t.responsable}
-                                            dueDateLabel={`${t.status ?? ""}${t.dueDate ? ` • ${formatDateFR(t.dueDate)}` : ""}`}
-                                            status={t.status}
-                                            badgeVariant={statusBadgeVariant(
-                                                t.status,
-                                            )}
-                                        />
-                                        {relatedCase ? (
-                                            <div className="mt-1 flex items-center gap-2 text-xs text-muted">
-                                                <span
-                                                    className={`h-2.5 w-2.5 rounded-full ${accent?.dot ?? "bg-muted"} ring-2 ${accent?.dotRing ?? "ring-border"}`}
-                                                />
-                                                <span className="truncate">
-                                                    {relatedCase.title ??
-                                                        relatedCase.id}
-                                                </span>
-                                            </div>
-                                        ) : null}
-                                    </div>
-                                );
-                            })
+                            doneShown.map((t) => (
+                                <TaskItemRow
+                                    key={t.id}
+                                    taskID={t.id}
+                                    title={t.title ?? t.id}
+                                    createdAtLabel={
+                                        t.createdAt
+                                            ? formatDateFR(t.createdAt)
+                                            : ""
+                                    }
+                                />
+                            ))
                         ) : (
                             <div className="text-sm text-muted">
                                 Aucune tâche.

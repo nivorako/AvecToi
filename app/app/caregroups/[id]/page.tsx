@@ -168,7 +168,7 @@ type Case = { id: string; title?: string; type?: "medical" | "custom" };
 type Task = {
     id: string;
     title?: string;
-    responsable?: string;
+    createdAt?: string;
     status?: string;
     dueDate?: string;
     case?: string | { id: string; title?: string };
@@ -182,12 +182,6 @@ function formatDateFR(iso: string) {
         month: "short",
         year: "numeric",
     }).format(d);
-}
-
-function statusBadgeVariant(status: string | undefined) {
-    if (status === "done") return "primary" as const;
-    if (status === "cancelled") return "danger" as const;
-    return "muted" as const;
 }
 
 function hashToIndex(input: string, modulo: number) {
@@ -254,9 +248,7 @@ export default async function CareGroupPage({
     ).then((r) => r.docs[0]);
 
     // Caregroup data (depth=0 is enough here).
-    const careGroup = await payloadREST<CareGroup>(
-        `/api/caregroups/${id}?depth=0`,
-    );
+    await payloadREST<CareGroup>(`/api/caregroups/${id}?depth=0`);
 
     // Cases and tasks are filtered by Payload access control.
     // The UI can safely show what the API returns for the current user.
@@ -268,8 +260,6 @@ export default async function CareGroupPage({
     const tasks = await payloadREST<{ docs: Task[] }>(
         `/api/tasks?where[careGroup][equals]=${encodeURIComponent(id)}&limit=50&depth=0`,
     );
-
-    const casesById = new Map(cases.docs.map((c) => [c.id, c] as const));
 
     const upcomingTasks = tasks.docs
         .filter((t) => t.status !== "done")
@@ -310,48 +300,17 @@ export default async function CareGroupPage({
                         <div className="mt-4 flex flex-col gap-2">
                             {upcomingTasks.length ? (
                                 upcomingTasks.map((t) => {
-                                    const caseId =
-                                        typeof t.case === "string"
-                                            ? t.case
-                                            : t.case?.id;
-                                    const relatedCase = caseId
-                                        ? casesById.get(caseId)
-                                        : undefined;
-                                    const accent = caseId
-                                        ? caseAccentClasses(caseId)
-                                        : undefined;
-
                                     return (
-                                        <div
+                                        <TaskItemRow
                                             key={t.id}
-                                            className={`rounded-2xl border border-border bg-card px-3 py-2 text-sm ${accent ? `border-l-4 ${accent.border}` : ""}`}
-                                        >
-                                            <TaskItemRow
-                                                taskID={t.id}
-                                                title={t.title ?? t.id}
-                                                responsable={t.responsable}
-                                                dueDateLabel={
-                                                    t.dueDate
-                                                        ? `Échéance: ${formatDateFR(t.dueDate)}`
-                                                        : ""
-                                                }
-                                                status={t.status}
-                                                badgeVariant={statusBadgeVariant(
-                                                    t.status,
-                                                )}
-                                            />
-                                            {relatedCase ? (
-                                                <div className="mt-1 flex items-center gap-2 text-xs text-muted">
-                                                    <span
-                                                        className={`h-2.5 w-2.5 rounded-full ${accent?.dot ?? "bg-muted"} ring-2 ${accent?.dotRing ?? "ring-border"}`}
-                                                    />
-                                                    <span className="truncate">
-                                                        {relatedCase.title ??
-                                                            relatedCase.id}
-                                                    </span>
-                                                </div>
-                                            ) : null}
-                                        </div>
+                                            taskID={t.id}
+                                            title={t.title ?? t.id}
+                                            createdAtLabel={
+                                                t.createdAt
+                                                    ? formatDateFR(t.createdAt)
+                                                    : ""
+                                            }
+                                        />
                                     );
                                 })
                             ) : (
