@@ -647,7 +647,7 @@ export default buildConfig({
                 },
             ],
         },
-
+        // invitations
         {
             slug: "invitations",
             access: {
@@ -880,7 +880,7 @@ export default buildConfig({
                 },
             ],
         },
-
+        // case-attachment
         {
             slug: "case-attachments",
             admin: {

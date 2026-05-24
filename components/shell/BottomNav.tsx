@@ -62,6 +62,7 @@ export default function BottomNav() {
             try {
                 const res = await fetch(`/api/cases/${caseId}?depth=0`, {
                     signal: controller.signal,
+                    credentials: "include",
                 });
 
                 if (!res.ok) return;
