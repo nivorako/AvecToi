@@ -21,7 +21,7 @@ export default async function AppHomePage() {
                 {caregroups.docs.map((cg) => (
                     <Link
                         key={cg.id}
-                        href={`/app/caregroups/${cg.id}`}
+                        href={`/app/caregroup/${cg.id}`}
                         className="rounded-2xl border border-border bg-card p-4 hover:bg-card/70"
                     >
                         <div className="font-medium">{cg.name ?? cg.id}</div>

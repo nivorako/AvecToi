@@ -9,11 +9,13 @@ export default function AddTaskPanel({
     defaultCaseId,
     cases,
     action,
+    users,
 }: {
     careGroupId: string;
     defaultCaseId: string;
     cases: Array<{ id: string; title?: string }>;
     action: (formData: FormData) => Promise<void>;
+    users: Array<{ id: string; name?: string }>;
 }) {
     const [open, setOpen] = useState(false);
 
@@ -42,11 +44,16 @@ export default function AddTaskPanel({
                             className="input"
                             required
                         />
-                        <input
-                            name="responsable"
-                            placeholder="Responsable (optionnel)"
-                            className="input"
-                        />
+
+                        <select name="assignedTo" className="input">
+                            <option value="">Non assigné</option>
+                            {users.map((u) => (
+                                <option key={u.id} value={u.id}>
+                                    {u.name || u.id}
+                                </option>
+                            ))}
+                        </select>
+
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                             <select
                                 name="case"

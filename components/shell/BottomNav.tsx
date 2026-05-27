@@ -11,13 +11,15 @@ type Item = {
 
 function getCareGroupIdFromPathname(pathname: string | null) {
     if (!pathname) return null;
-    const match = pathname.match(/^\/app\/caregroups\/([^/]+)(?:\/|$)/);
+    const match = pathname.match(/^\/app\/caregroup\/([^/]+)(?:\/|$)/);
     return match?.[1] ?? null;
 }
 
 function getCaseIdFromPathname(pathname: string | null) {
     if (!pathname) return null;
-    const match = pathname.match(/^\/app\/cases\/([^/]+)(?:\/|$)/);
+    const match = pathname.match(
+        /^\/app\/caregroup\/[^/]+\/case\/([^/]+)(?:\/|$)/,
+    );
     return match?.[1] ?? null;
 }
 
@@ -100,23 +102,23 @@ export default function BottomNav() {
     const items: Item[] = effectiveCareGroupId
         ? [
               {
-                  href: `/app/caregroups/${effectiveCareGroupId}`,
+                  href: `/app/caregroup/${effectiveCareGroupId}`,
                   label: "Dashboard",
               },
               {
-                  href: `/app/caregroups/${effectiveCareGroupId}/dossiers`,
+                  href: `/app/caregroup/${effectiveCareGroupId}/dossiers`,
                   label: "Dossiers",
               },
               {
-                  href: `/app/caregroups/${effectiveCareGroupId}/history`,
+                  href: `/app/caregroup/${effectiveCareGroupId}/tasks`,
                   label: "Agenda",
               },
               {
-                  href: `/app/caregroups/${effectiveCareGroupId}/messages`,
+                  href: `/app/caregroup/${effectiveCareGroupId}/messages`,
                   label: "Messages",
               },
               {
-                  href: `/app/caregroups/${effectiveCareGroupId}/calendar`,
+                  href: `/app/caregroup/${effectiveCareGroupId}/calendar`,
                   label: "Calendrier",
               },
           ]

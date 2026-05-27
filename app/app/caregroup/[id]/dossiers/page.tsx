@@ -34,7 +34,7 @@ export default async function CareGroupDossiersPage({
         `/api/cases?where[careGroup][equals]=${encodeURIComponent(id)}${whereType}&limit=50&depth=0`,
     );
 
-    const baseUrl = `/app/caregroups/${id}/dossiers`;
+    const baseUrl = `/app/caregroup/${id}/dossiers`;
     const queryType =
         type === "medical" || type === "custom" ? `type=${type}` : "";
 
@@ -60,7 +60,7 @@ export default async function CareGroupDossiersPage({
                             cases.docs.map((c) => (
                                 <Link
                                     key={c.id}
-                                    href={`/app/cases/${c.id}`}
+                                    href={`/app/caregroup/${id}/case/${c.id}`}
                                     className="rounded-2xl border border-border bg-card px-3 py-3 text-sm hover:bg-card/70"
                                 >
                                     <div className="font-medium">

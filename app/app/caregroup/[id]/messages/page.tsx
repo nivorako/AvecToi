@@ -40,7 +40,7 @@ async function createMessage(formData: FormData) {
         return;
     }
 
-    revalidatePath(`/app/caregroups/${careGroup}/messages`);
+    revalidatePath(`/app/caregroup/${careGroup}/messages`);
 }
 
 export default async function CareGroupMessagesPage({

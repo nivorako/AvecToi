@@ -16,41 +16,41 @@ export default function CareGroupBreadcrumbs({
         { label: "Groupes", href: "/app" },
         {
             label: careGroupName,
-            href: `/app/caregroups/${encodeURIComponent(careGroupId)}`,
+            href: `/app/caregroup/${encodeURIComponent(careGroupId)}`,
         },
     ];
 
-    if (pathname.includes(`/app/caregroups/${careGroupId}/dossiers`)) {
+    if (pathname.includes(`/app/caregroup/${careGroupId}/dossiers`)) {
         items.push({
             label: "Dossiers",
-            href: `/app/caregroups/${encodeURIComponent(careGroupId)}/dossiers`,
+            href: `/app/caregroup/${encodeURIComponent(careGroupId)}/dossiers`,
         });
-    } else if (pathname.includes(`/app/caregroups/${careGroupId}/history`)) {
+    } else if (pathname.includes(`/app/caregroup/${careGroupId}/tasks`)) {
         items.push({
             label: "Agenda",
-            href: `/app/caregroups/${encodeURIComponent(careGroupId)}/history`,
+            href: `/app/caregroup/${encodeURIComponent(careGroupId)}/tasks`,
         });
-    } else if (pathname.includes(`/app/caregroups/${careGroupId}/messages`)) {
+    } else if (pathname.includes(`/app/caregroup/${careGroupId}/messages`)) {
         items.push({
             label: "Messages",
-            href: `/app/caregroups/${encodeURIComponent(careGroupId)}/messages`,
+            href: `/app/caregroup/${encodeURIComponent(careGroupId)}/messages`,
         });
-    } else if (pathname.includes(`/app/caregroups/${careGroupId}/calendar`)) {
+    } else if (pathname.includes(`/app/caregroup/${careGroupId}/calendar`)) {
         items.push({
             label: "Calendrier",
-            href: `/app/caregroups/${encodeURIComponent(careGroupId)}/calendar`,
+            href: `/app/caregroup/${encodeURIComponent(careGroupId)}/calendar`,
         });
-    } else if (pathname.includes(`/app/caregroups/${careGroupId}/members`)) {
+    } else if (pathname.includes(`/app/caregroup/${careGroupId}/members`)) {
         items.push({
             label: "Membres",
-            href: `/app/caregroups/${encodeURIComponent(careGroupId)}/members`,
+            href: `/app/caregroup/${encodeURIComponent(careGroupId)}/members`,
         });
     }
 
-    if (pathname.startsWith("/app/cases/")) {
+    if (pathname.includes(`/app/caregroup/${careGroupId}/case/`)) {
         items.push({
             label: "Dossiers",
-            href: `/app/caregroups/${encodeURIComponent(careGroupId)}/dossiers`,
+            href: `/app/caregroup/${encodeURIComponent(careGroupId)}/dossiers`,
         });
         items.push({ label: "Dossier" });
     }

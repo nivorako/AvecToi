@@ -98,7 +98,7 @@ async function acceptInvite(invite: Invitation) {
         overrideAccess: true,
     });
 
-    redirect(`/app/caregroups/${invite.careGroup}`);
+    redirect(`/app/caregroup/${invite.careGroup}`);
 }
 
 export default async function InvitePage({

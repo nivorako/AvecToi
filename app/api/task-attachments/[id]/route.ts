@@ -13,13 +13,6 @@ type PayloadMeResponse = {
     user?: { id: string } | null;
 };
 
-type TaskDoc = {
-    id: string;
-    status?: string;
-    careGroup?: unknown;
-    caseType?: unknown;
-};
-
 async function getUserIDFromTokenWithOrigin(args: {
     token: string;
     origin: string;
@@ -37,19 +30,16 @@ async function getUserIDFromTokenWithOrigin(args: {
     return me.user?.id ?? null;
 }
 
-async function authorizeTask(args: {
+async function canManageAttachment(args: {
     token: string;
-    taskID: string;
+    attachmentID: string;
     origin: string;
 }): Promise<
-    | {
-          ok: true;
-          payload: Awaited<ReturnType<typeof getPayload>>;
-          task: TaskDoc;
-          role: string;
-      }
+    | { ok: true; payload: Awaited<ReturnType<typeof getPayload>> }
     | { ok: false; status: number; message: string }
 > {
+    // These endpoints are called from a Client Component (menu actions). We can't use Server
+    // Actions here without passing event handlers across the server/client boundary.
     const userID = await getUserIDFromTokenWithOrigin({
         token: args.token,
         origin: args.origin,
@@ -58,24 +48,25 @@ async function authorizeTask(args: {
 
     const payload = await getPayload({ config });
 
-    const task = (await payload.findByID({
-        collection: "tasks",
-        id: args.taskID,
+    const attachment = (await payload.findByID({
+        collection: "task-attachments",
+        id: args.attachmentID,
         depth: 0,
         overrideAccess: true,
         disableTransaction: true,
     } as unknown as Parameters<
         Awaited<ReturnType<typeof getPayload>>["findByID"]
-    >[0])) as unknown as TaskDoc;
+    >[0])) as { careGroup?: unknown };
 
     const careGroupID =
-        typeof task?.careGroup === "string" ||
-        typeof task?.careGroup === "number"
-            ? task.careGroup
-            : (task?.careGroup as { id?: string | number } | undefined)?.id;
+        typeof attachment?.careGroup === "string" ||
+        typeof attachment?.careGroup === "number"
+            ? attachment.careGroup
+            : (attachment?.careGroup as { id?: string | number } | undefined)
+                  ?.id;
 
     if (!careGroupID) {
-        return { ok: false, status: 400, message: "Invalid task" };
+        return { ok: false, status: 400, message: "Invalid attachment" };
     }
 
     const membership = await payload.find({
@@ -96,9 +87,14 @@ async function authorizeTask(args: {
     >[0]);
 
     const role = (membership.docs[0] as { role?: string } | undefined)?.role;
-    if (!role) return { ok: false, status: 403, message: "Forbidden" };
 
-    return { ok: true, payload, task, role };
+    if (role !== "owner" && role !== "family") {
+        return { ok: false, status: 403, message: "Forbidden" };
+    }
+
+    // Local API with `disableTransaction: true` helps avoid transaction errors seen on some
+    // local Mongo setups during write operations.
+    return { ok: true, payload };
 }
 
 export async function PATCH(
@@ -109,51 +105,30 @@ export async function PATCH(
     if (!token) return new Response("Unauthorized", { status: 401 });
 
     const { id } = await params;
+
     const origin = getOriginFromRequestURL(req.url);
 
-    const auth = await authorizeTask({ token, taskID: id, origin });
+    const auth = await canManageAttachment({
+        token,
+        attachmentID: id,
+        origin,
+    });
     if (!auth.ok) return new Response(auth.message, { status: auth.status });
 
-    const canUpdate =
-        auth.role === "owner" ||
-        auth.role === "family" ||
-        (auth.role === "professional" && auth.task?.caseType === "medical");
-
-    if (!canUpdate) return new Response("Forbidden", { status: 403 });
-
     const json = (await req.json().catch(() => null)) as {
-        status?: unknown;
-        urgency?: unknown;
+        displayName?: unknown;
     } | null;
 
-    const updateData: Record<string, unknown> = {};
-
-    // Handle status update (existing functionality)
-    const status = typeof json?.status === "string" ? json.status.trim() : "";
-    if (status === "done") {
-        updateData.status = "done";
-    } else if (status !== "") {
-        return new Response("Invalid status", { status: 400 });
-    }
-
-    // Handle urgency update (new functionality)
-    const urgency =
-        typeof json?.urgency === "string" ? json.urgency.trim() : "";
-    if (urgency === "low" || urgency === "medium" || urgency === "high") {
-        updateData.urgency = urgency;
-    } else if (urgency !== "") {
-        return new Response("Invalid urgency", { status: 400 });
-    }
-
-    if (Object.keys(updateData).length === 0) {
-        return new Response("No valid fields to update", { status: 400 });
-    }
+    const displayName =
+        typeof json?.displayName === "string" ? json.displayName.trim() : "";
 
     try {
         const updated = await auth.payload.update({
-            collection: "tasks",
+            collection: "task-attachments",
             id,
-            data: updateData,
+            data: {
+                displayName,
+            },
             overrideAccess: true,
             disableTransaction: true,
         } as unknown as Parameters<
@@ -162,12 +137,12 @@ export async function PATCH(
 
         return Response.json(updated);
     } catch (err) {
-        console.error("tasks.patch.error", { id, err });
+        console.error("task-attachments.patch.error", { id, err });
         const errorMessage = err instanceof Error ? err.message : String(err);
         const errorName = err instanceof Error ? err.name : "UnknownError";
         return Response.json(
             {
-                error: "Failed to update task",
+                error: "Failed to update attachment",
                 id,
                 errorName,
                 errorMessage,
@@ -185,21 +160,19 @@ export async function DELETE(
     if (!token) return new Response("Unauthorized", { status: 401 });
 
     const { id } = await params;
+
     const origin = getOriginFromRequestURL(req.url);
 
-    const auth = await authorizeTask({ token, taskID: id, origin });
+    const auth = await canManageAttachment({
+        token,
+        attachmentID: id,
+        origin,
+    });
     if (!auth.ok) return new Response(auth.message, { status: auth.status });
-
-    const canDelete = auth.role === "owner" || auth.role === "family";
-    if (!canDelete) return new Response("Forbidden", { status: 403 });
-
-    if (auth.task?.status === "done") {
-        return new Response("Task already done", { status: 400 });
-    }
 
     try {
         const deleted = await auth.payload.delete({
-            collection: "tasks",
+            collection: "task-attachments",
             id,
             overrideAccess: true,
             disableTransaction: true,
@@ -209,12 +182,52 @@ export async function DELETE(
 
         return Response.json(deleted);
     } catch (err) {
-        console.error("tasks.delete.error", { id, err });
+        console.error("task-attachments.delete.error", { id, err });
         const errorMessage = err instanceof Error ? err.message : String(err);
         const errorName = err instanceof Error ? err.name : "UnknownError";
+
+        if (errorName === "ErrorDeletingFile") {
+            try {
+                const collections = auth.payload.db
+                    .collections as unknown as Record<
+                    string,
+                    {
+                        collection?: { collectionName?: string };
+                        deleteOne?: (filter: { _id: string }) => Promise<{
+                            deletedCount?: number;
+                        }>;
+                    }
+                >;
+
+                const model =
+                    collections["task-attachments"] ??
+                    Object.values(collections).find(
+                        (m) =>
+                            m?.collection?.collectionName ===
+                                "task-attachments" ||
+                            m?.collection?.collectionName ===
+                                "task-attachments" + "s",
+                    );
+
+                const res = await model?.deleteOne?.({ _id: id });
+                if ((res?.deletedCount ?? 0) > 0) {
+                    return Response.json({
+                        id,
+                        deleted: true,
+                        fileDeleted: false,
+                    });
+                }
+            } catch (fallbackErr) {
+                console.error("task-attachments.delete.fallback_error", {
+                    id,
+                    fallbackErr,
+                });
+            }
+        }
+
         return Response.json(
             {
-                error: "Failed to delete task",
+                error: "Failed to delete attachment",
                 id,
                 errorName,
                 errorMessage,

@@ -15,7 +15,7 @@ type Case = { id: string; title?: string };
 type Membership = {
     id: string;
     role?: "owner" | "family" | "professional" | "patient";
-    user?: string;
+    user?: string | { id: string; name?: string };
     careGroup?: string;
 };
 
@@ -34,7 +34,7 @@ async function createTask(formData: FormData) {
     const careGroup = String(formData.get("careGroup") ?? "");
     const caseID = String(formData.get("case") ?? "");
     const title = String(formData.get("title") ?? "");
-    const responsable = String(formData.get("responsable") ?? "");
+    const assignedTo = String(formData.get("assignedTo") ?? "");
     const dueDate = String(formData.get("dueDate") ?? "");
 
     const user = await requireUser();
@@ -60,8 +60,8 @@ async function createTask(formData: FormData) {
             body: JSON.stringify({
                 case: caseID,
                 title,
-                ...(responsable ? { responsable } : {}),
                 status: "todo",
+                ...(assignedTo ? { assignedTo } : {}),
                 ...(dueDate ? { dueDate } : {}),
             }),
         });
@@ -69,7 +69,7 @@ async function createTask(formData: FormData) {
         return;
     }
 
-    revalidatePath(`/app/caregroups/${careGroup}/history`);
+    revalidatePath(`/app/caregroup/${careGroup}/tasks`);
 }
 
 function formatDateFR(iso: string) {
@@ -94,7 +94,7 @@ export default async function CareGroupHistoryPage({
     const user = await requireUser();
 
     const showAll = all === "1";
-    const baseUrl = `/app/caregroups/${encodeURIComponent(id)}/history`;
+    const baseUrl = `/app/caregroup/${encodeURIComponent(id)}/tasks`;
 
     const membership = await payloadREST<{ docs: Membership[] }>(
         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(id)}&limit=1&depth=0`,
@@ -107,6 +107,16 @@ export default async function CareGroupHistoryPage({
     const cases = await payloadREST<{ docs: Case[] }>(
         `/api/cases?where[careGroup][equals]=${encodeURIComponent(id)}&limit=100&depth=0`,
     );
+
+    const careGroupMembers = await payloadREST<{ docs: Membership[] }>(
+        `/api/memberships?where[careGroup][equals]=${encodeURIComponent(id)}&limit=100&depth=1`,
+    );
+    const users = careGroupMembers.docs
+        .map((m) => m.user)
+        .filter(
+            (u): u is { id: string; name?: string } =>
+                u !== null && typeof u === "object",
+        );
 
     const done = tasks.docs.filter((t) => t.status === "done");
     const upcoming = tasks.docs.filter((t) => t.status !== "done");
@@ -165,18 +175,26 @@ export default async function CareGroupHistoryPage({
                 <CardContent>
                     <div className="flex flex-col gap-2">
                         {upcomingShown.length ? (
-                            upcomingShown.map((t) => (
-                                <TaskItemRow
-                                    key={t.id}
-                                    taskID={t.id}
-                                    title={t.title ?? t.id}
-                                    createdAtLabel={
-                                        t.createdAt
-                                            ? formatDateFR(t.createdAt)
-                                            : ""
-                                    }
-                                />
-                            ))
+                            upcomingShown.map((t) => {
+                                const caseId =
+                                    typeof t.case === "string"
+                                        ? t.case
+                                        : t.case?.id;
+                                return (
+                                    <TaskItemRow
+                                        key={t.id}
+                                        taskID={t.id}
+                                        title={t.title ?? t.id}
+                                        createdAtLabel={
+                                            t.createdAt
+                                                ? formatDateFR(t.createdAt)
+                                                : ""
+                                        }
+                                        careGroupId={id}
+                                        caseId={caseId}
+                                    />
+                                );
+                            })
                         ) : (
                             <div className="text-sm text-muted">
                                 Aucune tâche.
@@ -193,6 +211,7 @@ export default async function CareGroupHistoryPage({
                             defaultCaseId={cases.docs[0]?.id ?? ""}
                             cases={cases.docs}
                             action={createTask}
+                            users={users}
                         />
                     ) : null}
                 </CardContent>
@@ -223,18 +242,26 @@ export default async function CareGroupHistoryPage({
                 <CardContent>
                     <div className="flex flex-col gap-2">
                         {doneShown.length ? (
-                            doneShown.map((t) => (
-                                <TaskItemRow
-                                    key={t.id}
-                                    taskID={t.id}
-                                    title={t.title ?? t.id}
-                                    createdAtLabel={
-                                        t.createdAt
-                                            ? formatDateFR(t.createdAt)
-                                            : ""
-                                    }
-                                />
-                            ))
+                            doneShown.map((t) => {
+                                const caseId =
+                                    typeof t.case === "string"
+                                        ? t.case
+                                        : t.case?.id;
+                                return (
+                                    <TaskItemRow
+                                        key={t.id}
+                                        taskID={t.id}
+                                        title={t.title ?? t.id}
+                                        createdAtLabel={
+                                            t.createdAt
+                                                ? formatDateFR(t.createdAt)
+                                                : ""
+                                        }
+                                        careGroupId={id}
+                                        caseId={caseId}
+                                    />
+                                );
+                            })
                         ) : (
                             <div className="text-sm text-muted">
                                 Aucune tâche.

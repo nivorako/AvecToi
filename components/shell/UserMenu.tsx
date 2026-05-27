@@ -60,7 +60,7 @@ export default function UserMenu() {
 
                     {careGroupId ? (
                         <Link
-                            href={`/app/caregroups/${careGroupId}/members`}
+                            href={`/app/caregroup/${careGroupId}/members`}
                             className="block w-full rounded-xl px-3 py-2 text-sm hover:bg-muted"
                             onClick={() => setOpen(false)}
                         >

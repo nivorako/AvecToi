@@ -22,14 +22,14 @@ type Patient = {
 type Membership = {
     id: string;
     role?: "owner" | "family" | "professional" | "patient";
-    user?: string;
+    user?: string | { id: string; name?: string };
     careGroup?: string;
 };
 
 async function createTask(formData: FormData) {
     "use server";
 
-    // Create Task server action for /app/caregroups/[id].
+    // Create Task server action for /app/caregroup/[id].
     //
     // Permissions (enforced here + by Payload ACL):
     // - owner/family: can create tasks for any case in the caregroup
@@ -39,7 +39,7 @@ async function createTask(formData: FormData) {
     const careGroup = String(formData.get("careGroup") ?? "");
     const caseID = String(formData.get("case") ?? "");
     const title = String(formData.get("title") ?? "");
-    const responsable = String(formData.get("responsable") ?? "");
+    const assignedTo = String(formData.get("assignedTo") ?? "");
     const dueDate = String(formData.get("dueDate") ?? "");
 
     const user = await requireUser();
@@ -87,8 +87,8 @@ async function createTask(formData: FormData) {
             body: JSON.stringify({
                 case: caseID,
                 title,
-                ...(responsable ? { responsable } : {}),
                 status: "todo",
+                ...(assignedTo ? { assignedTo } : {}),
                 ...(dueDate ? { dueDate } : {}),
             }),
         });
@@ -97,7 +97,7 @@ async function createTask(formData: FormData) {
     }
 
     // Refresh the caregroup dashboard so the task list updates.
-    revalidatePath(`/app/caregroups/${careGroup}`);
+    revalidatePath(`/app/caregroup/${careGroup}`);
 }
 
 async function createCase(formData: FormData) {
@@ -160,7 +160,7 @@ async function createCase(formData: FormData) {
     }
 
     // Refresh to show the newly created case.
-    revalidatePath(`/app/caregroups/${careGroup}`);
+    revalidatePath(`/app/caregroup/${careGroup}`);
 }
 
 type Case = { id: string; title?: string; type?: "medical" | "custom" };
@@ -234,7 +234,7 @@ export default async function CareGroupPage({
 }: {
     params: Promise<{ id: string }>;
 }) {
-    // Route: /app/caregroups/:id
+    // Route: /app/caregroup/:id
     // Displays a caregroup dashboard (patients, cases, tasks).
     const { id } = await params;
 
@@ -260,6 +260,17 @@ export default async function CareGroupPage({
     const tasks = await payloadREST<{ docs: Task[] }>(
         `/api/tasks?where[careGroup][equals]=${encodeURIComponent(id)}&limit=50&depth=0`,
     );
+
+    // Get caregroup members for task assignment
+    const careGroupMembers = await payloadREST<{ docs: Membership[] }>(
+        `/api/memberships?where[careGroup][equals]=${encodeURIComponent(id)}&limit=100&depth=1`,
+    );
+    const users = careGroupMembers.docs
+        .map((m) => m.user)
+        .filter(
+            (u): u is { id: string; name?: string } =>
+                u !== null && typeof u === "object",
+        );
 
     const upcomingTasks = tasks.docs
         .filter((t) => t.status !== "done")
@@ -288,7 +299,7 @@ export default async function CareGroupPage({
                         title="Prochaines tâches"
                         action={
                             <Link
-                                href={`/app/caregroups/${id}/history`}
+                                href={`/app/caregroup/${id}/tasks`}
                                 className="text-sm font-semibold text-primary"
                             >
                                 Voir plus
@@ -300,6 +311,10 @@ export default async function CareGroupPage({
                         <div className="mt-4 flex flex-col gap-2">
                             {upcomingTasks.length ? (
                                 upcomingTasks.map((t) => {
+                                    const caseId =
+                                        typeof t.case === "string"
+                                            ? t.case
+                                            : t.case?.id;
                                     return (
                                         <TaskItemRow
                                             key={t.id}
@@ -310,6 +325,8 @@ export default async function CareGroupPage({
                                                     ? formatDateFR(t.createdAt)
                                                     : ""
                                             }
+                                            careGroupId={id}
+                                            caseId={caseId}
                                         />
                                     );
                                 })
@@ -330,6 +347,7 @@ export default async function CareGroupPage({
                                 defaultCaseId={cases.docs[0]?.id ?? ""}
                                 cases={cases.docs}
                                 action={createTask}
+                                users={users}
                             />
                         ) : (
                             <div className="mt-4 text-sm text-muted">
@@ -344,7 +362,7 @@ export default async function CareGroupPage({
                         title="Dossiers récents"
                         action={
                             <Link
-                                href={`/app/caregroups/${id}/dossiers`}
+                                href={`/app/caregroup/${id}/dossiers`}
                                 className="text-sm font-semibold text-primary"
                             >
                                 Voir tout
@@ -361,7 +379,7 @@ export default async function CareGroupPage({
                                     return (
                                         <Link
                                             key={c.id}
-                                            href={`/app/cases/${c.id}`}
+                                            href={`/app/caregroup/${id}/case/${c.id}`}
                                             className={`rounded-2xl border border-border bg-card px-3 py-2 text-sm hover:bg-white/70 border-l-4 ${accent.border}`}
                                         >
                                             <div className="flex items-start justify-between gap-3">
@@ -412,7 +430,7 @@ export default async function CareGroupPage({
                         title="Messages récents"
                         action={
                             <Link
-                                href={`/app/caregroups/${id}/messages`}
+                                href={`/app/caregroup/${id}/messages`}
                                 className="text-sm font-semibold text-primary"
                             >
                                 Voir tout

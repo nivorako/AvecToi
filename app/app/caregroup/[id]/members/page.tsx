@@ -59,7 +59,7 @@ async function deleteInvitation(invitationID: string, careGroupID: string) {
         method: "DELETE",
     });
 
-    revalidatePath(`/app/caregroups/${careGroupID}/members`);
+    revalidatePath(`/app/caregroup/${careGroupID}/members`);
 }
 
 async function inviteMember(prevState: InviteState, formData: FormData) {
@@ -142,7 +142,7 @@ async function inviteMember(prevState: InviteState, formData: FormData) {
         return { ok: false, message: "Erreur lors de l'invitation." };
     }
 
-    revalidatePath(`/app/caregroups/${careGroup}/members`);
+    revalidatePath(`/app/caregroup/${careGroup}/members`);
     return { ok: true, message: "Invitation créée." };
 }
 

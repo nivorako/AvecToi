@@ -11,13 +11,13 @@ import TaskItemRow from "@/components/task/TaskItemRow";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
-import { CaseAttachmentsUploader } from "./CaseAttachmentsUploader";
-import { CaseAttachmentRow } from "./CaseAttachmentRow";
+import { CaseAttachmentsUploader } from "../../../../../../components/case/CaseAttachmentsUploader";
+import { CaseAttachmentRow } from "../../../../../../components/case/CaseAttachmentRow";
 
 type Membership = {
     id: string;
     role?: "owner" | "family" | "professional" | "patient";
-    user?: string;
+    user?: string | { id: string; name?: string };
     careGroup?: string;
 };
 
@@ -35,6 +35,7 @@ type Task = {
     createdAt?: string;
     status?: string;
     dueDate?: string;
+    urgency?: "low" | "medium" | "high";
 };
 
 function formatDateFR(iso: string) {
@@ -56,6 +57,16 @@ type CaseAttachment = {
     description?: string;
 };
 
+type TaskAttachment = {
+    id: string;
+    filename?: string;
+    displayName?: string;
+    mimeType?: string;
+    url?: string;
+    description?: string;
+    task?: string;
+};
+
 async function createTask(formData: FormData) {
     "use server";
 
@@ -71,7 +82,7 @@ async function createTask(formData: FormData) {
     const careGroup = String(formData.get("careGroup") ?? "");
     const caseType = String(formData.get("caseType") ?? "");
     const title = String(formData.get("title") ?? "");
-    const responsable = String(formData.get("responsable") ?? "");
+    const assignedTo = String(formData.get("assignedTo") ?? "");
     const dueDate = String(formData.get("dueDate") ?? "");
 
     const user = await requireUser();
@@ -85,6 +96,7 @@ async function createTask(formData: FormData) {
     ).then((r) => r.docs[0]);
 
     const role = membership?.role;
+
     const canCreate =
         role === "owner" ||
         role === "family" ||
@@ -101,8 +113,8 @@ async function createTask(formData: FormData) {
             body: JSON.stringify({
                 case: caseID,
                 title,
-                ...(responsable ? { responsable } : {}),
                 status: "todo",
+                ...(assignedTo ? { assignedTo } : {}),
                 ...(dueDate ? { dueDate } : {}),
             }),
         });
@@ -111,7 +123,7 @@ async function createTask(formData: FormData) {
     }
 
     // Refresh this case page so the task list updates after the mutation.
-    revalidatePath(`/app/cases/${caseID}`);
+    revalidatePath(`/app/caregroup/${careGroup}/case/${caseID}`);
 }
 
 async function updateCaseDescription(formData: FormData) {
@@ -162,26 +174,26 @@ async function updateCaseDescription(formData: FormData) {
         return;
     }
 
-    revalidatePath(`/app/cases/${caseID}`);
+    revalidatePath(`/app/caregroup/${careGroup}/case/${caseID}`);
 }
 
 export default async function CasePage({
     params,
     searchParams,
 }: {
-    params: Promise<{ id: string }>;
+    params: Promise<{ id: string; caseId: string }>;
     searchParams: Promise<{ allTodo?: string; allDone?: string }>;
 }) {
-    // Route: /app/cases/:id
+    // Route: /app/caregroup/:id/case/:caseId
     // Displays a case details page with its tasks.
     // Tasks, and the create UI below, are filtered by role via Payload access control.
-    const { id } = await params;
+    const { id, caseId } = await params;
 
     // Protected page: redirect to login when user is not authenticated.
     const user = await requireUser();
 
     // Case data (depth=1 to populate relationships like careGroup).
-    const caseDoc = await payloadREST<CaseDoc>(`/api/cases/${id}?depth=1`);
+    const caseDoc = await payloadREST<CaseDoc>(`/api/cases/${caseId}?depth=1`);
 
     // Used to render a "Retour caregroup" link when available.
     const careGroupID =
@@ -191,13 +203,13 @@ export default async function CasePage({
 
     // Tasks belonging to this case.
     const tasks = await payloadREST<{ docs: Task[] }>(
-        `/api/tasks?where[case][equals]=${encodeURIComponent(id)}&limit=50&depth=0`,
+        `/api/tasks?where[case][equals]=${encodeURIComponent(caseId)}&limit=50&depth=0`,
     );
 
     const { allTodo, allDone } = await searchParams;
     const showAllTodo = allTodo === "1";
     const showAllDone = allDone === "1";
-    const baseUrl = `/app/cases/${encodeURIComponent(id)}`;
+    const baseUrl = `/app/caregroup/${id}/case/${caseId}`;
 
     function buildHref(next: { allTodo?: boolean; allDone?: boolean }) {
         const parts: string[] = [];
@@ -218,6 +230,19 @@ export default async function CasePage({
           ).then((r) => r.docs[0])
         : undefined;
 
+    // Get caregroup members for task assignment
+    const careGroupMembers = careGroupID
+        ? await payloadREST<{ docs: Membership[] }>(
+              `/api/memberships?where[careGroup][equals]=${encodeURIComponent(careGroupID)}&limit=100&depth=1`,
+          )
+        : { docs: [] };
+    const users = careGroupMembers.docs
+        .map((m) => m.user)
+        .filter(
+            (u): u is { id: string; name?: string } =>
+                u !== null && typeof u === "object",
+        );
+
     const role = membership?.role;
     const normalizedCaseType =
         caseDoc?.type === "medical" || caseDoc?.type === "custom"
@@ -235,7 +260,12 @@ export default async function CasePage({
     // - we still rely on Payload access control as the real security boundary
 
     const attachments = await payloadREST<{ docs: CaseAttachment[] }>(
-        `/api/case-attachments?where[case][equals]=${encodeURIComponent(id)}&limit=50&depth=0`,
+        `/api/case-attachments?where[case][equals]=${encodeURIComponent(caseId)}&limit=50&depth=0`,
+    );
+
+    // Récupérer les task-attachments liés aux tâches de cette case
+    const taskAttachments = await payloadREST<{ docs: TaskAttachment[] }>(
+        `/api/task-attachments?where[task][in]=${tasks.docs.map((t) => t.id).join(",")}&limit=50&depth=0`,
     );
 
     const upcomingTasks = tasks.docs
@@ -252,6 +282,7 @@ export default async function CasePage({
                 String(b.title ?? b.id),
             );
         });
+
     const doneTasks = tasks.docs
         .filter((t) => t.status === "done")
         .sort((a, b) => {
@@ -312,6 +343,9 @@ export default async function CasePage({
                                                     ? formatDateFR(t.createdAt)
                                                     : ""
                                             }
+                                            careGroupId={id}
+                                            caseId={caseId}
+                                            urgency={t.urgency}
                                         />
                                     ))
                                 ) : (
@@ -325,9 +359,10 @@ export default async function CasePage({
                             {canCreateTask ? (
                                 <AddCaseTaskPanel
                                     careGroupId={careGroupID ?? ""}
-                                    caseId={id}
+                                    caseId={caseId}
                                     caseType={normalizedCaseType}
                                     action={createTask}
+                                    users={users}
                                 />
                             ) : (
                                 <div className="mt-4 text-sm text-muted">
@@ -372,6 +407,9 @@ export default async function CasePage({
                                                     ? formatDateFR(t.createdAt)
                                                     : ""
                                             }
+                                            careGroupId={id}
+                                            caseId={caseId}
+                                            urgency={t.urgency}
                                         />
                                     ))
                                 ) : (
@@ -391,22 +429,44 @@ export default async function CasePage({
                             {/* Each row is a Client Component to support the inline menu (rename/delete).
                                 We trigger mutations through Next API routes because Server Components cannot
                                 pass event handlers to Client Components. */}
-                            {attachments.docs.length ? (
-                                attachments.docs.map((a) => (
-                                    <CaseAttachmentRow
-                                        key={a.id}
-                                        attachmentID={a.id}
-                                        href={`/api/case-attachments/${encodeURIComponent(a.id)}/file`}
-                                        label={
-                                            a.displayName ?? a.filename ?? a.id
-                                        }
-                                        description={a.description}
-                                        canManage={
-                                            role === "owner" ||
-                                            role === "family"
-                                        }
-                                    />
-                                ))
+                            {attachments.docs.length ||
+                            taskAttachments.docs.length ? (
+                                <>
+                                    {attachments.docs.map((a) => (
+                                        <CaseAttachmentRow
+                                            key={a.id}
+                                            attachmentID={a.id}
+                                            href={`/api/case-attachments/${encodeURIComponent(a.id)}/file`}
+                                            label={
+                                                a.displayName ??
+                                                a.filename ??
+                                                a.id
+                                            }
+                                            description={a.description}
+                                            canManage={
+                                                role === "owner" ||
+                                                role === "family"
+                                            }
+                                        />
+                                    ))}
+                                    {taskAttachments.docs.map((a) => (
+                                        <CaseAttachmentRow
+                                            key={a.id}
+                                            attachmentID={a.id}
+                                            href={`/api/task-attachments/${encodeURIComponent(a.id)}/file`}
+                                            label={
+                                                a.displayName ??
+                                                a.filename ??
+                                                a.id
+                                            }
+                                            description={a.description}
+                                            canManage={
+                                                role === "owner" ||
+                                                role === "family"
+                                            }
+                                        />
+                                    ))}
+                                </>
                             ) : (
                                 <div className="text-sm text-muted">
                                     Aucun document.
@@ -419,7 +479,7 @@ export default async function CasePage({
                                 Patients are read-only and cannot add documents. */}
                         {canUpdateCase ? (
                             <AddCaseAttachmentPanel canAdd={true}>
-                                <CaseAttachmentsUploader caseID={id} />
+                                <CaseAttachmentsUploader caseID={caseId} />
                             </AddCaseAttachmentPanel>
                         ) : (
                             <div className="mt-4 text-sm text-muted">
@@ -442,7 +502,11 @@ export default async function CasePage({
                                 action={updateCaseDescription}
                                 className="flex flex-col gap-2"
                             >
-                                <input type="hidden" name="case" value={id} />
+                                <input
+                                    type="hidden"
+                                    name="case"
+                                    value={caseId}
+                                />
                                 <input
                                     type="hidden"
                                     name="careGroup"
