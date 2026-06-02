@@ -35,7 +35,7 @@ type Task = {
     createdAt?: string;
     status?: string;
     dueDate?: string;
-    urgency?: "low" | "medium" | "high";
+    urgency?: "low" | "high";
 };
 
 function formatDateFR(iso: string) {

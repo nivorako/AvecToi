@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { TaskAttachmentsUploader } from "@/components/task/TaskAttachmentsUploader";
 import AddTaskAttachmentPanel from "@/components/task/AddTaskAttachmentPanel";
 import { TaskAttachmentRow } from "@/components/task/TaskAttachmentRow";
-import TaskUrgencyIndicator from "@/components/task/TaskUrgencyIndicator";
+import TaskMetadataBar from "@/components/task/TaskMetadataBar";
 
 type CaseDoc = {
     id: string;
@@ -32,7 +32,8 @@ type Task = {
     updatedAt: string;
     case?: string | { id: string; title: string };
     assignedTo?: string | { id: string; name?: string; title: string };
-    urgency?: "low" | "medium" | "high";
+    urgency?: "low" | "high";
+    subtasks?: Array<{ id: string; title: string; completed: boolean }>;
 };
 
 type TaskAttachment = {
@@ -59,7 +60,6 @@ export default async function TaskPage({
     );
     const task = tasks.docs[0];
 
-    console.log("task.assignedTo :", task?.assignedTo);
     // Extraire le careGroupId (peut être une string ou un objet avec id)
     const careGroupId =
         typeof task?.careGroup === "string"
@@ -98,19 +98,6 @@ export default async function TaskPage({
           ).then((r) => r.docs[0])
         : undefined;
 
-    // Get caregroup members for task assignment
-    const careGroupMembers = careGroupID
-        ? await payloadREST<{ docs: Membership[] }>(
-              `/api/memberships?where[careGroup][equals]=${encodeURIComponent(careGroupID)}&limit=100&depth=1`,
-          )
-        : { docs: [] };
-    const users = careGroupMembers.docs
-        .map((m) => m.user)
-        .filter(
-            (u): u is { id: string; name?: string } =>
-                u !== null && typeof u === "object",
-        );
-
     const role = membership?.role;
     const normalizedCaseType =
         caseDoc?.type === "medical" || caseDoc?.type === "custom"
@@ -125,17 +112,16 @@ export default async function TaskPage({
     return (
         <>
             {careGroupId ? <CareGroupBanner careGroupId={careGroupId} /> : null}
+            <p>Vous êtes dans Dossier {caseTitle}</p>
+            <h1> Tâche : {task?.title}</h1>
 
-            <div className="mt-8 mb-6">
-                <TaskUrgencyIndicator
-                    taskID={taskId}
-                    initialUrgency={task?.urgency}
-                />
-            </div>
-
+            <TaskMetadataBar
+                taskID={taskId}
+                initialUrgency={task?.urgency}
+                initialStatus={task?.status as "todo" | "in_progress" | "done"}
+                initialSubTasks={task?.subtasks || []}
+            />
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <p>Dossier1 {caseTitle}</p>
-                <h1>{task?.title}</h1>
                 <Card>
                     <CardHeader title="Informations" />
                     <CardContent>
@@ -145,11 +131,8 @@ export default async function TaskPage({
                                 ? task.assignedTo.name || task.assignedTo.id
                                 : "Non assigné"}
                         </p>
-                        <p>Priorité</p>
-                        <p>statut + changement de statut</p>
                         <p>{task?.createdAt}</p>
                         <p>date limite</p>
-                        <p>documents liés</p>
                         <p>Evenement liés (rendez-vous, rappels, etc.)</p>
                     </CardContent>
                 </Card>
@@ -161,27 +144,11 @@ export default async function TaskPage({
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader title="Sous-taches" />
-                    <CardContent>
-                        <p>liste des sous-taches</p>
-                        <p>Statut de chaque étape</p>
-                    </CardContent>
-                </Card>
-                <Card>
                     <CardHeader title="Commentaires" />
                     <CardContent>
                         <p>liste des commentaires</p>
                         <p>Auteur + date + contenu</p>
                         <p>+ bouton pour ajouter un commentaire</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader title="Actions rapides" />
-                    <CardContent>
-                        <p>fil de commentaires</p>
-                        <p>Auteur + date + contenu</p>
-                        <p>+ bouton pour ajouter un commentaire</p>
-                        <p>Upload rapide ( photo ou doc)</p>
                     </CardContent>
                 </Card>
                 <Card>

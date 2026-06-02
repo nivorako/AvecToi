@@ -10,7 +10,10 @@ import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
-type CareGroup = { id: string; name?: string };
+type CareGroup = {
+    id: string;
+    name?: string;
+};
 
 type Patient = {
     id: string;
@@ -24,6 +27,28 @@ type Membership = {
     role?: "owner" | "family" | "professional" | "patient";
     user?: string | { id: string; name?: string };
     careGroup?: string;
+};
+
+type Task = {
+    id: string;
+    title?: string;
+    createdAt?: string;
+    status?: string;
+    dueDate?: string;
+    case?: string | { id: string; title?: string };
+    urgency?: "low" | "high";
+};
+
+type Case = {
+    id: string;
+    title?: string;
+    type?: "medical" | "custom";
+};
+
+type CaseDoc = {
+    id: string;
+    type?: "medical" | "custom";
+    careGroup?: string | { id: string };
 };
 
 async function createTask(formData: FormData) {
@@ -53,11 +78,6 @@ async function createTask(formData: FormData) {
     if (!role) return;
     if (!caseID || !title) return;
 
-    type CaseDoc = {
-        id: string;
-        type?: "medical" | "custom";
-        careGroup?: string | { id: string };
-    };
     // Fetch the target case to validate it belongs to this caregroup (anti-tampering guard).
     const relatedCase = await payloadREST<CaseDoc>(
         `/api/cases/${encodeURIComponent(caseID)}?depth=0`,
@@ -162,17 +182,6 @@ async function createCase(formData: FormData) {
     // Refresh to show the newly created case.
     revalidatePath(`/app/caregroup/${careGroup}`);
 }
-
-type Case = { id: string; title?: string; type?: "medical" | "custom" };
-
-type Task = {
-    id: string;
-    title?: string;
-    createdAt?: string;
-    status?: string;
-    dueDate?: string;
-    case?: string | { id: string; title?: string };
-};
 
 function formatDateFR(iso: string) {
     const d = new Date(iso);
@@ -327,6 +336,7 @@ export default async function CareGroupPage({
                                             }
                                             careGroupId={id}
                                             caseId={caseId}
+                                            urgency={t.urgency}
                                         />
                                     );
                                 })

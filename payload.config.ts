@@ -2473,6 +2473,55 @@ export default buildConfig({
                         };
                     },
                 ],
+                beforeChange: [
+                    async ({ data, originalDoc }) => {
+                        const subtasks = data.subtasks as
+                            | Array<{ completed: boolean }>
+                            | undefined;
+
+                        // Si pas de sous-tâches, laisser le statut manuel
+                        if (!subtasks || subtasks.length === 0) {
+                            return data;
+                        }
+
+                        // Si le statut est explicitement fourni par le frontend, le respecter
+                        if (data.status !== undefined) {
+                            return data;
+                        }
+
+                        // Si la tâche a déjà un statut et qu'on ne le change pas explicitement, le respecter
+                        if (
+                            originalDoc.status !== undefined &&
+                            data.status === undefined
+                        ) {
+                            return data;
+                        }
+
+                        // // Calculer le statut basé sur les sous-tâches
+                        // const completedCount = subtasks.filter(
+                        //     (st) => st.completed,
+                        // ).length;
+                        // const totalCount = subtasks.length;
+
+                        // if (completedCount === 0) {
+                        //     return { ...data, status: "todo" };
+                        // } else if (
+                        //     completedCount > 0 &&
+                        //     completedCount < totalCount
+                        // ) {
+                        //     return { ...data, status: "in_progress" };
+                        // }
+
+                        // Si le statut est explicitement fourni par le frontend, le respecter
+                        if (data.status !== undefined) {
+                            return data;
+                        }
+
+                        // Sinon, ne pas modifier le statut automatiquement
+                        // Le frontend gère la logique auto-status via useEffect
+                        return data;
+                    },
+                ],
             },
             fields: [
                 {
@@ -2572,12 +2621,42 @@ export default buildConfig({
                             value: "low",
                         },
                         {
-                            label: "Moyen",
-                            value: "medium",
-                        },
-                        {
                             label: "Très urgent",
                             value: "high",
+                        },
+                    ],
+                },
+                {
+                    name: "subtasks",
+                    type: "array",
+                    required: false,
+                    fields: [
+                        {
+                            name: "title",
+                            type: "text",
+                            required: true,
+                        },
+                        {
+                            name: "description",
+                            type: "textarea",
+                            required: false,
+                        },
+                        {
+                            name: "dueDate",
+                            type: "date",
+                            required: false,
+                        },
+                        {
+                            name: "assignedTo",
+                            type: "relationship",
+                            relationTo: "users",
+                            required: false,
+                        },
+                        {
+                            name: "completed",
+                            type: "checkbox",
+                            required: true,
+                            defaultValue: false,
                         },
                     ],
                 },

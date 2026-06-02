@@ -124,14 +124,15 @@ export async function PATCH(
     const json = (await req.json().catch(() => null)) as {
         status?: unknown;
         urgency?: unknown;
+        subtasks?: unknown;
     } | null;
 
     const updateData: Record<string, unknown> = {};
 
     // Handle status update (existing functionality)
     const status = typeof json?.status === "string" ? json.status.trim() : "";
-    if (status === "done") {
-        updateData.status = "done";
+    if (status === "todo" || status === "in_progress" || status === "done") {
+        updateData.status = status;
     } else if (status !== "") {
         return new Response("Invalid status", { status: 400 });
     }
@@ -143,6 +144,11 @@ export async function PATCH(
         updateData.urgency = urgency;
     } else if (urgency !== "") {
         return new Response("Invalid urgency", { status: 400 });
+    }
+
+    // Handle subtasks update
+    if (Array.isArray(json?.subtasks)) {
+        updateData.subtasks = json.subtasks;
     }
 
     if (Object.keys(updateData).length === 0) {

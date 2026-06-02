@@ -26,6 +26,7 @@ type Task = {
     status?: string;
     dueDate?: string;
     case?: string | { id: string; title?: string };
+    urgency?: "low" | "high";
 };
 
 async function createTask(formData: FormData) {
@@ -192,6 +193,7 @@ export default async function CareGroupHistoryPage({
                                         }
                                         careGroupId={id}
                                         caseId={caseId}
+                                        urgency={t.urgency}
                                     />
                                 );
                             })

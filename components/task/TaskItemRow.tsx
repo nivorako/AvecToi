@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useTransition, useState } from "react";
 
-type Urgency = "low" | "medium" | "high";
+type Urgency = "low" | "high";
 
 type Props = {
     taskID: string;
@@ -18,9 +18,8 @@ const urgencyConfig = {
     low: {
         label: "Peut attendre",
         color: "bg-green-500",
-        next: "medium" as const,
+        next: "high" as const,
     },
-    medium: { label: "Moyen", color: "bg-orange-500", next: "high" as const },
     high: { label: "Très urgent", color: "bg-red-500", next: "low" as const },
 };
 
@@ -35,7 +34,7 @@ export default function TaskItemRow({
     const [pending, startTransition] = useTransition();
     const [currentUrgency, setCurrentUrgency] = useState<Urgency>(urgency);
 
-    const config = urgencyConfig[currentUrgency];
+    const config = urgencyConfig[currentUrgency] || urgencyConfig.low;
 
     const cycleUrgency = () => {
         const nextUrgency = config.next;

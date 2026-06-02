@@ -1,4 +1,4 @@
-import { getPayload } from "payload";
+import { getPayload, type SanitizedConfig } from "payload";
 
 import config from "@/payload.config";
 
@@ -9,7 +9,7 @@ if (typeof window !== "undefined") {
 
 // Lazy initialization: only connect to MongoDB when actually needed (server-side only)
 // This prevents the connection from being bundled and executed in the browser
-let payloadConfigPromiseCache: Promise<any> | null = null;
+let payloadConfigPromiseCache: Promise<SanitizedConfig> | null = null;
 
 function _getPayloadConfigPromise() {
     if (!payloadConfigPromiseCache) {
@@ -24,15 +24,15 @@ function _getPayloadConfigPromise() {
 // Using a Thenable to delay getPayload() call until the promise is actually used
 export const payloadConfigPromise = {
     then: (
-        onFulfilled?: (value: any) => any,
-        onRejected?: (reason: any) => any,
+        onFulfilled?: (value: SanitizedConfig) => unknown,
+        onRejected?: (reason: unknown) => unknown,
     ) => {
         return _getPayloadConfigPromise().then(onFulfilled, onRejected);
     },
-    catch: (onRejected?: (reason: any) => any) => {
+    catch: (onRejected?: (reason: unknown) => unknown) => {
         return _getPayloadConfigPromise().catch(onRejected);
     },
     finally: (onFinally?: () => void) => {
         return _getPayloadConfigPromise().finally(onFinally);
     },
-} as Promise<any>;
+} as Promise<SanitizedConfig>;
