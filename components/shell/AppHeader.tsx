@@ -17,7 +17,7 @@ export default function AppHeader({ userName }: { userName?: string | null }) {
     return (
         <TopBar
             left={
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col items-left gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
                         {initial}
                     </div>
