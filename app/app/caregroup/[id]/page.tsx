@@ -299,161 +299,155 @@ export default async function CareGroupPage({
         .slice(0, 3);
 
     return (
-        <div>
-            <CareGroupBanner careGroupId={id} />
+        <div className="flex flex-col gap-5">
 
-            <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <Card>
-                    <CardHeader
-                        title="Prochaines tâches"
-                        action={
-                            <Link
-                                href={`/app/caregroup/${id}/tasks`}
-                                className="text-sm font-semibold text-primary"
-                            >
-                                Voir plus
-                            </Link>
-                        }
-                    />
-
-                    <CardContent>
-                        <div className="mt-4 flex flex-col gap-2">
-                            {upcomingTasks.length ? (
-                                upcomingTasks.map((t) => {
-                                    const caseId =
-                                        typeof t.case === "string"
-                                            ? t.case
-                                            : t.case?.id;
-                                    return (
-                                        <TaskItemRow
-                                            key={t.id}
-                                            taskID={t.id}
-                                            title={t.title ?? t.id}
-                                            createdAtLabel={
-                                                t.createdAt
-                                                    ? formatDateFR(t.createdAt)
-                                                    : ""
-                                            }
-                                            careGroupId={id}
-                                            caseId={caseId}
-                                            urgency={t.urgency}
-                                        />
-                                    );
-                                })
-                            ) : (
-                                <div className="mt-2 text-sm text-muted">
-                                    Aucune tâche.
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Patients can view tasks but not create them (read-only). */}
-                        {membership?.role &&
-                        ["owner", "family", "professional"].includes(
-                            membership.role,
-                        ) ? (
-                            <AddTaskPanel
-                                careGroupId={id}
-                                defaultCaseId={cases.docs[0]?.id ?? ""}
-                                cases={cases.docs}
-                                action={createTask}
-                                users={users}
-                            />
-                        ) : (
-                            <div className="mt-4 text-sm text-muted">
-                                Tu n’as pas les droits pour ajouter une task.
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader
-                        title="Dossiers récents"
-                        action={
-                            <Link
-                                href={`/app/caregroup/${id}/dossiers`}
-                                className="text-sm font-semibold text-primary"
-                            >
-                                Voir tout
-                            </Link>
-                        }
-                    />
-
-                    <CardContent>
-                        <div className="mt-4 flex flex-col gap-2">
-                            {cases.docs.length ? (
-                                cases.docs.map((c) => {
-                                    const accent = caseAccentClasses(c.id);
-
-                                    return (
-                                        <Link
-                                            key={c.id}
-                                            href={`/app/caregroup/${id}/case/${c.id}`}
-                                            className={`rounded-2xl border border-border bg-card px-3 py-2 text-sm hover:bg-white/70 border-l-4 ${accent.border}`}
-                                        >
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="min-w-0">
-                                                    <div className="flex items-center gap-2 font-medium">
-                                                        <span
-                                                            className={`h-2.5 w-2.5 rounded-full ${accent.dot} ring-2 ${accent.dotRing}`}
-                                                        />
-                                                        <span className="truncate">
-                                                            {c.title ?? c.id}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="text-xs text-muted">
-                                                {c.type}
-                                            </div>
-                                        </Link>
-                                    );
-                                })
-                            ) : (
-                                <div className="mt-2 text-sm text-muted">
-                                    Aucun dossier.
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Patients can view dossiers but not create them (read-only). */}
-                        {membership?.role === "owner" ||
-                        membership?.role === "family" ? (
-                            <AddDossierPanel
-                                careGroupId={id}
-                                action={createCase}
-                            />
-                        ) : (
-                            <div className="mt-4 text-sm text-muted">
-                                Seul un owner ou un membre famille peut ajouter
-                                un dossier.
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+            {/* Section 1 — Résumé du jour */}
+            <div className="rounded-2xl bg-primary/10 p-4">
+                <h2 className="text-base font-bold text-primary mb-3">Résumé du jour</h2>
+                <div className="flex flex-col gap-1.5 text-sm">
+                    <div className="flex items-center gap-2">
+                        <span>🗂️</span>
+                        <span>{upcomingTasks.length} actions à faire aujourd&​apos;hui</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span>📅</span>
+                        <span>{upcomingTasks.filter(t => t.dueDate).length} rendez-vous à venir</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span>💬</span>
+                        <span>Messages non lus</span>
+                    </div>
+                </div>
+                <div className="mt-4 flex justify-end">
+                    <Link
+                        href={`/app/caregroup/${id}/tasks`}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
+                    >
+                        Voir tout
+                    </Link>
+                </div>
             </div>
 
-            <div className="mt-6">
-                <Card>
-                    <CardHeader
-                        title="Messages récents"
-                        action={
-                            <Link
-                                href={`/app/caregroup/${id}/messages`}
-                                className="text-sm font-semibold text-primary"
-                            >
-                                Voir tout
-                            </Link>
-                        }
-                    />
-                    <CardContent>
+            {/* Section 2 — Accès rapide */}
+            <div>
+                <h2 className="text-sm font-semibold text-foreground mb-3">Accès rapide</h2>
+                <div className="grid grid-cols-4 gap-2">
+                    {[
+                        { label: "Dossiers", href: `/app/caregroup/${id}/dossiers`, icon: (
+                            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" /></svg>
+                        )},
+                        { label: "Calendrier", href: `/app/caregroup/${id}/calendar`, icon: (
+                            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+                        )},
+                        { label: "Messages", href: `/app/caregroup/${id}/messages`, icon: (
+                            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                        )},
+                        { label: "Historique", href: `/app/caregroup/${id}/tasks`, icon: (
+                            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>
+                        )},
+                    ].map((item) => (
+                        <Link
+                            key={item.label}
+                            href={item.href}
+                            className="flex flex-col items-center gap-1.5 rounded-2xl bg-card border border-border p-3 hover:bg-muted/10"
+                        >
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                {item.icon}
+                            </div>
+                            <span className="text-xs text-muted">{item.label}</span>
+                        </Link>
+                    ))}
+                </div>
+            </div>
+
+            {/* Section 3 — À traiter */}
+            <div>
+                <h2 className="text-base font-semibold mb-1">À traiter</h2>
+                <p className="text-xs text-muted mb-3">Actions prioritaires</p>
+                <div className="flex flex-col gap-2">
+                    {upcomingTasks.length ? (
+                        upcomingTasks.map((t) => {
+                            const caseId = typeof t.case === "string" ? t.case : t.case?.id;
+                            const caseTitle = typeof t.case === "object" ? t.case?.title : undefined;
+                            return (
+                                <Link
+                                    key={t.id}
+                                    href={caseId ? `/app/caregroup/${id}/case/${caseId}` : `/app/caregroup/${id}/tasks`}
+                                    className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 hover:bg-card/70 gap-3"
+                                >
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${t.urgency === "high" ? "bg-amber-50 text-amber-500" : "bg-primary/10 text-primary"}`}>
+                                            {t.urgency === "high" ? (
+                                                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                            ) : (
+                                                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                            )}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <div className="text-sm font-medium truncate">{t.title ?? t.id}</div>
+                                            {caseTitle && <div className="text-xs text-muted">{caseTitle}</div>}
+                                            {t.dueDate && <div className="text-xs text-muted">Échéance : {formatDateFR(t.dueDate)}</div>}
+                                        </div>
+                                    </div>
+                                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-muted" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+                                </Link>
+                            );
+                        })
+                    ) : (
                         <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
-                            À venir.
+                            Aucune tâche en cours.
                         </div>
-                    </CardContent>
-                </Card>
+                    )}
+                </div>
             </div>
+
+            {/* Section 4 — À venir */}
+            <div>
+                <h2 className="text-base font-semibold mb-1">À venir</h2>
+                <p className="text-xs text-muted mb-3">Prochains rendez-vous</p>
+                <div className="flex flex-col gap-2">
+                    {upcomingTasks.filter(t => t.dueDate).length ? (
+                        upcomingTasks.filter(t => t.dueDate).map((t) => {
+                            const caseId = typeof t.case === "string" ? t.case : t.case?.id;
+                            const d = t.dueDate ? new Date(t.dueDate) : null;
+                            const dayLabel = d ? new Intl.DateTimeFormat("fr-FR", { weekday: "long" }).format(d) : "";
+                            const timeLabel = d ? new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(d) : "";
+                            return (
+                                <Link
+                                    key={t.id}
+                                    href={caseId ? `/app/caregroup/${id}/case/${caseId}` : `/app/caregroup/${id}/tasks`}
+                                    className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 hover:bg-card/70 gap-3"
+                                >
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+                                        </div>
+                                        <div className="min-w-0">
+                                            <div className="text-sm font-medium truncate">{t.title ?? t.id}</div>
+                                            <div className="text-xs text-muted capitalize">{dayLabel} • {timeLabel}</div>
+                                        </div>
+                                    </div>
+                                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-muted" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+                                </Link>
+                            );
+                        })
+                    ) : (
+                        <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
+                            Aucun rendez-vous à venir.
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Section 5 — Activité du groupe (placeholder) */}
+            <div>
+                <h2 className="text-base font-semibold mb-3">Activité du groupe</h2>
+                <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
+                    À venir.
+                </div>
+            </div>
+
         </div>
     );
+
 }

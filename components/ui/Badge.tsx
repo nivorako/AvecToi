@@ -2,13 +2,15 @@ import type { HTMLAttributes } from "react";
 
 import { cn } from "@/lib/cn";
 
-export type BadgeVariant = "default" | "primary" | "danger" | "muted";
+export type BadgeVariant = "default" | "primary" | "danger" | "muted"| "warning" | "success";
 
 const variantClasses: Record<BadgeVariant, string> = {
     default: "bg-card text-foreground ring-1 ring-border",
     primary: "bg-primary/10 text-primary ring-1 ring-primary/20",
     danger: "bg-danger/10 text-danger ring-1 ring-danger/20",
     muted: "bg-card text-muted ring-1 ring-border",
+    warning: "bg-amber-50 text-amber-600 ring-1 ring-amber-200",
+    success: "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200",
 };
 
 export default function Badge({
