@@ -1,14 +1,14 @@
-import { getPayload } from "payload";
+
+import { getPayloadInstance } from "@/lib/payloadConfig";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import config from "@/payload.config";
 
 export async function GET(
     req: Request,
     { params }: { params: Promise<{ id: string }> },
 ) {
     try {
-        const payload = await getPayload({ config });
+        const payload = await getPayloadInstance();
 
         //initialises Payload côté serveur
         const cookieStore = await cookies();

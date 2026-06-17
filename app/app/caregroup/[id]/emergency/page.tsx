@@ -35,7 +35,7 @@ export default async function CareGroupEmergencyPage({
                 </div>
                 <div className="mt-4 flex justify-end">
                     <Link
-                        href={`${baseUrl}/tasks`}
+                        href={`${baseUrl}/history`}
                         className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
                     >
                         Voir tout
@@ -152,10 +152,10 @@ export default async function CareGroupEmergencyPage({
                 <h2 className="text-base font-semibold mb-3">Documents essentiels</h2>
                 <div className="flex flex-col gap-2">
                     {[
-                        { label: "Carte Vitale", href: `${baseUrl}/dossiers` },
-                        { label: "Carte Mutuelle", href: `${baseUrl}/dossiers` },
-                        { label: "Ordonnance principale", href: `${baseUrl}/dossiers` },
-                        { label: "Directives anticipées", href: `${baseUrl}/dossiers` },
+                        { label: "Carte Vitale", href: `${baseUrl}/cases` },
+                        { label: "Carte Mutuelle", href: `${baseUrl}/cases` },
+                        { label: "Ordonnance principale", href: `${baseUrl}/cases` },
+                        { label: "Directives anticipées", href: `${baseUrl}/cases` },
                     ].map((doc) => (
                         <Link
                             key={doc.label}

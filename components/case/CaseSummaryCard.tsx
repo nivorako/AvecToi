@@ -8,9 +8,8 @@ type CaseStatus = "action" | "ok" | "urgent";
 
 type Props = {
     title: string;
-    subtitle?: string;
-    category: string;
     categoryIcon: ReactNode;
+    categoryColor?: string;
     status: CaseStatus;
     meta: string;
     lastActivity: string;
@@ -25,9 +24,8 @@ const statusConfig: Record<CaseStatus, { label: string; variant: BadgeVariant }>
 
 export default function CaseSummaryCard({
     title,
-    subtitle,
-    category,
     categoryIcon,
+    categoryColor = "bg-primary/10",
     status,
     meta,
     lastActivity,
@@ -41,17 +39,14 @@ export default function CaseSummaryCard({
             className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-4 hover:bg-card/70 gap-3"
         >
             <div className="flex items-start gap-3 min-w-0">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xl">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl ${categoryColor}`}>
                     {categoryIcon}
                 </div>
                 <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-sm">{category}</span>
+                        <span className="font-semibold text-sm">{title}</span>
                         <Badge variant={variant}>{label}</Badge>
                     </div>
-                    {subtitle && (
-                        <div className="text-sm text-foreground mt-0.5">{subtitle}</div>
-                    )}
                     <div className="text-xs text-muted mt-1">{meta}</div>
                     <div className="text-xs text-muted">Dernière activité : {lastActivity}</div>
                 </div>

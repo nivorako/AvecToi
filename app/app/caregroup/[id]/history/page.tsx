@@ -70,7 +70,7 @@ async function createTask(formData: FormData) {
         return;
     }
 
-    revalidatePath(`/app/caregroup/${careGroup}/tasks`);
+    revalidatePath(`/app/caregroup/${careGroup}/history`);
 }
 
 function formatDateFR(iso: string) {
@@ -95,7 +95,7 @@ export default async function CareGroupHistoryPage({
     const user = await requireUser();
 
     const showAll = all === "1";
-    const baseUrl = `/app/caregroup/${encodeURIComponent(id)}/tasks`;
+    const baseUrl = `/app/caregroup/${encodeURIComponent(id)}/history`;
 
     const membership = await payloadREST<{ docs: Membership[] }>(
         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(id)}&limit=1&depth=0`,

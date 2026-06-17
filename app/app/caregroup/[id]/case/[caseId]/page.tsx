@@ -4,7 +4,6 @@ import Link from "next/link";
 
 import AddCaseAttachmentPanel from "@/components/case/AddCaseAttachmentPanel";
 import AddCaseTaskPanel from "@/components/case/AddCaseTaskPanel";
-import CareGroupBanner from "@/components/caregroup/CareGroupBanner";
 import Button from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import TaskItemRow from "@/components/task/TaskItemRow";
@@ -305,8 +304,7 @@ export default async function CasePage({
 
     return (
         <div>
-            {careGroupID ? <CareGroupBanner careGroupId={careGroupID} /> : null}
-
+            
             <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <div className="flex flex-col gap-6">
                     <Card>

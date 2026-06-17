@@ -20,15 +20,15 @@ export default function CareGroupBreadcrumbs({
         },
     ];
 
-    if (pathname.includes(`/app/caregroup/${careGroupId}/dossiers`)) {
+    if (pathname.includes(`/app/caregroup/${careGroupId}/cases`)) {
         items.push({
-            label: "Dossiers",
-            href: `/app/caregroup/${encodeURIComponent(careGroupId)}/dossiers`,
+            label: "Cases",
+            href: `/app/caregroup/${encodeURIComponent(careGroupId)}/cases`,
         });
-    } else if (pathname.includes(`/app/caregroup/${careGroupId}/tasks`)) {
+    } else if (pathname.includes(`/app/caregroup/${careGroupId}/history`)) {
         items.push({
-            label: "Agenda",
-            href: `/app/caregroup/${encodeURIComponent(careGroupId)}/tasks`,
+            label: "History",
+            href: `/app/caregroup/${encodeURIComponent(careGroupId)}/history`,
         });
     } else if (pathname.includes(`/app/caregroup/${careGroupId}/messages`)) {
         items.push({
@@ -49,10 +49,10 @@ export default function CareGroupBreadcrumbs({
 
     if (pathname.includes(`/app/caregroup/${careGroupId}/case/`)) {
         items.push({
-            label: "Dossiers",
-            href: `/app/caregroup/${encodeURIComponent(careGroupId)}/dossiers`,
+            label: "Cases",
+            href: `/app/caregroup/${encodeURIComponent(careGroupId)}/cases`,
         });
-        items.push({ label: "Dossier" });
+        items.push({ label: "Case" });
     }
 
     return (

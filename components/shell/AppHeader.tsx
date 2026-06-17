@@ -1,4 +1,7 @@
+"use client";
+
 import TopBar from "@/components/shell/TopBar";
+import SettingsDrawer from "./SettingsDrawer";
 
 function getFirstName(name?: string | null): string {
     if (!name) return "vous";
@@ -35,13 +38,14 @@ export default function AppHeader({ userName }: { userName?: string | null }) {
                     >
                         🔔
                     </button>
-                    <button
+                    {/* <button
                         type="button"
                         aria-label="Paramètres"
                         className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted"
                     >
                         ⚙️
-                    </button>
+                    </button> */}
+                    <SettingsDrawer />
                 </div>
             }
         />
