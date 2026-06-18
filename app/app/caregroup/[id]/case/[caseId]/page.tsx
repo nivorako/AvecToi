@@ -302,123 +302,207 @@ export default async function CasePage({
         : upcomingTasks.slice(0, 3);
     const doneShown = showAllDone ? doneTasks : doneTasks.slice(0, 3);
 
+    async function archiveCase(formData: FormData) {
+        "use server";
+        const caseID = String(formData.get("case") ?? "");
+        const careGroup = String(formData.get("careGroup") ?? "");
+        if (!caseID || !careGroup) return;
+
+        const user = await requireUser();
+        const membership = await payloadREST<{ docs: { role?: string }[] }>(
+            `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
+        ).then((r) => r.docs[0]);
+
+        if (membership?.role !== "owner") return;
+
+        await payloadREST(`/api/cases/${encodeURIComponent(caseID)}`, {
+            method: "PATCH",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ status: "archived" }),
+        });
+
+        revalidatePath(`/app/caregroup/${careGroup}/cases`);
+    }
+
+    async function deleteCase(formData: FormData) {
+        "use server";
+        const caseID = String(formData.get("case") ?? "");
+        const careGroup = String(formData.get("careGroup") ?? "");
+        if (!caseID || !careGroup) return;
+
+        const user = await requireUser();
+        const membership = await payloadREST<{ docs: { role?: string }[] }>(
+            `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
+        ).then((r) => r.docs[0]);
+
+        if (membership?.role !== "owner") return;
+
+        await payloadREST(`/api/cases/${encodeURIComponent(caseID)}`, {
+            method: "DELETE",
+        });
+
+        const { redirect } = await import("next/navigation");
+        redirect(`/app/caregroup/${careGroup}/cases`);
+    }
+
     return (
         <div>
-            
-            <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <div className="flex flex-col gap-6">
-                    <Card>
-                        <CardHeader
-                            title="Tâches à faire"
-                            action={
-                                !showAllTodo && upcomingTasks.length > 3 ? (
-                                    <Link
-                                        href={buildHref({ allTodo: true })}
-                                        className="text-sm font-semibold text-primary"
-                                    >
-                                        Voir plus
-                                    </Link>
-                                ) : showAllTodo ? (
-                                    <Link
-                                        href={buildHref({ allTodo: false })}
-                                        className="text-sm font-semibold text-primary"
-                                    >
-                                        Voir moins
-                                    </Link>
-                                ) : null
-                            }
-                        />
-                        <CardContent>
-                            <div className="flex flex-col gap-2">
-                                {upcomingShown.length ? (
-                                    upcomingShown.map((t) => (
-                                        <TaskItemRow
-                                            key={t.id}
-                                            taskID={t.id}
-                                            title={t.title ?? t.id}
-                                            createdAtLabel={
-                                                t.createdAt
-                                                    ? formatDateFR(t.createdAt)
-                                                    : ""
-                                            }
-                                            careGroupId={id}
-                                            caseId={caseId}
-                                            urgency={t.urgency}
-                                        />
-                                    ))
-                                ) : (
-                                    <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
-                                        Aucune tâche à faire.
-                                    </div>
-                                )}
-                            </div>
+            {/* En-tête de page */}
+            <div className="mb-2">
+                <h1 className="text-2xl font-bold">{caseDoc.title ?? "Dossier"}</h1>
+                {/* badge statut si nécessaire */}
+            </div>
 
-                            {/* Patients will see tasks but not the create panel (read-only). */}
-                            {canCreateTask ? (
-                                <AddCaseTaskPanel
-                                    careGroupId={careGroupID ?? ""}
-                                    caseId={caseId}
-                                    caseType={normalizedCaseType}
-                                    action={createTask}
-                                    users={users}
-                                />
+            {/*Bloc résumé */}
+            <div className="rounded-2xl bg-primary/10 p-4 mt-3">
+                <div className="flex flex-col gap-1.5 text-sm">
+                    <div className="flex items-center gap-2">
+                        <span>📄</span>
+                        <span>{attachments.docs.length} documents</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span>✅</span>
+                        <span>{upcomingTasks.length} tâches ouvertes</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span>📅</span>
+                        <span>
+                            {upcomingTasks.filter(t => t.dueDate).length} rendez-vous à venir
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* grille raccourcis */}
+            <div className="grid grid-cols-3 gap-2">
+                <div className="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card p-3 text-sm">
+                    <span>📄</span>
+                    <span>Documents ({attachments.docs.length})</span>
+                </div>
+                <div className="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card p-3 text-sm">
+                    <span>✅</span>
+                    <span>Tâches ({upcomingTasks.length})</span>
+                </div>
+                <div className="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card p-3 text-sm">
+                    <span>📝</span>
+                    <span>Notes</span>
+                </div>
+            </div>
+
+            {/* <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2"> */}
+            <div className="mt-4 flex flex-col gap-4">
+                
+                <Card>
+                    <CardHeader
+                        title="Tâches à faire"
+                        action={
+                            !showAllTodo && upcomingTasks.length > 3 ? (
+                                <Link
+                                    href={buildHref({ allTodo: true })}
+                                    className="text-sm font-semibold text-primary"
+                                >
+                                    Voir plus
+                                </Link>
+                            ) : showAllTodo ? (
+                                <Link
+                                    href={buildHref({ allTodo: false })}
+                                    className="text-sm font-semibold text-primary"
+                                >
+                                    Voir moins
+                                </Link>
+                            ) : null
+                        }
+                    />
+                    <CardContent>
+                        <div className="flex flex-col gap-2">
+                            {upcomingShown.length ? (
+                                upcomingShown.map((t) => (
+                                    <TaskItemRow
+                                        key={t.id}
+                                        taskID={t.id}
+                                        title={t.title ?? t.id}
+                                        createdAtLabel={
+                                            t.createdAt
+                                                ? formatDateFR(t.createdAt)
+                                                : ""
+                                        }
+                                        careGroupId={id}
+                                        caseId={caseId}
+                                        urgency={t.urgency}
+                                    />
+                                ))
                             ) : (
-                                <div className="mt-4 text-sm text-muted">
-                                    Tu n’as pas les droits pour ajouter une
-                                    task.
+                                <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
+                                    Aucune tâche à faire.
                                 </div>
                             )}
-                        </CardContent>
-                    </Card>
+                        </div>
 
-                    <Card>
-                        <CardHeader
-                            title="Tâches archivées"
-                            action={
-                                !showAllDone && doneTasks.length > 3 ? (
-                                    <Link
-                                        href={buildHref({ allDone: true })}
-                                        className="text-sm font-semibold text-primary"
-                                    >
-                                        Voir plus
-                                    </Link>
-                                ) : showAllDone ? (
-                                    <Link
-                                        href={buildHref({ allDone: false })}
-                                        className="text-sm font-semibold text-primary"
-                                    >
-                                        Voir moins
-                                    </Link>
-                                ) : null
-                            }
-                        />
-                        <CardContent>
-                            <div className="flex flex-col gap-2">
-                                {doneShown.length ? (
-                                    doneShown.map((t) => (
-                                        <TaskItemRow
-                                            key={t.id}
-                                            taskID={t.id}
-                                            title={t.title ?? t.id}
-                                            createdAtLabel={
-                                                t.createdAt
-                                                    ? formatDateFR(t.createdAt)
-                                                    : ""
-                                            }
-                                            careGroupId={id}
-                                            caseId={caseId}
-                                            urgency={t.urgency}
-                                        />
-                                    ))
-                                ) : (
-                                    <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
-                                        Aucune tâche archivée.
-                                    </div>
-                                )}
+                        {/* Patients will see tasks but not the create panel (read-only). */}
+                        {canCreateTask ? (
+                            <AddCaseTaskPanel
+                                careGroupId={careGroupID ?? ""}
+                                caseId={caseId}
+                                caseType={normalizedCaseType}
+                                action={createTask}
+                                users={users}
+                            />
+                        ) : (
+                            <div className="mt-4 text-sm text-muted">
+                                Tu n’as pas les droits pour ajouter une
+                                task.
                             </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader
+                        title="Tâches archivées"
+                        action={
+                            !showAllDone && doneTasks.length > 3 ? (
+                                <Link
+                                    href={buildHref({ allDone: true })}
+                                    className="text-sm font-semibold text-primary"
+                                >
+                                    Voir plus
+                                </Link>
+                            ) : showAllDone ? (
+                                <Link
+                                    href={buildHref({ allDone: false })}
+                                    className="text-sm font-semibold text-primary"
+                                >
+                                    Voir moins
+                                </Link>
+                            ) : null
+                        }
+                    />
+                    <CardContent>
+                        <div className="flex flex-col gap-2">
+                            {doneShown.length ? (
+                                doneShown.map((t) => (
+                                    <TaskItemRow
+                                        key={t.id}
+                                        taskID={t.id}
+                                        title={t.title ?? t.id}
+                                        createdAtLabel={
+                                            t.createdAt
+                                                ? formatDateFR(t.createdAt)
+                                                : ""
+                                        }
+                                        careGroupId={id}
+                                        caseId={caseId}
+                                        urgency={t.urgency}
+                                    />
+                                ))
+                            ) : (
+                                <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
+                                    Aucune tâche archivée.
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
 
                 <Card>
                     <CardHeader title="Mediathéque" />
@@ -532,6 +616,29 @@ export default async function CasePage({
                     </CardContent>
                 </Card>
             </div>
+
+            {/* daanger zone */}
+            {role === "owner" && (
+                <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4">
+                    <h2 className="text-sm font-semibold text-rose-700 mb-3">Zone de danger</h2>
+                    <div className="flex flex-col gap-2">
+                        <form action={archiveCase}>
+                            <input type="hidden" name="case" value={caseId} />
+                            <input type="hidden" name="careGroup" value={careGroupID ?? ""} />
+                            <button type="submit" className="w-full rounded-xl bg-white border border-rose-300 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50">
+                                Archiver ce dossier
+                            </button>
+                        </form>
+                        <form action={deleteCase}>
+                            <input type="hidden" name="case" value={caseId} />
+                            <input type="hidden" name="careGroup" value={careGroupID ?? ""} />
+                            <button type="submit" className="w-full rounded-xl bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700">
+                                Supprimer définitivement
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

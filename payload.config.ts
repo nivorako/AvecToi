@@ -2155,6 +2155,16 @@ export default buildConfig({
                     type: "textarea",
                     required: false,
                 },
+                {
+                    name: "status",
+                    type: "select",
+                    required: false,
+                    defaultValue: "active",
+                    options: [
+                        { label: "Actif", value: "active" },
+                        { label: "Archivé", value: "archived" },
+                    ],
+                },
             ],
         },
 

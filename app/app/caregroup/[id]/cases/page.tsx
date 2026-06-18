@@ -38,8 +38,12 @@ export default async function CareGroupCasesPage({
 
     await requireUser();
 
+    // const cases = await payloadREST<{ docs: Case[] }>(
+    //     `/api/cases?where[careGroup][equals]=${encodeURIComponent(id)}&limit=50&depth=0`,
+    // );
+
     const cases = await payloadREST<{ docs: Case[] }>(
-        `/api/cases?where[careGroup][equals]=${encodeURIComponent(id)}&limit=50&depth=0`,
+        `/api/cases?where[careGroup][equals]=${encodeURIComponent(id)}&where[status][not_equals]=archived&limit=50&depth=0`,
     );
 
     const [tasksRes, attachmentsRes] = await Promise.all([
