@@ -2,6 +2,7 @@
 
 import TopBar from "@/components/shell/TopBar";
 import SettingsDrawer from "./SettingsDrawer";
+import Breadcrumb from "./Breadcrumb";
 
 function getFirstName(name?: string | null): string {
     if (!name) return "vous";
@@ -27,6 +28,7 @@ export default function AppHeader({ userName }: { userName?: string | null }) {
                     <span className="text-base font-semibold">
                         Bonjour, {firstName} 👋
                     </span>
+                    <Breadcrumb />
                 </div>
             }
             right={

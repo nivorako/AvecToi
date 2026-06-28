@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 
 type Item = {
     label: string;
@@ -19,13 +20,27 @@ const ITEMS: Item[] = [
     { icon: "🔔", label: "Notifications", href: "/app/notifications" },
     { icon: "⚙️", label: "Paramètres",   href: "/app/settings" },
     { icon: "❓", label: "Aide",          href: "/app/help" },
-    { icon: "🚪", label: "Déconnexion",   href: "/api/users/logout", danger: true },
+    { icon: "🚪", label: "Déconnexion",   danger: true },
 ];
 
 export default function SettingsDrawer() {
     const [open, setOpen] = useState(false);
-
+    const [loadingLogout, setLoadingLogout] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const router = useRouter();
+     async function handleLogout() {
+        setLoadingLogout(true);
+        try {
+            await fetch("/api/auth/logout", {
+                method: "POST",
+                credentials: "include",
+            });
+        } finally {
+            setOpen(false);
+            router.replace("/");
+            setLoadingLogout(false);
+        }
+    }
 
     useEffect(() => {
         setMounted(true);
@@ -78,10 +93,10 @@ export default function SettingsDrawer() {
                         className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-muted text-lg"
                     >
                         ✕
-                    </button>
+                    </button>     
                 </div>
 
-                <nav className="flex flex-col py-2">
+                {/* <nav className="flex flex-col py-2">
                     {ITEMS.map((item) => (
                         <Link
                             key={item.label}
@@ -95,7 +110,51 @@ export default function SettingsDrawer() {
                             <span className="font-medium">{item.label}</span>
                         </Link>
                     ))}
+                </nav> */}
+
+                 <nav className="flex flex-col py-2">
+                    {ITEMS.map((item) => (
+                        item.label === "Déconnexion" ? (
+                            <button
+                                key={item.label}
+                                type="button"
+                                onClick={handleLogout}
+                                disabled={loadingLogout}
+                                className={`flex items-center gap-3 px-5 py-3.5 text-sm hover:bg-gray-50 text-left w-full ${
+                                    item.danger ? "text-red-500" : "text-gray-800"
+                                }`}
+                            >
+                                <span className="text-xl w-7 shrink-0">{item.icon}</span>
+                                <span className="font-medium">
+                                    {loadingLogout ? "..." : item.label}
+                                </span>
+                            </button>
+                        ) : (
+                            <Link
+                                key={item.label}
+                                href={item.href ?? "#"} 
+                                onClick={() => setOpen(false)}
+                                className={`flex items-center gap-3 px-5 py-3.5 text-sm hover:bg-gray-50 ${
+                                    item.danger ? "text-red-500" : "text-gray-800"
+                                }`}
+                            >
+                                <span className="text-xl w-7 shrink-0">{item.icon}</span>
+                                <span className="font-medium">{item.label}</span>
+                            </Link>
+                        )
+                    ))}
                 </nav>
+
+                {/* <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={loadingLogout}
+                    className="flex items-center gap-3 px-5 py-3.5 text-sm hover:bg-gray-50 text-red-500"
+                >
+                    <span className="text-xl w-7 shrink-0">🚪</span>
+                    <span className="font-medium">Déconnexion</span>
+                </button> */}
+
             </div>
         </>,
         document.body,

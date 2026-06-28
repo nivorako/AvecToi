@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/requireUser";
-import CareGroupBanner from "@/components/caregroup/CareGroupBanner";
+
+import TaskDescriptionEditor from "@/components/task/TaskDescriptionEditor";
 import { payloadREST } from "@/lib/payloadRest";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { TaskAttachmentsUploader } from "@/components/task/TaskAttachmentsUploader";
@@ -30,6 +31,7 @@ type Task = {
     status: string;
     createdAt: string;
     updatedAt: string;
+    dueDate?: string;
     case?: string | { id: string; title: string };
     assignedTo?: string | { id: string; name?: string; title: string };
     urgency?: "low" | "high";
@@ -50,9 +52,10 @@ type TaskAttachment = {
 export default async function TaskPage({
     params,
 }: {
-    params: Promise<{ caseId: string; taskId: string }>;
+    params: Promise<{ id: string; caseId: string; taskId: string }>;
 }) {
-    const { caseId, taskId } = await params;
+
+    const { id, caseId, taskId } = await params;
     const user = await requireUser();
     // Récupérer tasks pour obtenir le careGroupId
     const tasks = await payloadREST<{ docs: Task[] }>(
@@ -110,10 +113,67 @@ export default async function TaskPage({
 
     const canUpdateCase = canCreateTask;
     return (
+
         <>
-            {careGroupId ? <CareGroupBanner careGroupId={careGroupId} /> : null}
-            <p>Vous êtes dans Dossier {caseTitle}</p>
-            <h1> Tâche : {task?.title}</h1>
+
+            {/* Résumé de la page */}
+            <div className="rounded-2xl bg-primary/10 p-4 flex flex-col gap-3 mb-4">
+                <div className="flex items-center justify-between">
+                    <h1 className="text-2xl font-bold text-primary">Tache : {task.title ?? "Dossier"}</h1>
+                </div>
+                
+                <div className="flex flex-col flex-wrap gap-2 text-sm">
+
+                    {/* Badge statut */}
+                    {(() => {
+                        const statusConfig = {
+                            todo:        { label: "À faire",  classes: "bg-yellow-100 text-yellow-700" },
+                            in_progress: { label: "En cours", classes: "bg-blue-100 text-blue-700"    },
+                            done:        { label: "Terminée", classes: "bg-green-100 text-green-700"  },
+                        };
+                        const cfg = statusConfig[task.status as keyof typeof statusConfig] 
+                                ?? statusConfig.todo;
+                        return (
+                            <span className={`inline-flex w-fit rounded-full px-3 py-1 font-medium ${cfg.classes}`}>
+                                {cfg.label}
+                            </span>
+                        );
+                    })()}
+
+                    {/* Assigné à */}
+                    {task.assignedTo && (
+                        <span className="text-muted">
+                            Assigné à :{" "}
+                            <strong>
+                                {typeof task.assignedTo === "object"
+                                    ? task.assignedTo.name ?? task.assignedTo.id
+                                    : task.assignedTo}
+                            </strong>
+                        </span>
+                    )}
+
+                    {/* Échéance */}
+                    {task.dueDate && (() => {
+                        const due = new Date(task.dueDate);
+                        const isLate = due < new Date() && task.status !== "done";
+                        const label = due.toLocaleDateString("fr-FR", {
+                            day: "2-digit", month: "long", year: "numeric",
+                        });
+                        return (
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="text-muted">Échéance : <strong>{label}</strong></span>
+                                {isLate && (
+                                    <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-600">
+                                        En retard
+                                    </span>
+                                )}
+                            </div>
+                        );
+                    })()}
+
+                </div>
+
+            </div>
 
             <TaskMetadataBar
                 taskID={taskId}
@@ -122,35 +182,18 @@ export default async function TaskPage({
                 initialSubTasks={task?.subtasks || []}
             />
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <Card>
-                    <CardHeader title="Informations" />
-                    <CardContent>
-                        <p>
-                            Assigné à:{" "}
-                            {typeof task?.assignedTo === "object"
-                                ? task.assignedTo.name || task.assignedTo.id
-                                : "Non assigné"}
-                        </p>
-                        <p>{task?.createdAt}</p>
-                        <p>date limite</p>
-                        <p>Evenement liés (rendez-vous, rappels, etc.)</p>
-                    </CardContent>
-                </Card>
+
                 <Card>
                     <CardHeader title="Description" />
                     <CardContent>
-                        <p>description détaillée</p>
-                        <p>Bouton modifier description</p>
+                        <TaskDescriptionEditor
+                            taskID={taskId}
+                            initialDescription={task.description}
+                            canEdit={canUpdateCase}
+                        />
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardHeader title="Commentaires" />
-                    <CardContent>
-                        <p>liste des commentaires</p>
-                        <p>Auteur + date + contenu</p>
-                        <p>+ bouton pour ajouter un commentaire</p>
-                    </CardContent>
-                </Card>
+                
                 <Card>
                     <CardHeader title="Mediathéque" />
                     <CardContent>

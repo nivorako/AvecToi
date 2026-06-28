@@ -7,6 +7,7 @@ import AddTaskPanel from "@/components/caregroup/AddTaskPanel";
 import CareGroupBanner from "@/components/caregroup/CareGroupBanner";
 import TaskItemRow from "@/components/task/TaskItemRow";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
@@ -299,8 +300,9 @@ export default async function CareGroupPage({
         .slice(0, 3);
 
     return (
+        
         <div className="flex flex-col gap-5">
-
+            
             {/* Section 1 — Résumé du jour */}
             <div className="rounded-2xl bg-primary/10 p-4">
                 <h2 className="text-base font-bold text-primary mb-3">Résumé du jour</h2>
@@ -327,38 +329,6 @@ export default async function CareGroupPage({
                     </Link>
                 </div>
             </div>
-
-            {/* Section 2 — Accès rapide */}
-            {/* <div>
-                <h2 className="text-sm font-semibold text-foreground mb-3">Accès rapide</h2>
-                <div className="grid grid-cols-4 gap-2">
-                    {[
-                        { label: "Cases", href: `/app/caregroup/${id}/cases`, icon: (
-                            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" /></svg>
-                        )},
-                        { label: "Calendrier", href: `/app/caregroup/${id}/calendar`, icon: (
-                            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
-                        )},
-                        { label: "Messages", href: `/app/caregroup/${id}/messages`, icon: (
-                            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-                        )},
-                        { label: "History", href: `/app/caregroup/${id}/history`, icon: (
-                            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>
-                        )},
-                    ].map((item) => (
-                        <Link
-                            key={item.label}
-                            href={item.href}
-                            className="flex flex-col items-center gap-1.5 rounded-2xl bg-card border border-border p-3 hover:bg-muted/10"
-                        >
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                                {item.icon}
-                            </div>
-                            <span className="text-xs text-muted">{item.label}</span>
-                        </Link>
-                    ))}
-                </div>
-            </div> */}
 
             {/* Section 3 — À traiter */}
             <div>

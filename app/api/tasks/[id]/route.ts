@@ -125,6 +125,7 @@ export async function PATCH(
         status?: unknown;
         urgency?: unknown;
         subtasks?: unknown;
+        description?: unknown;
     } | null;
 
     const updateData: Record<string, unknown> = {};
@@ -149,6 +150,11 @@ export async function PATCH(
     // Handle subtasks update
     if (Array.isArray(json?.subtasks)) {
         updateData.subtasks = json.subtasks;
+    }
+
+    // Handle description update
+    if (typeof json?.description === "string") {
+        updateData.description = json.description;
     }
 
     if (Object.keys(updateData).length === 0) {

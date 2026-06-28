@@ -9,12 +9,9 @@ type Props = {
     initialUrgency?: Urgency;
 };
 
-const urgencyConfig = {
-    low: {
-        label: "Peut attendre",
-        color: "bg-green-500",
-    },
-    high: { label: "Très urgent", color: "bg-red-500" },
+const urgencyConfig: Record<Urgency, { label: string; activeClasses: string; dotColor: string }> = {
+    low:  { label: "Peut attendre", activeClasses: "bg-green-100 text-green-700 border-green-300",  dotColor: "bg-green-500" },
+    high: { label: "Très urgent",   activeClasses: "bg-red-100 text-red-700 border-red-300",        dotColor: "bg-red-500"   },
 };
 
 export default function TaskUrgencyIndicator({
@@ -22,15 +19,10 @@ export default function TaskUrgencyIndicator({
     initialUrgency = "low",
 }: Props) {
     const [pending, startTransition] = useTransition();
-    const [currentUrgency, setCurrentUrgency] =
-        useState<Urgency>(initialUrgency);
-
-    const config = urgencyConfig[currentUrgency] || urgencyConfig.low;
-
-    const [isOpen, setIsOpen] = useState(false);
+    const [currentUrgency, setCurrentUrgency] = useState<Urgency>(initialUrgency);
 
     const updateUrgency = (newUrgency: Urgency) => {
-        setIsOpen(false);
+        if (newUrgency === currentUrgency) return;
         startTransition(async () => {
             try {
                 const res = await fetch(`/api/tasks/${taskID}`, {
@@ -48,47 +40,32 @@ export default function TaskUrgencyIndicator({
     };
 
     return (
-        <div className="relative">
-            <div className="flex justify-between gap-3 rounded-2xl border border-border bg-card px-6 py-3">
-                <div className="flex items-center gap-2">
-                    <div
-                        className={`h-4 w-4 rounded-full ${config.color}`}
-                        title={config.label}
-                    />
-                    <span className="font-medium">{config.label}</span>
-                </div>
-                <button
-                    type="button"
-                    onClick={() => setIsOpen(!isOpen)}
-                    disabled={pending}
-                    className="btn-secondary px-3 py-1.5 text-sm"
-                    title="Changer le niveau d'urgence"
-                >
-                    Modifier urgence
-                </button>
+        <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted uppercase tracking-wide">Urgence</span>
+            <div className="flex gap-2">
+                {(Object.keys(urgencyConfig) as Urgency[]).map((key) => {
+                    const opt = urgencyConfig[key];
+                    const isActive = currentUrgency === key;
+                    return (
+                        <button
+                            key={key}
+                            type="button"
+                            onClick={() => updateUrgency(key)}
+                            disabled={pending}
+                            className={`
+                                flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm font-medium
+                                transition-all duration-150 disabled:opacity-50
+                                ${isActive
+                                    ? opt.activeClasses
+                                    : "border-border text-muted bg-transparent hover:bg-muted/10"}
+                            `}
+                        >
+                            <span className={`h-2 w-2 rounded-full ${isActive ? opt.dotColor : "bg-muted/40"}`} />
+                            {opt.label}
+                        </button>
+                    );
+                })}
             </div>
-
-            {isOpen && (
-                <div className="absolute top-full left-0 mt-2 z-10 rounded-2xl border border-border bg-card shadow-lg p-2 min-w-[200px]">
-                    {(Object.keys(urgencyConfig) as Urgency[]).map((key) => {
-                        const option = urgencyConfig[key];
-                        return (
-                            <button
-                                key={key}
-                                type="button"
-                                onClick={() => updateUrgency(key)}
-                                disabled={pending}
-                                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/70 disabled:opacity-50 text-sm"
-                            >
-                                <div
-                                    className={`h-3 w-3 rounded-full ${option.color}`}
-                                />
-                                <span>{option.label}</span>
-                            </button>
-                        );
-                    })}
-                </div>
-            )}
         </div>
     );
 }

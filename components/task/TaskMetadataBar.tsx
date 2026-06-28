@@ -21,26 +21,35 @@ export default function TaskMetadataBar({
     const [subTasks, setSubTasks] = useState(initialSubTasks);
     const [status, setStatus] = useState<Status>(initialStatus || "todo");
 
-    return (
-        <>
-            <div className="mt-4 mb-6 pb-4 rounded-2xl border border-border bg-card shadow-sm">
-                <TaskUrgencyIndicator
-                    taskID={taskID}
-                    initialUrgency={initialUrgency}
-                />
-                <TaskStatusIndicator
-                    taskID={taskID}
-                    status={status}
-                    disabled={subTasks.length >= 2}
-                />
-            </div>
+    const hasSubTasks = subTasks.length > 0;
 
+    return (
+        <div className="mb-6 rounded-2xl border border-border bg-card shadow-sm p-4 flex flex-col gap-4">
+
+            {/* Statut — manuel si pas de sous-tâches, lecture seule si sous-tâches */}
+            <TaskStatusIndicator
+                taskID={taskID}
+                status={status}
+                disabled={hasSubTasks}
+                onStatusChange={setStatus}
+            />
+
+            {/* Sous-tâches — gèrent le statut automatiquement quand elles existent */}
             <TaskSubtasksManager
                 taskID={taskID}
                 initialSubTasks={subTasks}
                 onSubTasksChange={setSubTasks}
                 onStatusChange={setStatus}
             />
-        </>
+
+            {/* Séparateur */}
+            <div className="border-t border-border" />
+
+            {/* Urgence */}
+            <TaskUrgencyIndicator
+                taskID={taskID}
+                initialUrgency={initialUrgency}
+            />
+        </div>
     );
 }

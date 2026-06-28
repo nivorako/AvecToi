@@ -12,6 +12,8 @@ type Props = {
     careGroupId?: string;
     caseId?: string;
     urgency?: Urgency;
+    dueDate?: string;
+    assignedTo?: string;
 };
 
 const urgencyConfig = {
@@ -26,10 +28,11 @@ const urgencyConfig = {
 export default function TaskItemRow({
     taskID,
     title,
-    createdAtLabel,
+    dueDate,
     careGroupId,
     caseId,
     urgency = "low",
+    assignedTo,
 }: Props) {
     const [pending, startTransition] = useTransition();
     const [currentUrgency, setCurrentUrgency] = useState<Urgency>(urgency);
@@ -61,9 +64,9 @@ export default function TaskItemRow({
             : `/app/tasks/${taskID}`;
 
     return (
-        <div className="rounded-2xl border border-border bg-card px-3 py-2 text-sm">
+        <Link href={taskHref} className="block rounded-2xl border border-border bg-card px-3 py-2 mb-2 text-sm">
             <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
+                <div className="min-w-full flex-1">
                     <div className="flex items-center gap-2">
                         <div
                             className={`h-3 w-3 rounded-full ${config.color}`}
@@ -71,34 +74,32 @@ export default function TaskItemRow({
                         />
                         <div className="font-medium">{title}</div>
                     </div>
-                    <div className="text-xs text-muted">
-                        {createdAtLabel ?? ""}
-                    </div>
-                </div>
 
-                <div className="flex shrink-0 items-start gap-2">
-                    <button
-                        type="button"
-                        onClick={cycleUrgency}
-                        disabled={pending}
-                        className="btn-secondary px-2 py-1.5 leading-none text-xs"
-                        title={`Changer urgence: ${config.label}`}
-                    >
-                        {config.label}
-                    </button>
-                    <Link
-                        href={taskHref}
-                        className="btn-secondary px-3 py-1.5 leading-none"
-                        onClick={(e) => {
-                            if (pending) {
-                                e.preventDefault();
-                            }
-                        }}
-                    >
-                        Détails
-                    </Link>
+                    <div className="text-xs text-muted">
+                        {dueDate && (() => {
+                            const due = new Date(dueDate);
+                            const isLate = due < new Date();
+                            const label = due.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
+                            return (
+                                <div className="flex items-center justify-between gap-1 text-xs text-muted w-full">
+                                    <span>Échéance : {label}</span>
+                                    {isLate && (
+                                        <span className="rounded bg-red-100 px-1 py-0.5 text-xs font-semibold text-red-600">
+                                            En retard
+                                        </span>
+                                    )}
+                                </div>
+                            );
+                        })()}
+                    </div>
+
+                    {assignedTo && (
+                        <div className="text-xs text-muted">
+                            Assigné à : {assignedTo}
+                        </div>
+                    )}
                 </div>
             </div>
-        </div>
+        </Link>
     );
 }

@@ -2,16 +2,15 @@ import { revalidatePath } from "next/cache";
 
 import Link from "next/link";
 
-import AddCaseAttachmentPanel from "@/components/case/AddCaseAttachmentPanel";
-import AddCaseTaskPanel from "@/components/case/AddCaseTaskPanel";
-import Button from "@/components/ui/Button";
-import { Card, CardContent, CardHeader } from "@/components/ui/Card";
-import TaskItemRow from "@/components/task/TaskItemRow";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
-import { CaseAttachmentsUploader } from "../../../../../../components/case/CaseAttachmentsUploader";
-import { CaseAttachmentRow } from "../../../../../../components/case/CaseAttachmentRow";
+type Message = {
+    id: string;
+    content?: string;
+    createdAt?: string;
+    author?: string | { id: string; name?: string; email?: string };
+};
 
 type Membership = {
     id: string;
@@ -25,6 +24,7 @@ type CaseDoc = {
     title?: string;
     type?: string;
     description?: string;
+    status?: string;
     careGroup?: string | { id: string; name?: string };
 };
 
@@ -34,18 +34,18 @@ type Task = {
     createdAt?: string;
     status?: string;
     dueDate?: string;
+    assignedTo?: string;
     urgency?: "low" | "high";
 };
 
-function formatDateFR(iso: string) {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return iso;
-    return new Intl.DateTimeFormat("fr-FR", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-    }).format(d);
-}
+type CaseInformation = {
+    id: string;
+    category?: "doctor" | "insurance" | "contact" | "other";
+    title?: string;
+    subtitle?: string;
+    phone?: string;
+    notes?: string;
+};
 
 type CaseAttachment = {
     id: string;
@@ -65,6 +65,16 @@ type TaskAttachment = {
     description?: string;
     task?: string;
 };
+
+function formatDateFR(iso: string) {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    return new Intl.DateTimeFormat("fr-FR", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+    }).format(d);
+}
 
 async function createTask(formData: FormData) {
     "use server";
@@ -235,6 +245,7 @@ export default async function CasePage({
               `/api/memberships?where[careGroup][equals]=${encodeURIComponent(careGroupID)}&limit=100&depth=1`,
           )
         : { docs: [] };
+
     const users = careGroupMembers.docs
         .map((m) => m.user)
         .filter(
@@ -243,16 +254,16 @@ export default async function CasePage({
         );
 
     const role = membership?.role;
+
     const normalizedCaseType =
         caseDoc?.type === "medical" || caseDoc?.type === "custom"
             ? caseDoc.type
             : "";
+
     const canCreateTask =
         role === "owner" ||
         role === "family" ||
         (role === "professional" && normalizedCaseType === "medical");
-
-    const canUpdateCase = canCreateTask;
 
     // UI permissions:
     // - patients are read-only on dossiers (no tasks creation, no attachments upload, no notes edits)
@@ -261,6 +272,45 @@ export default async function CasePage({
     const attachments = await payloadREST<{ docs: CaseAttachment[] }>(
         `/api/case-attachments?where[case][equals]=${encodeURIComponent(caseId)}&limit=50&depth=0`,
     );
+
+    const caseInformations = await payloadREST<{ docs: CaseInformation[] }>(
+        `/api/case-informations?where[case][equals]=${encodeURIComponent(caseId)}&limit=100&depth=0`,
+    );
+
+    // Ajouter après les autres récupérations de données (après ligne 268)
+    // Récupérer les messages du careGroup pour afficher le compteur
+    const messages = careGroupID
+        ? await payloadREST<{ docs: Message[] }>(
+            `/api/messages?where[careGroup][equals]=${encodeURIComponent(careGroupID)}&limit=50&sort=-createdAt&depth=1`,
+        )
+        : { docs: [] };
+ 
+    const today = new Date();
+
+    const todayMessages = messages.docs.filter((m) => {
+        if (!m.createdAt) return false;
+        const d = new Date(m.createdAt);
+        return (
+            d.getDate() === today.getDate() &&
+            d.getMonth() === today.getMonth() &&
+            d.getFullYear() === today.getFullYear()
+        );
+    });
+ 
+    // Actions importantes : urgentes + échéance dans moins de 7 jours
+    const now = new Date();
+    const in7Days = new Date();
+    in7Days.setDate(now.getDate() + 7);
+
+    const importantTasks = tasks.docs.filter((t) => {
+        if (t.status === "done") return false;
+        const isUrgent = t.urgency === "high";
+        const isDueSoon =
+            t.dueDate &&
+            new Date(t.dueDate).getTime() <= in7Days.getTime() &&
+            new Date(t.dueDate).getTime() >= now.getTime();
+        return isUrgent || isDueSoon;
+    });
 
     // Récupérer les task-attachments liés aux tâches de cette case
     const taskAttachments = await payloadREST<{ docs: TaskAttachment[] }>(
@@ -296,11 +346,6 @@ export default async function CasePage({
                 String(b.title ?? b.id),
             );
         });
-
-    const upcomingShown = showAllTodo
-        ? upcomingTasks
-        : upcomingTasks.slice(0, 3);
-    const doneShown = showAllDone ? doneTasks : doneTasks.slice(0, 3);
 
     async function archiveCase(formData: FormData) {
         "use server";
@@ -347,274 +392,207 @@ export default async function CasePage({
 
     return (
         <div>
-            {/* En-tête de page */}
-            <div className="mb-2">
-                <h1 className="text-2xl font-bold">{caseDoc.title ?? "Dossier"}</h1>
-                {/* badge statut si nécessaire */}
-            </div>
-
-            {/*Bloc résumé */}
-            <div className="rounded-2xl bg-primary/10 p-4 mt-3">
+            
+            {/* Section 1 — Résumé du dossier */}
+            <div className="rounded-2xl bg-primary/10 p-4">
+                <h1 className="text-base font-bold text-primary mb-3">Dossier : {caseDoc.title ?? "Dossier"}</h1>
+                
+                {/* Stats */}
                 <div className="flex flex-col gap-1.5 text-sm">
-                    <div className="flex items-center gap-2">
-                        <span>📄</span>
-                        <span>{attachments.docs.length} documents</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span>✅</span>
-                        <span>{upcomingTasks.length} tâches ouvertes</span>
-                    </div>
+                    {/* Rendez-vous */}
                     <div className="flex items-center gap-2">
                         <span>📅</span>
-                        <span>
-                            {upcomingTasks.filter(t => t.dueDate).length} rendez-vous à venir
-                        </span>
+                        <span>{upcomingTasks.filter(t => t.dueDate).length} rendez-vous à venir</span>
+                    </div>
+
+                    
+
+                    {/* Messages */}
+                    <div className="flex items-center gap-2">
+                        <span>💬</span>
+                        <span>{todayMessages.length} nouveaux messages aujourd'hui</span>
+                    </div>
+                    
+                    {/* Notes */}
+                    <div className="flex items-center gap-2">
+                        <span>📝</span>
+                        <span>{caseDoc?.description ? "Notes ajoutées" : "Aucune note"}</span>
                     </div>
                 </div>
             </div>
 
-            {/* grille raccourcis */}
-            <div className="grid grid-cols-3 gap-2">
-                <div className="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card p-3 text-sm">
-                    <span>📄</span>
-                    <span>Documents ({attachments.docs.length})</span>
-                </div>
-                <div className="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card p-3 text-sm">
-                    <span>✅</span>
-                    <span>Tâches ({upcomingTasks.length})</span>
-                </div>
-                <div className="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card p-3 text-sm">
-                    <span>📝</span>
-                    <span>Notes</span>
-                </div>
-            </div>
-
-            {/* <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2"> */}
-            <div className="mt-4 flex flex-col gap-4">
-                
-                <Card>
-                    <CardHeader
-                        title="Tâches à faire"
-                        action={
-                            !showAllTodo && upcomingTasks.length > 3 ? (
-                                <Link
-                                    href={buildHref({ allTodo: true })}
-                                    className="text-sm font-semibold text-primary"
-                                >
-                                    Voir plus
-                                </Link>
-                            ) : showAllTodo ? (
-                                <Link
-                                    href={buildHref({ allTodo: false })}
-                                    className="text-sm font-semibold text-primary"
-                                >
-                                    Voir moins
-                                </Link>
-                            ) : null
-                        }
-                    />
-                    <CardContent>
-                        <div className="flex flex-col gap-2">
-                            {upcomingShown.length ? (
-                                upcomingShown.map((t) => (
-                                    <TaskItemRow
-                                        key={t.id}
-                                        taskID={t.id}
-                                        title={t.title ?? t.id}
-                                        createdAtLabel={
-                                            t.createdAt
-                                                ? formatDateFR(t.createdAt)
-                                                : ""
-                                        }
-                                        careGroupId={id}
-                                        caseId={caseId}
-                                        urgency={t.urgency}
-                                    />
-                                ))
-                            ) : (
-                                <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
-                                    Aucune tâche à faire.
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Patients will see tasks but not the create panel (read-only). */}
-                        {canCreateTask ? (
-                            <AddCaseTaskPanel
-                                careGroupId={careGroupID ?? ""}
-                                caseId={caseId}
-                                caseType={normalizedCaseType}
-                                action={createTask}
-                                users={users}
-                            />
-                        ) : (
-                            <div className="mt-4 text-sm text-muted">
-                                Tu n’as pas les droits pour ajouter une
-                                task.
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader
-                        title="Tâches archivées"
-                        action={
-                            !showAllDone && doneTasks.length > 3 ? (
-                                <Link
-                                    href={buildHref({ allDone: true })}
-                                    className="text-sm font-semibold text-primary"
-                                >
-                                    Voir plus
-                                </Link>
-                            ) : showAllDone ? (
-                                <Link
-                                    href={buildHref({ allDone: false })}
-                                    className="text-sm font-semibold text-primary"
-                                >
-                                    Voir moins
-                                </Link>
-                            ) : null
-                        }
-                    />
-                    <CardContent>
-                        <div className="flex flex-col gap-2">
-                            {doneShown.length ? (
-                                doneShown.map((t) => (
-                                    <TaskItemRow
-                                        key={t.id}
-                                        taskID={t.id}
-                                        title={t.title ?? t.id}
-                                        createdAtLabel={
-                                            t.createdAt
-                                                ? formatDateFR(t.createdAt)
-                                                : ""
-                                        }
-                                        careGroupId={id}
-                                        caseId={caseId}
-                                        urgency={t.urgency}
-                                    />
-                                ))
-                            ) : (
-                                <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
-                                    Aucune tâche archivée.
-                                </div>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader title="Mediathéque" />
-                    <CardContent>
-                        <div className="mt-4 flex flex-col gap-2">
-                            {/* Each row is a Client Component to support the inline menu (rename/delete).
-                                We trigger mutations through Next API routes because Server Components cannot
-                                pass event handlers to Client Components. */}
-                            {attachments.docs.length ||
-                            taskAttachments.docs.length ? (
-                                <>
-                                    {attachments.docs.map((a) => (
-                                        <CaseAttachmentRow
-                                            key={a.id}
-                                            attachmentID={a.id}
-                                            href={`/api/case-attachments/${encodeURIComponent(a.id)}/file`}
-                                            label={
-                                                a.displayName ??
-                                                a.filename ??
-                                                a.id
-                                            }
-                                            description={a.description}
-                                            canManage={
-                                                role === "owner" ||
-                                                role === "family"
-                                            }
-                                        />
-                                    ))}
-                                    {taskAttachments.docs.map((a) => (
-                                        <CaseAttachmentRow
-                                            key={a.id}
-                                            attachmentID={a.id}
-                                            href={`/api/task-attachments/${encodeURIComponent(a.id)}/file`}
-                                            label={
-                                                a.displayName ??
-                                                a.filename ??
-                                                a.id
-                                            }
-                                            description={a.description}
-                                            canManage={
-                                                role === "owner" ||
-                                                role === "family"
-                                            }
-                                        />
-                                    ))}
-                                </>
-                            ) : (
-                                <div className="text-sm text-muted">
-                                    Aucun document.
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Attachments management is restricted to owner/family in the UI.
-                                Payload ACL also enforces write permissions server-side.
-                                Patients are read-only and cannot add documents. */}
-                        {canUpdateCase ? (
-                            <AddCaseAttachmentPanel canAdd={true}>
-                                <CaseAttachmentsUploader caseID={caseId} />
-                            </AddCaseAttachmentPanel>
-                        ) : (
-                            <div className="mt-4 text-sm text-muted">
-                                Tu n’as pas les droits pour ajouter des
-                                documents.
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-
-            <div className="mt-6">
-                <Card>
-                    <CardHeader title="Notes partagées" />
-                    <CardContent>
-                        {/* Shared notes are editable only for roles allowed to update the case.
-                            Patients are read-only. */}
-                        {canUpdateCase ? (
-                            <form
-                                action={updateCaseDescription}
-                                className="flex flex-col gap-2"
+                        {/* Section 2 — Actions importantes */}
+            <div className="mt-4">
+                <h2 className="text-base font-bold mb-3">Actions importantes</h2>
+                {importantTasks.length > 0 ? (
+                    <div className="flex flex-col gap-2">
+                        {importantTasks.map((t) => (
+                            <Link
+                                key={t.id}
+                                href={`/app/caregroup/${id}/case/${caseId}/tasks`}
+                                className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm hover:bg-amber-100 transition-colors"
                             >
-                                <input
-                                    type="hidden"
-                                    name="case"
-                                    value={caseId}
-                                />
-                                <input
-                                    type="hidden"
-                                    name="careGroup"
-                                    value={careGroupID ?? ""}
-                                />
-                                <textarea
-                                    name="description"
-                                    className="input min-h-28"
-                                    defaultValue={caseDoc?.description ?? ""}
-                                    placeholder="Idées, infos utiles, prochaines étapes..."
-                                />
-                                <Button
-                                    type="submit"
-                                    size="lg"
-                                    className="w-full sm:w-auto"
-                                >
-                                    Enregistrer
-                                </Button>
-                            </form>
-                        ) : (
-                            <div className="text-sm text-muted">
-                                Tu n’as pas les droits pour modifier les notes.
+                                <div className="flex items-center gap-2">
+                                    <span>{t.urgency === "high" ? "⚠️" : "📅"}</span>
+                                    <div className="flex flex-col">
+                                        <span className="font-medium">{t.title ?? t.id}</span>
+                                        {t.dueDate && (
+                                            <span className="text-xs text-muted">
+                                                avant le {formatDateFR(t.dueDate)}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                <span className="text-muted">›</span>
+                            </Link>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
+                        Pas d'actions prévues pour la semaine à venir
+                    </div>
+                )}
+            </div>
+
+            {/* Section 3 — Accès aux sections */}
+            <div className="mt-4">
+                <h2 className="text-base font-bold mb-3">Accès aux sections</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    <Link
+                        href={`/app/caregroup/${id}/case/${caseId}/documents`}
+                        className="flex items-center justify-between gap-2 rounded-2xl border border-border bg-card p-3 text-sm hover:bg-accent/50 transition-colors"
+                    >
+                        <div className="flex items-center gap-2">
+                            <span>📄</span>
+                            <span>Documents ({attachments.docs.length + taskAttachments.docs.length})</span>
+                        </div>
+                        <span className="text-muted">›</span>
+                    </Link>
+
+                    <Link
+                        href={`/app/caregroup/${id}/case/${caseId}/tasks`}
+                        className="flex items-center justify-between gap-2 rounded-2xl border border-border bg-card p-3 text-sm hover:bg-accent/50 transition-colors"
+                    >
+                        <div className="flex items-center gap-2">
+                            <span>✅</span>
+                            <span>Tâches ({upcomingTasks.length})</span>
+                        </div>
+                        <span className="text-muted">›</span>
+                    </Link>
+
+                    <Link
+                        href={`/app/caregroup/${id}/case/${caseId}/calendar`}
+                        className="flex items-center justify-between gap-2 rounded-2xl border border-border bg-card p-3 text-sm hover:bg-accent/50 transition-colors"
+                    >
+                        <div className="flex items-center gap-2">
+                            <span>📅</span>
+                            <span>Calendrier ({upcomingTasks.filter(t => t.dueDate).length})</span>
+                        </div>
+                        <span className="text-muted">›</span>
+                    </Link>
+
+                    <Link
+                        href={`/app/caregroup/${id}/case/${caseId}/messages`}
+                        className="flex items-center justify-between gap-2 rounded-2xl border border-border bg-card p-3 text-sm hover:bg-accent/50 transition-colors"
+                    >
+                        <div className="flex items-center gap-2">
+                            <span>💬</span>
+                            <span>Messages ({messages.docs.length})</span>
+                        </div>
+                        <span className="text-muted">›</span>
+                    </Link>
+
+                    <Link
+                        href={`/app/caregroup/${id}/case/${caseId}/notes`}
+                        className="flex items-center justify-between gap-2 rounded-2xl border border-border bg-card p-3 text-sm hover:bg-accent/50 transition-colors"
+                    >
+                        <div className="flex items-center gap-2">
+                            <span>📝</span>
+                            <span>Notes ({caseDoc?.description ? 1 : 0})</span>
+                        </div>
+                        <span className="text-muted">›</span>
+                    </Link>
+                </div>
+            </div>
+
+                        {/* Section 4 — Informations du dossier */}
+            <div className="mt-4">
+                <h2 className="text-base font-bold mb-3">Informations</h2>
+                {caseInformations.docs.length === 0 ? (
+                    <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
+                        Ex. personne à contacter.
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-2">
+                        {caseInformations.docs.map((info) => (
+                            <div
+                                key={info.id}
+                                className="rounded-2xl border border-border bg-card p-3"
+                            >
+                                <div className="text-xs font-medium text-primary">
+                                    {info.category === "doctor"
+                                        ? "Médecin"
+                                        : info.category === "insurance"
+                                          ? "Mutuelle / Assurance"
+                                          : info.category === "contact"
+                                            ? "Contact"
+                                            : "Autre"}
+                                </div>
+                                <div className="font-medium">{info.title ?? "Sans titre"}</div>
+                                {info.subtitle && (
+                                    <div className="text-sm text-muted">{info.subtitle}</div>
+                                )}
+                                {info.phone && (
+                                    <div className="text-sm text-muted">📞 {info.phone}</div>
+                                )}
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
+                        ))}
+                    </div>
+                )}
+                <div className="mt-3 flex justify-center">
+                    <Link
+                        href={`/app/caregroup/${id}/case/${caseId}/informations`}
+                        className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                    >
+                        Ajouter une information
+                    </Link>
+                </div>
+            </div>
+
+                        {/* Section 5 — Responsables */}
+            <div className="mt-4">
+                <h2 className="text-base font-bold mb-3">Responsables</h2>
+                <div className="flex flex-col gap-2">
+                    {(() => {
+                        const assignedUserIds = tasks.docs
+                            .filter(t => t.assignedTo)
+                            .map(t => t.assignedTo as string);
+                        const uniqueIds = Array.from(new Set(assignedUserIds));
+
+                        if (uniqueIds.length === 0) {
+                            return (
+                                <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
+                                    Aucun responsable assigné.
+                                </div>
+                            );
+                        }
+
+                        return uniqueIds.map(userId => {
+                            const user = users.find(u => u.id === userId);
+                            return (
+                                <div key={userId} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold">
+                                        {(user?.name?.[0] ?? "?").toUpperCase()}
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="font-medium">{user?.name ?? "Inconnu"}</span>
+                                        <span className="text-xs text-muted">Responsable</span>
+                                    </div>
+                                </div>
+                            );
+                        });
+                    })()}
+                </div>
             </div>
 
             {/* daanger zone */}
