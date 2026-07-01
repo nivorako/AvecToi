@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import PageSummary from "@/components/ui/PageSummary"; 
 import LocationWidget from "./LocationWidget";
 import { requireUser } from "@/lib/requireUser";
 
@@ -17,31 +18,16 @@ export default async function CareGroupEmergencyPage({
         <div className="flex flex-col gap-5 pb-20">
 
             {/* Section 1 — Résumé urgence */}
-            <div className="rounded-2xl bg-red-50 border border-red-100 p-4">
-                <h2 className="text-base font-bold text-red-600 mb-3">Résumé urgence</h2>
-                <div className="flex flex-col gap-1.5 text-sm">
-                    <div className="flex items-center gap-2 font-semibold">
-                        <span>🆘</span>
-                        <span>Fiche d&​apos;urgence disponible</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted">
-                        <span>👥</span>
-                        <span>3 contacts prioritaires</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted">
-                        <span>💊</span>
-                        <span>2 traitements enregistrés</span>
-                    </div>
-                </div>
-                <div className="mt-4 flex justify-end">
-                    <Link
-                        href={`${baseUrl}/history`}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
-                    >
-                        Voir tout
-                    </Link>
-                </div>
-            </div>
+            <PageSummary
+                title="Résumé urgence"
+                variant="danger"
+                items={[
+                    { icon: "🆘", label: "Fiche d'urgence disponible", className: "font-semibold" },
+                    { icon: "👥", label: "3 contacts prioritaires", className: "text-muted" },
+                    { icon: "💊", label: "2 traitements enregistrés", className: "text-muted" },
+                ]}
+                action={{ label: "Voir tout", href: `${baseUrl}/history` }}
+            />
 
             {/* Section 2 — Appeler rapidement */}
             <div>

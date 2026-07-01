@@ -8,6 +8,8 @@ import CareGroupBanner from "@/components/caregroup/CareGroupBanner";
 import TaskItemRow from "@/components/task/TaskItemRow";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 
+import PageSummary from "@/components/ui/PageSummary";
+
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
@@ -304,31 +306,25 @@ export default async function CareGroupPage({
         <div className="flex flex-col gap-5">
             
             {/* Section 1 — Résumé du jour */}
-            <div className="rounded-2xl bg-primary/10 p-4">
-                <h2 className="text-base font-bold text-primary mb-3">Résumé du jour</h2>
-                <div className="flex flex-col gap-1.5 text-sm">
-                    <div className="flex items-center gap-2">
-                        <span>🗂️</span>
-                        <span>{upcomingTasks.length} actions à faire aujourd'hui</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span>📅</span>
-                        <span>{upcomingTasks.filter(t => t.dueDate).length} rendez-vous à venir</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span>💬</span>
-                        <span>Messages non lus</span>
-                    </div>
-                </div>
-                <div className="mt-4 flex justify-end">
-                    <Link
-                        href={`/app/caregroup/${id}/history`}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
-                    >
-                        Voir tout
-                    </Link>
-                </div>
-            </div>
+
+            <PageSummary
+                title="Résumé du jour"
+                items={[
+                    {
+                        icon: "🗂️",
+                        label: `${upcomingTasks.length} actions à faire aujourd'hui`,
+                    },
+                    {
+                        icon: "📅",
+                        label: `${upcomingTasks.filter(t => t.dueDate).length} rendez-vous à venir`,
+                    },
+                    {
+                        icon: "💬",
+                        label: "Messages non lus",
+                    },
+                ]}
+                action={{ label: "Voir tout", href: `/app/caregroup/${id}/history` }}
+            />
 
             {/* Section 3 — À traiter */}
             <div>

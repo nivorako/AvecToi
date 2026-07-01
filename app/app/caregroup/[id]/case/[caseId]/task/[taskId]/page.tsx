@@ -119,7 +119,7 @@ export default async function TaskPage({
             {/* Résumé de la page */}
             <div className="rounded-2xl bg-primary/10 p-4 flex flex-col gap-3 mb-4">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold text-primary">Tache : {task.title ?? "Dossier"}</h1>
+                    <h1 className="text-2xl font-bold text-primary">{task.title ?? "Dossier"}</h1>
                 </div>
                 
                 <div className="flex flex-col flex-wrap gap-2 text-sm">

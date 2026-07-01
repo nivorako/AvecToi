@@ -25,7 +25,7 @@ export default function FilterPills({ pills }: { pills: Pill[] }) {
     }
 
     return (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap justify-around gap-2 w-full">
             {pills.map((pill) => {
                 const isActive = pill.value === active;
                 return (

@@ -14,12 +14,12 @@ export default function AddDossierPanel({
     const [open, setOpen] = useState(false);
 
     return (
-        <div className="mt-4 flex justify-center">
+        <div className="flex justify-center">
             {!open ? (
                 <Button
                     type="button"
-                    size="lg"
-                    className="w-full max-w-xs"
+                    size="md"
+                    className="bg-primary text-white hover:bg-primary/90 rounded-full px-4 py-2 text-sm font-semibold"
                     onClick={() => setOpen(true)}
                 >
                     Ajouter dossier

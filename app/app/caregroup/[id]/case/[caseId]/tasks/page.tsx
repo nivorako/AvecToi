@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 import { revalidatePath } from "next/cache";
 
+import PageSummary from "@/components/ui/PageSummary";
 import TaskItemRow from "@/components/task/TaskItemRow";
 import AddCaseTaskPanel from "@/components/case/AddCaseTaskPanel";
 
@@ -149,7 +150,36 @@ export default async function TasksPage({params}: {params: Promise <{id: string;
         <div  className="container mx-auto py-8 flex flex-col justify-between gap-10">
             
             {/* Résumé de la page */}
-            <div className="rounded-2xl bg-primary/10 p-4 flex flex-col gap-3 mb-4">
+            <PageSummary
+                title="Liste des tâches"
+                items={[
+                    {
+                        icon: "📁",
+                        label: `${tasks.docs.length} tâches`,
+                        className: "font-semibold",
+                    },
+                    {
+                        icon: "🟠",
+                        label: `${tasks.docs.filter((t) => t.status !== "done").length} actions à effectuer`,
+                        className: "text-amber-600",
+                    },
+                    {
+                        icon: "📅",
+                        label: `${tasks.docs.filter((t) => {
+                            if (!t.dueDate) return false;
+                            const d = new Date(t.dueDate as string);
+                            const weekEnd = new Date();
+                            weekEnd.setDate(weekEnd.getDate() + 7);
+                            return d <= weekEnd && t.status !== "done";
+                        }).length} échéances cette semaine`,
+                        className: "text-muted",
+                    },
+                ]}
+                // extraAction={<AddCaseTaskPanel careGroupId={caregroupID} caseId={caseId} action={createTask} />}
+            />
+
+
+            {/* <div className="rounded-2xl bg-primary/10 p-4 flex flex-col gap-3 mb-4">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold text-primary">Dossier : {caseDoc.title ?? "Dossier"}</h1>
                 </div>
@@ -169,12 +199,11 @@ export default async function TasksPage({params}: {params: Promise <{id: string;
                     </span>
                     
                 </div>
-            </div>
+            </div> */}
 
             {/* liste des taches */}
             <div className="flex flex-col gap-6">
-                <h2 className="text-2xl text-center font-semibold">Liste des tâches</h2>
-
+    
                 {/* taches a faire */}
                  <div>
                     <h2 className="text-xl font-semibold">A faire</h2>

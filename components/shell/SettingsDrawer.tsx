@@ -14,7 +14,7 @@ type Item = {
 
 const ITEMS: Item[] = [
     { icon: "👤", label: "Profil",        href: "/app/profile" },
-    { icon: "👥", label: "Membres",       href: "/app/members" },
+    { icon: "👥", label: "Membres",       href: "/app" },
     { icon: "🏠", label: "Care Group",    href: "/app" },
     { icon: "🕐", label: "Historique",    href: "/app/history" },
     { icon: "🔔", label: "Notifications", href: "/app/notifications" },
@@ -96,22 +96,6 @@ export default function SettingsDrawer() {
                     </button>     
                 </div>
 
-                {/* <nav className="flex flex-col py-2">
-                    {ITEMS.map((item) => (
-                        <Link
-                            key={item.label}
-                            href={item.href ?? "#"}
-                            onClick={() => setOpen(false)}
-                            className={`flex items-center gap-3 px-5 py-3.5 text-sm hover:bg-gray-50 ${
-                                item.danger ? "text-red-500" : "text-gray-800"
-                            }`}
-                        >
-                            <span className="text-xl w-7 shrink-0">{item.icon}</span>
-                            <span className="font-medium">{item.label}</span>
-                        </Link>
-                    ))}
-                </nav> */}
-
                  <nav className="flex flex-col py-2">
                     {ITEMS.map((item) => (
                         item.label === "Déconnexion" ? (
@@ -144,16 +128,6 @@ export default function SettingsDrawer() {
                         )
                     ))}
                 </nav>
-
-                {/* <button
-                    type="button"
-                    onClick={handleLogout}
-                    disabled={loadingLogout}
-                    className="flex items-center gap-3 px-5 py-3.5 text-sm hover:bg-gray-50 text-red-500"
-                >
-                    <span className="text-xl w-7 shrink-0">🚪</span>
-                    <span className="font-medium">Déconnexion</span>
-                </button> */}
 
             </div>
         </>,

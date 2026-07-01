@@ -1,6 +1,8 @@
 import Link from "next/link";
 
 import AddDossierPanel from "@/components/caregroup/AddDossierPanel";
+import PageSummary from "@/components/ui/PageSummary";
+
 import CaseSummaryCard from "@/components/case/CaseSummaryCard";
 import FilterPills from "@/components/ui/FilterPills";
 import SearchInput from "@/components/ui/SearchInput";
@@ -149,8 +151,36 @@ export default async function CareGroupCasesPage({
 
     return (
         <div className="flex flex-col gap-5">
-            {/* Section 1 — Stats */}
-            <div className="rounded-2xl bg-primary/10 p-4">
+            {/* Section 1 — résumé de la page */}
+            <PageSummary
+                title="Dossiers"
+                items={[
+                    {
+                        icon: "📁",
+                        label: `${cases.docs.length} dossiers actifs`,
+                        className: "font-semibold",
+                    },
+                    {
+                        icon: "🟠",
+                        label: `${tasksRes.docs.filter((t) => t.status !== "done").length} actions à effectuer`,
+                        className: "text-amber-600",
+                    },
+                    {
+                        icon: "📅",
+                        label: `${tasksRes.docs.filter((t) => {
+                            if (!t.dueDate) return false;
+                            const d = new Date(t.dueDate as string);
+                            const weekEnd = new Date();
+                            weekEnd.setDate(weekEnd.getDate() + 7);
+                            return d <= weekEnd && t.status !== "done";
+                        }).length} échéances cette semaine`,
+                        className: "text-muted",
+                    },
+                ]}
+                extraAction={<AddDossierPanel careGroupId={id} action={createCase} />}
+            />
+
+            {/* <div className="rounded-2xl bg-primary/10 p-4">
                 <h1 className="text-lg font-bold text-primary mb-3">Dossiers</h1>
                 <div className="flex flex-col gap-1.5 text-sm">
                     <div className="flex items-center gap-2 font-semibold">
@@ -175,7 +205,7 @@ export default async function CareGroupCasesPage({
                     </div>
                 </div>
                 <AddDossierPanel careGroupId={id} action={createCase} />
-            </div>
+            </div> */}
 
             {/* Section 2 — Recherche */}
             <SearchInput placeholder="Rechercher un dossier..." />

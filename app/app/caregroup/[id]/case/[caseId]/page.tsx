@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 
 import Link from "next/link";
-
+import PageSummary from "@/components/ui/PageSummary";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
@@ -394,12 +394,29 @@ export default async function CasePage({
         <div>
             
             {/* Section 1 — Résumé du dossier */}
-            <div className="rounded-2xl bg-primary/10 p-4">
+
+            <PageSummary
+                title={`${caseDoc.title ?? "Dossier"}`}
+                items={[
+                    {
+                        icon: "📅",
+                        label: `${upcomingTasks.filter((t) => t.dueDate).length} rendez-vous à venir`,
+                    },
+                    {
+                        icon: "💬",
+                        label: `${todayMessages.length} nouveaux messages aujourd'hui`,
+                    },
+                    {
+                        icon: "📝",
+                        label: caseDoc?.description ? "Notes ajoutées" : "Aucune note",
+                    },
+                ]}
+            />
+            {/* <div className="rounded-2xl bg-primary/10 p-4">
                 <h1 className="text-base font-bold text-primary mb-3">Dossier : {caseDoc.title ?? "Dossier"}</h1>
                 
-                {/* Stats */}
                 <div className="flex flex-col gap-1.5 text-sm">
-                    {/* Rendez-vous */}
+                    
                     <div className="flex items-center gap-2">
                         <span>📅</span>
                         <span>{upcomingTasks.filter(t => t.dueDate).length} rendez-vous à venir</span>
@@ -407,19 +424,19 @@ export default async function CasePage({
 
                     
 
-                    {/* Messages */}
+                
                     <div className="flex items-center gap-2">
                         <span>💬</span>
                         <span>{todayMessages.length} nouveaux messages aujourd'hui</span>
                     </div>
                     
-                    {/* Notes */}
+                    
                     <div className="flex items-center gap-2">
                         <span>📝</span>
                         <span>{caseDoc?.description ? "Notes ajoutées" : "Aucune note"}</span>
                     </div>
                 </div>
-            </div>
+            </div> */}
 
                         {/* Section 2 — Actions importantes */}
             <div className="mt-4">
