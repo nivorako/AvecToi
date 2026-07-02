@@ -65,7 +65,10 @@ export default async function TasksPage({params}: {params: Promise <{id: string;
     ).then((r) => r.docs[0]) : undefined;
 
     // calculer les permissions
-    const canCreateTask = membership?.role === "owner" || membership?.role === "family" || membership?.role === "professional";
+    const canCreateTask = 
+        membership?.role === "owner" || 
+        membership?.role === "family" || 
+        (membership?.role === "professional" && isMedical);
 
     //récupérer tasks
     const tasks = await payloadREST<{ docs: Task[] }>(
@@ -175,33 +178,19 @@ export default async function TasksPage({params}: {params: Promise <{id: string;
                         className: "text-muted",
                     },
                 ]}
-                // extraAction={<AddCaseTaskPanel careGroupId={caregroupID} caseId={caseId} action={createTask} />}
+                extraAction={
+                    caregroupID && canCreateTask ? (
+                        <AddCaseTaskPanel
+                            careGroupId={caregroupID}
+                            caseId={caseId}
+                            caseType={caseDoc?.type ?? "custom"}
+                            action={createTask}
+                            users={users}
+                        />
+                    ) : undefined
+}
             />
 
-
-            {/* <div className="rounded-2xl bg-primary/10 p-4 flex flex-col gap-3 mb-4">
-                <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold text-primary">Dossier : {caseDoc.title ?? "Dossier"}</h1>
-                </div>
-                <div className="flex flex-col flex-wrap gap-2 text-sm">
-                    {tasks.docs.filter(t => t.urgency === "high" && t.status !== "done").length > 0 && (
-                        <span className="rounded-full  px-3 py-1 text-red-600">
-                            <strong>{tasks.docs.filter(t => t.urgency === "high" && t.status !== "done").length}</strong> urgentes
-                        </span>
-                    )}
-                    
-                    <span className="rounded-full px-3 py-1 text-blue-700">
-                        <strong>{inProgressTasks.length}</strong> en cours
-                    </span>
-
-                    <span className="rounded-full px-3 py-1">
-                        <strong>{toDoTasks.length}</strong> à faire
-                    </span>
-                    
-                </div>
-            </div> */}
-
-            {/* liste des taches */}
             <div className="flex flex-col gap-6">
     
                 {/* taches a faire */}
@@ -282,16 +271,6 @@ export default async function TasksPage({params}: {params: Promise <{id: string;
                     </div>
                  </div>
             </div>
-
-            {canCreateTask && (
-                <AddCaseTaskPanel
-                    careGroupId={caregroupID ?? ""}
-                    caseId={caseId}
-                    caseType={isMedical ? "medical" : "custom"}
-                    action={createTask}
-                    users={users}
-                />
-            )}
         </div>
     );
 }

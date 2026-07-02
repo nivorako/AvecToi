@@ -202,7 +202,7 @@ export default function TaskSubtasksManager({
                             </label>
                             <button
                                 onClick={() => deleteSubtask(subTask.id)}
-                                className="text-red-500 text-sm hover:underline"
+                                className="text-sm text-danger hover:underline"
                             >
                                 Supprimer
                             </button>
@@ -223,7 +223,7 @@ export default function TaskSubtasksManager({
                     />
                     <button
                         onClick={addSubtask}
-                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                        className="btn-primary"
                     >
                         Ajouter
                     </button>
@@ -232,7 +232,7 @@ export default function TaskSubtasksManager({
                             setIsAdding(false);
                             setNewSubtaskTitle("");
                         }}
-                        className="px-3 py-1 rounded hover:bg-gray-200"
+                        className="btn-secondary"
                     >
                         Annuler
                     </button>
@@ -240,7 +240,7 @@ export default function TaskSubtasksManager({
             ) : (
                 <button
                     onClick={() => setIsAdding(true)}
-                    className="text-blue-500 hover:underline"
+                    className="btn-secondary"
                 >
                     + Ajouter une sous-tâche
                 </button>

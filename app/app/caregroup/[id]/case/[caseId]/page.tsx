@@ -76,115 +76,115 @@ function formatDateFR(iso: string) {
     }).format(d);
 }
 
-async function createTask(formData: FormData) {
-    "use server";
+// async function createTask(formData: FormData) {
+//     "use server";
 
-    // Create Task server action for /app/cases/[id].
-    //
-    // Permissions (enforced here + by Payload ACL):
-    // - owner/family: can create tasks for the case
-    // - professional: can create tasks only when the case is medical
+//     // Create Task server action for /app/cases/[id].
+//     //
+//     // Permissions (enforced here + by Payload ACL):
+//     // - owner/family: can create tasks for the case
+//     // - professional: can create tasks only when the case is medical
 
-    // Read values from the form.
-    // Note: everything is treated as untrusted input and re-validated on the server.
-    const caseID = String(formData.get("case") ?? "");
-    const careGroup = String(formData.get("careGroup") ?? "");
-    const caseType = String(formData.get("caseType") ?? "");
-    const title = String(formData.get("title") ?? "");
-    const assignedTo = String(formData.get("assignedTo") ?? "");
-    const dueDate = String(formData.get("dueDate") ?? "");
+//     // Read values from the form.
+//     // Note: everything is treated as untrusted input and re-validated on the server.
+//     const caseID = String(formData.get("case") ?? "");
+//     const careGroup = String(formData.get("careGroup") ?? "");
+//     const caseType = String(formData.get("caseType") ?? "");
+//     const title = String(formData.get("title") ?? "");
+//     const assignedTo = String(formData.get("assignedTo") ?? "");
+//     const dueDate = String(formData.get("dueDate") ?? "");
 
-    const user = await requireUser();
+//     const user = await requireUser();
 
-    if (!caseID || !careGroup || !title) return;
-    if (caseType !== "medical" && caseType !== "custom") return;
+//     if (!caseID || !careGroup || !title) return;
+//     if (caseType !== "medical" && caseType !== "custom") return;
 
-    // Determine the caller role inside the caregroup to decide if task creation is allowed.
-    const membership = await payloadREST<{ docs: Membership[] }>(
-        `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
-    ).then((r) => r.docs[0]);
+//     // Determine the caller role inside the caregroup to decide if task creation is allowed.
+//     const membership = await payloadREST<{ docs: Membership[] }>(
+//         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
+//     ).then((r) => r.docs[0]);
 
-    const role = membership?.role;
+//     const role = membership?.role;
 
-    const canCreate =
-        role === "owner" ||
-        role === "family" ||
-        (role === "professional" && caseType === "medical");
+//     const canCreate =
+//         role === "owner" ||
+//         role === "family" ||
+//         (role === "professional" && caseType === "medical");
 
-    if (!canCreate) return;
+//     if (!canCreate) return;
 
-    try {
-        await payloadREST("/api/tasks", {
-            method: "POST",
-            headers: {
-                "content-type": "application/json",
-            },
-            body: JSON.stringify({
-                case: caseID,
-                title,
-                status: "todo",
-                ...(assignedTo ? { assignedTo } : {}),
-                ...(dueDate ? { dueDate } : {}),
-            }),
-        });
-    } catch {
-        return;
-    }
+//     try {
+//         await payloadREST("/api/tasks", {
+//             method: "POST",
+//             headers: {
+//                 "content-type": "application/json",
+//             },
+//             body: JSON.stringify({
+//                 case: caseID,
+//                 title,
+//                 status: "todo",
+//                 ...(assignedTo ? { assignedTo } : {}),
+//                 ...(dueDate ? { dueDate } : {}),
+//             }),
+//         });
+//     } catch {
+//         return;
+//     }
 
-    // Refresh this case page so the task list updates after the mutation.
-    revalidatePath(`/app/caregroup/${careGroup}/case/${caseID}`);
-}
+//     // Refresh this case page so the task list updates after the mutation.
+//     revalidatePath(`/app/caregroup/${careGroup}/case/${caseID}`);
+// }
 
-async function updateCaseDescription(formData: FormData) {
-    "use server";
+// async function updateCaseDescription(formData: FormData) {
+//     "use server";
 
-    const caseID = String(formData.get("case") ?? "");
-    const careGroup = String(formData.get("careGroup") ?? "");
-    const description = String(formData.get("description") ?? "");
+//     const caseID = String(formData.get("case") ?? "");
+//     const careGroup = String(formData.get("careGroup") ?? "");
+//     const description = String(formData.get("description") ?? "");
 
-    const user = await requireUser();
+//     const user = await requireUser();
 
-    if (!caseID || !careGroup) return;
+//     if (!caseID || !careGroup) return;
 
-    const membership = await payloadREST<{ docs: Membership[] }>(
-        `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
-    ).then((r) => r.docs[0]);
+//     const membership = await payloadREST<{ docs: Membership[] }>(
+//         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
+//     ).then((r) => r.docs[0]);
 
-    const role = membership?.role;
-    if (!role) return;
+//     const role = membership?.role;
+//     if (!role) return;
 
-    const caseDoc = await payloadREST<CaseDoc>(
-        `/api/cases/${encodeURIComponent(caseID)}?depth=0`,
-    );
+//     const caseDoc = await payloadREST<CaseDoc>(
+//         `/api/cases/${encodeURIComponent(caseID)}?depth=0`,
+//     );
 
-    const normalizedCaseType =
-        caseDoc?.type === "medical" || caseDoc?.type === "custom"
-            ? caseDoc.type
-            : "";
+//     const normalizedCaseType =
+//         caseDoc?.type === "medical" || caseDoc?.type === "custom"
+//             ? caseDoc.type
+//             : "";
 
-    const canUpdate =
-        role === "owner" ||
-        role === "family" ||
-        (role === "professional" && normalizedCaseType === "medical");
+//     const canUpdate =
+//         role === "owner" ||
+//         role === "family" ||
+//         (role === "professional" && normalizedCaseType === "medical");
 
-    if (!canUpdate) return;
+//     if (!canUpdate) return;
 
-    try {
-        await payloadREST(`/api/cases/${encodeURIComponent(caseID)}`, {
-            method: "PATCH",
-            headers: {
-                "content-type": "application/json",
-            },
-            body: JSON.stringify({
-                description,
-            }),
-        });
-    } catch {
-        return;
-    }
+//     try {
+//         await payloadREST(`/api/cases/${encodeURIComponent(caseID)}`, {
+//             method: "PATCH",
+//             headers: {
+//                 "content-type": "application/json",
+//             },
+//             body: JSON.stringify({
+//                 description,
+//             }),
+//         });
+//     } catch {
+//         return;
+//     }
 
-    revalidatePath(`/app/caregroup/${careGroup}/case/${caseID}`);
-}
+//     revalidatePath(`/app/caregroup/${careGroup}/case/${caseID}`);
+// }
 
 export default async function CasePage({
     params,
@@ -411,32 +411,16 @@ export default async function CasePage({
                         label: caseDoc?.description ? "Notes ajoutées" : "Aucune note",
                     },
                 ]}
+                 extraAction={
+                    <Link
+                        href={`/app/caregroup/${id}/case/${caseId}/informations`}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold hover:bg-primary/90 transition-colors"
+                        style={{color:"white"}}
+                    >
+                        Ajouter une information
+                    </Link>
+                }
             />
-            {/* <div className="rounded-2xl bg-primary/10 p-4">
-                <h1 className="text-base font-bold text-primary mb-3">Dossier : {caseDoc.title ?? "Dossier"}</h1>
-                
-                <div className="flex flex-col gap-1.5 text-sm">
-                    
-                    <div className="flex items-center gap-2">
-                        <span>📅</span>
-                        <span>{upcomingTasks.filter(t => t.dueDate).length} rendez-vous à venir</span>
-                    </div>
-
-                    
-
-                
-                    <div className="flex items-center gap-2">
-                        <span>💬</span>
-                        <span>{todayMessages.length} nouveaux messages aujourd'hui</span>
-                    </div>
-                    
-                    
-                    <div className="flex items-center gap-2">
-                        <span>📝</span>
-                        <span>{caseDoc?.description ? "Notes ajoutées" : "Aucune note"}</span>
-                    </div>
-                </div>
-            </div> */}
 
                         {/* Section 2 — Actions importantes */}
             <div className="mt-4">
@@ -566,14 +550,6 @@ export default async function CasePage({
                         ))}
                     </div>
                 )}
-                <div className="mt-3 flex justify-center">
-                    <Link
-                        href={`/app/caregroup/${id}/case/${caseId}/informations`}
-                        className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-                    >
-                        Ajouter une information
-                    </Link>
-                </div>
             </div>
 
                         {/* Section 5 — Responsables */}

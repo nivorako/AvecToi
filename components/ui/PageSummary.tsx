@@ -67,7 +67,7 @@ export default function PageSummary({
             </div>
 
             {action || extraAction ? (
-                <div className="mt-4 flex justify-end">
+                <div className="mt-4 flex justify-center items-center">
                     {action ? (
                         <Link
                             href={action.href}

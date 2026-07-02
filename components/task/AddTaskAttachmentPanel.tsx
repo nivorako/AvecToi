@@ -16,12 +16,12 @@ export default function AddTaskAttachmentPanel({
     if (!canAdd) return null;
 
     return (
-        <div className="mt-4 flex justify-center">
+        <div className="mt-4 flex justify-start">
             {!open ? (
                 <Button
                     type="button"
-                    size="lg"
-                    className="w-full max-w-xs"
+                    variant="secondary"
+                    size="md"
                     onClick={() => setOpen(true)}
                 >
                     Ajouter un document
@@ -29,12 +29,11 @@ export default function AddTaskAttachmentPanel({
             ) : (
                 <div className="w-full rounded-2xl border border-border bg-card p-4">
                     {children}
-                    <div className="mt-3 flex justify-center">
+                    <div className="mt-3 flex justify-start">
                         <Button
                             variant="secondary"
                             type="button"
-                            size="lg"
-                            className="w-full max-w-xs"
+                            size="md"
                             onClick={() => setOpen(false)}
                         >
                             Fermer

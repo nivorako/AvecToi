@@ -115,8 +115,6 @@ export default async function CareGroupCasesPage({
         return bDate - aDate;
     });
 
-    const newCaseHref = `/app/caregroup/${id}/case/new`;
-
     async function createCase(formData: FormData) {
         "use server";
         const title = String(formData.get("title") ?? "").trim();

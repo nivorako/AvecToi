@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
  
+import PageSummary from "@/components/ui/PageSummary";
 import { CaseAttachmentRow } from "@/components/case/CaseAttachmentRow";
 import { TaskAttachmentRow } from "@/components/task/TaskAttachmentRow";
 import AddCaseAttachmentPanel  from "@/components/case/AddCaseAttachmentPanel";
@@ -97,11 +98,25 @@ export default async function DocumentsPage({
     
     return (
         <div className="container mx-auto py-8 flex flex-col justify-between gap-10">
-            <div className="rounded-2xl bg-primary/10 p-4 flex items-center justify-between mb-4">
+            <PageSummary
+                title="Mes documents"
+                items={[
+                    { icon: "📁", label: "Dossier : " + (caseDoc.title ?? "—") },
+                    { icon: "📎", label: caseAttachments.docs.length + " document(s) général" },
+                    { icon: "🔗", label: taskAttachments.docs.length + " document(s) lié(s) aux tâches" },
+                    { icon: "📌", label: tasks.docs.length + " tâche(s) dans ce dossier" }
+                ]}
+                action={canManage ? {
+                    href: `/app/caregroup/${id}/case/${caseId}/edit`,
+                    label: "Modifier le dossier",
+                } : undefined}
+            />
+            {/* <div className="rounded-2xl bg-primary/10 p-4 flex items-center justify-between mb-4">
                 <h1 className="text-2xl font-bold">{caseDoc.title ?? "Dossier"}</h1>
-            </div>
+            </div> */}
 
             <div className="flex flex-col gap-6">
+
                 <section>
                     <h2 className="text-base font-bold mb-3">Général</h2>
                     {caseAttachments.docs.length === 0 ? (
