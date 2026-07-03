@@ -74,44 +74,47 @@ export function CaseAttachmentRow({
                 <div className="min-w-0 flex-1">
                     <div className="flex min-w-0 flex-col gap-1">
                         <div className="flex min-w-0 items-start justify-between gap-3">
-                            <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-3">
-                                <a
-                                    href={href}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="min-w-0 truncate font-medium underline"
-                                    title={label}
-                                >
-                                    {label}
-                                </a>
+                            <div className="flex flex-col gap-1 sm:flex-row sm:gap-3">
+                                <div className="flex flex-row gap-1 items-baseline">
+                                    Document : {" "}
+                                    <a
+                                        href={href}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="min-w-0 truncate font-medium !text-primary underline"
+                                        title={label}
+                                    >
+                                        {label}
+                                    </a>
+                                </div>
 
-                                {normalizedDescription ? (
-                                    <div className="min-w-0 text-xs text-muted">
-                                        <span className="break-words">
-                                            {visibleDescription}
-                                        </span>
-                                        {isLong ? (
-                                            <button
-                                                type="button"
-                                                className="ml-2 underline"
-                                                onClick={() =>
-                                                    setExpanded((v) => !v)
-                                                }
-                                            >
-                                                {expanded
-                                                    ? "Voir moins"
-                                                    : "Voir plus"}
-                                            </button>
-                                        ) : null}
-                                    </div>
-                                ) : null}
+                                    {normalizedDescription ? (
+                                        <div className="min-w-0 text-xs text-muted">
+                                            <span className="break-words">
+                                                {visibleDescription}
+                                            </span>
+                                            {isLong ? (
+                                                <button
+                                                    type="button"
+                                                    className="ml-2 underline"
+                                                    onClick={() =>
+                                                        setExpanded((v) => !v)
+                                                    }
+                                                >
+                                                    {expanded
+                                                        ? "Voir moins"
+                                                        : "Voir plus"}
+                                                </button>
+                                            ) : null}
+                                        </div>
+                                    ) : null}
+                                
                             </div>
-
                             {canManage ? (
                                 <div className="relative">
                                     <button
                                         type="button"
-                                        className="btn-secondary"
+                                        className="btn-secondary !px-3 !py-2 !text-4xl !leading-none"
                                         onClick={() => setMenuOpen((v) => !v)}
                                         disabled={pending}
                                     >

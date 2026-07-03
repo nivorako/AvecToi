@@ -45,7 +45,7 @@ export default function TaskStatusIndicator({
 
     return (
         <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-muted uppercase tracking-wide">Statut</span>
+            <h2 className="text-lg font-semibold">Statut</h2>
             <div className="flex gap-1 rounded-xl bg-muted/10 border border-border p-1">
                 {(Object.keys(statusConfig) as Status[]).map((key) => {
                     const opt = statusConfig[key];

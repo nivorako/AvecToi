@@ -170,7 +170,7 @@ export default function TaskSubtasksManager({
 
     return (
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-3">
-            <h3 className="font-semibold mb-3">Sous-tâches</h3>
+            <h2 className="text-lg font-semibold">Sous-tâches</h2>
 
             {totalCount > 0 && (
                 <div className="mb-3 text-sm text-muted-foreground">

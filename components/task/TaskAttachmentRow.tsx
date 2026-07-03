@@ -12,6 +12,7 @@ type Props = {
     taskName?: string;
     mimeType?: string;
     createdAt?: string;
+    taskHref?: string;
 };
 
 function formatDateFR(iso: string) {
@@ -52,6 +53,7 @@ export function TaskAttachmentRow({
     taskName,
     mimeType,
     createdAt,
+    taskHref,
 }: Props) {
     const router = useRouter();
     const [expanded, setExpanded] = useState(false);
@@ -75,17 +77,19 @@ export function TaskAttachmentRow({
                 <div className="min-w-0 flex-1">
                     <div className="flex min-w-0 flex-col gap-1">
                         <div className="flex min-w-0 items-start justify-between gap-3">
-                            <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-3">
-                                <a
-                                    href={href}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="min-w-0 truncate font-medium underline"
-                                    title={label}
-                                >
-                                    {label}
-                                </a>
-
+                            <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:gap-3">
+                                <div className="flex flex-row gap-1 items-baseline">
+                                    Document : {" "}
+                                    <a
+                                        href={href}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="min-w-0 truncate font-medium !text-primary underline"
+                                        title={label}
+                                    >
+                                        {label}
+                                    </a>
+                                </div>
                                 {normalizedDescription ? (
                                     <div className="min-w-0 text-xs text-muted">
                                         <span className="break-words">
@@ -112,7 +116,7 @@ export function TaskAttachmentRow({
                                 <div className="relative">
                                     <button
                                         type="button"
-                                        className="btn-secondary"
+                                        className="btn-secondary !text-4xl"
                                         onClick={() => setMenuOpen((v) => !v)}
                                         disabled={pending}
                                     >
@@ -206,8 +210,15 @@ export function TaskAttachmentRow({
                         </div>
 
                         {taskName ? (
-                            <div className="text-xs text-muted">
-                                Tâche : {taskName}
+                            <div>
+                                Tâche :{" "}
+                                {taskHref ? (
+                                    <a href={taskHref} className="!text-primary underline">
+                                        {taskName}
+                                    </a>
+                                ) : (
+                                    taskName
+                                )}
                             </div>
                         ) : null}
 

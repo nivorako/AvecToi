@@ -41,7 +41,7 @@ export default function TaskUrgencyIndicator({
 
     return (
         <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-muted uppercase tracking-wide">Urgence</span>
+            <h2 className="text-lg font-semibold">Urgence</h2>
             <div className="flex gap-2">
                 {(Object.keys(urgencyConfig) as Urgency[]).map((key) => {
                     const opt = urgencyConfig[key];

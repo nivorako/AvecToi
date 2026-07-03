@@ -27,7 +27,7 @@ export function CardHeader({
         <div
             className={cn("flex items-center justify-between gap-4", className)}
         >
-            <div className="text-lg font-semibold">{title}</div>
+            <h2 className="text-lg font-semibold">{title}</h2>
             {action ? <div>{action}</div> : null}
         </div>
     );

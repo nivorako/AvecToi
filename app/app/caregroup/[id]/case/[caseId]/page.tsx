@@ -396,7 +396,7 @@ export default async function CasePage({
             {/* Section 1 — Résumé du dossier */}
 
             <PageSummary
-                title={`${caseDoc.title ?? "Dossier"}`}
+                title={`Dossier ${caseDoc.title ?? ""}`}
                 items={[
                     {
                         icon: "📅",

@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
- 
+
+import FilterPills from "@/components/ui/FilterPills";
 import PageSummary from "@/components/ui/PageSummary";
 import { CaseAttachmentRow } from "@/components/case/CaseAttachmentRow";
 import { TaskAttachmentRow } from "@/components/task/TaskAttachmentRow";
@@ -47,11 +48,13 @@ type CaseDoc = {
 
 export default async function DocumentsPage({
     params,
+    searchParams,
 }: {
     params: Promise<{ id: string; caseId: string }>;
+    searchParams: Promise<{ filter? : string }>
 }) {
     const { id, caseId } = await params;
-    
+    const { filter } = await searchParams;
     const user = await requireUser();
 
     // Rôle pour les permissions
@@ -106,18 +109,27 @@ export default async function DocumentsPage({
                     { icon: "🔗", label: taskAttachments.docs.length + " document(s) lié(s) aux tâches" },
                     { icon: "📌", label: tasks.docs.length + " tâche(s) dans ce dossier" }
                 ]}
-                action={canManage ? {
-                    href: `/app/caregroup/${id}/case/${caseId}/edit`,
-                    label: "Modifier le dossier",
-                } : undefined}
+                 extraAction={
+                    canManage ? (
+                        <AddCaseAttachmentPanel canAdd={canManage}>
+                            <CaseAttachmentsUploader caseID={caseId} />
+                        </AddCaseAttachmentPanel>
+                    ) : undefined
+                }
             />
-            {/* <div className="rounded-2xl bg-primary/10 p-4 flex items-center justify-between mb-4">
-                <h1 className="text-2xl font-bold">{caseDoc.title ?? "Dossier"}</h1>
-            </div> */}
+
+            {/* filtre */}
+            <FilterPills pills={[
+                { label: "Tous", value: "tous" },
+                { label: `Général (${caseAttachments.docs.length})`, value: "general" },
+                { label: `Tâches (${taskAttachments.docs.length})`, value: "taches" },
+            ]} />
 
             <div className="flex flex-col gap-6">
 
-                <section>
+            {/* section générale */}
+                {(filter === undefined || filter === "tous" || filter === "general") &&
+                (<section>
                     <h2 className="text-base font-bold mb-3">Général</h2>
                     {caseAttachments.docs.length === 0 ? (
                         <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
@@ -139,8 +151,10 @@ export default async function DocumentsPage({
                             ))}
                         </div>
                     )}
-                </section>
+                </section>)}
 
+                {/* section tâches */}
+                {(filter === undefined || filter === "tous" || filter === "taches") && (
                 <section>
                     <h2 className="text-base font-bold mb-3">Liés aux tâches</h2>
                     {taskAttachments.docs.length === 0 ? (
@@ -162,18 +176,19 @@ export default async function DocumentsPage({
                                             ? taskById.get(attachment.task)?.title
                                             : undefined
                                     }
+                                    taskHref={
+                                        attachment.task
+                                            ? `/app/caregroup/${id}/case/${caseId}/task/${attachment.task}`
+                                            : undefined
+                                    }
                                     mimeType={attachment.mimeType}
                                     createdAt={attachment.createdAt}
                                 />
                             ))}
                         </div>
                     )}
-                </section>
+                </section>)}
             </div>
-
-            <AddCaseAttachmentPanel canAdd={canManage}>
-                <CaseAttachmentsUploader caseID={caseId} />
-            </AddCaseAttachmentPanel>
         </div>
     );
 }

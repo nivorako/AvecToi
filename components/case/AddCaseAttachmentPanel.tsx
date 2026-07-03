@@ -21,7 +21,7 @@ export default function AddCaseAttachmentPanel({
                 <Button
                     type="button"
                     size="lg"
-                    className="w-full max-w-xs"
+                    variant="solid"
                     onClick={() => setOpen(true)}
                 >
                     Ajouter un document

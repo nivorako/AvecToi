@@ -151,7 +151,7 @@ export default async function CareGroupCasesPage({
         <div className="flex flex-col gap-5">
             {/* Section 1 — résumé de la page */}
             <PageSummary
-                title="Dossiers"
+                title="Vos dossiers"
                 items={[
                     {
                         icon: "📁",
