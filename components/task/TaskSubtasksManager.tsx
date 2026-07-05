@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+
+import Button from "@/components/ui/Button";
+
 import { Status } from "./TaskStatusIndicator";
 
 export default function TaskSubtasksManager({
@@ -221,29 +224,35 @@ export default function TaskSubtasksManager({
                         className="flex-1 border rounded px-2 py-1"
                         onKeyPress={(e) => e.key === "Enter" && addSubtask()}
                     />
-                    <button
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="md"
                         onClick={addSubtask}
-                        className="btn-primary"
                     >
                         Ajouter
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="tertiary"
+                        size="md"
                         onClick={() => {
                             setIsAdding(false);
                             setNewSubtaskTitle("");
                         }}
-                        className="btn-secondary"
                     >
                         Annuler
-                    </button>
+                    </Button>
                 </div>
             ) : (
-                <button
+                <Button
+                    type="button"
+                    variant="primary"
+                    size="md"
                     onClick={() => setIsAdding(true)}
-                    className="btn-secondary"
                 >
                     + Ajouter une sous-tâche
-                </button>
+                </Button>
             )}
         </div>
     );

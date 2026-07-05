@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import Button from "@/components/ui/Button";
+
 export function WrongAccountActions({
     nextUrl,
     invitedEmail,
@@ -28,14 +30,15 @@ export function WrongAccountActions({
 
     return (
         <div className="mt-4 flex flex-wrap gap-2">
-            <button
+            <Button
                 type="button"
-                className="btn-secondary"
+                variant="tertiary"
+                size="md"
                 onClick={logoutAndContinue}
                 disabled={loading}
             >
                 {loading ? "Déconnexion..." : "Se déconnecter"}
-            </button>
+            </Button>
         </div>
     );
 }

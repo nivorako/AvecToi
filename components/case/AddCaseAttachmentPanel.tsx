@@ -21,7 +21,7 @@ export default function AddCaseAttachmentPanel({
                 <Button
                     type="button"
                     size="lg"
-                    variant="solid"
+                    variant="primary"
                     onClick={() => setOpen(true)}
                 >
                     Ajouter un document
@@ -31,7 +31,7 @@ export default function AddCaseAttachmentPanel({
                     {children}
                     <div className="mt-3 flex justify-center">
                         <Button
-                            variant="secondary"
+                            variant="tertiary"
                             type="button"
                             size="lg"
                             className="w-full max-w-xs"

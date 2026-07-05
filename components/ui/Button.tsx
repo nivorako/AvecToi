@@ -5,18 +5,18 @@ import { cn } from "@/lib/cn";
 export type ButtonVariant =
     | "primary"
     | "secondary"
+    | "tertiary"
     | "danger"
     | "ghost"
-    | "solid"
 
 export type ButtonSize = "sm" | "md" | "lg";
 
 const variantClasses: Record<ButtonVariant, string> = {
     primary: "btn-primary",
     secondary: "btn-secondary",
+    tertiary: "btn-tertiary",
     danger: "btn-danger",
-    ghost: "inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-50 bg-transparent text-foreground hover:bg-card",
-    solid: "inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50 bg-primary hover:bg-primary/90",
+    ghost: "inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-colors disabled:opacity-50 bg-transparent text-foreground hover:bg-card",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -49,9 +49,7 @@ export default function Button({
             aria-busy={isLoading ? true : undefined}
             className={cn(
                 variantClasses[variant],
-                variant === "primary" || variant === "secondary" || variant === "danger"
-                    ? sizeClasses[size]
-                    : undefined,
+                sizeClasses[size],
                 isLoading ? "cursor-wait" : undefined,
                 className,
             )}

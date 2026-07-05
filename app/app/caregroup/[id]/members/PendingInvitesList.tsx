@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import Button from "@/components/ui/Button";
+
 type Invitation = {
     id: string;
     email?: string;
@@ -56,20 +58,22 @@ export function PendingInvitesList({
                             {url || "Lien indisponible"}
                         </div>
                         <div className="mt-2 flex items-center gap-2">
-                            <button
+                            <Button
                                 type="button"
-                                className="btn-secondary"
+                                variant="tertiary"
+                                size="md"
                                 onClick={() => copy(invite)}
                                 disabled={!invite.token}
                             >
                                 {copiedID === invite.id
                                     ? "Copié"
                                     : "Copier le lien"}
-                            </button>
+                            </Button>
 
-                            <button
+                            <Button
                                 type="button"
-                                className="btn-danger"
+                                variant="danger"
+                                size="md"
                                 disabled={deletingID === invite.id}
                                 onClick={async () => {
                                     // Optimistic UI: disable only the row being deleted.
@@ -84,7 +88,7 @@ export function PendingInvitesList({
                                 {deletingID === invite.id
                                     ? "Suppression..."
                                     : "Supprimer"}
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 );

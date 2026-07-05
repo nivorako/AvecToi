@@ -2,6 +2,8 @@
 
 import { useActionState } from "react";
 
+import Button from "@/components/ui/Button";
+
 type InviteState =
     | {
           ok: true;
@@ -43,9 +45,9 @@ export function InviteMemberForm({
                 <option value="patient">Patient</option>
             </select>
 
-            <button type="submit" className="btn-primary" disabled={pending}>
+            <Button type="submit" variant="primary" size="md" disabled={pending}>
                 Inviter
-            </button>
+            </Button>
 
             {state?.message ? (
                 <div className="text-sm text-muted">{state.message}</div>

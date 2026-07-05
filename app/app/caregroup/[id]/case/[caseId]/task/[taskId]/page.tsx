@@ -124,22 +124,6 @@ export default async function TaskPage({
                 
                 <div className="flex flex-col flex-wrap gap-2 text-sm">
 
-                    {/* Badge statut */}
-                    {(() => {
-                        const statusConfig = {
-                            todo:        { label: "À faire",  classes: "bg-yellow-100 text-yellow-700" },
-                            in_progress: { label: "En cours", classes: "bg-blue-100 text-blue-700"    },
-                            done:        { label: "Terminée", classes: "bg-green-100 text-green-700"  },
-                        };
-                        const cfg = statusConfig[task.status as keyof typeof statusConfig] 
-                                ?? statusConfig.todo;
-                        return (
-                            <span className={`inline-flex w-fit rounded-full px-3 py-1 font-medium ${cfg.classes}`}>
-                                {cfg.label}
-                            </span>
-                        );
-                    })()}
-
                     {/* Assigné à */}
                     {task.assignedTo && (
                         <span className="text-muted">
@@ -195,7 +179,7 @@ export default async function TaskPage({
                 </Card>
                 
                 <Card>
-                    <CardHeader title="Mediathéque" />
+                    <CardHeader title="Mediathèque" />
                     <CardContent>
                         <div className="mt-4 flex flex-col gap-2">
                             {/* Each row is a Client Component to support the inline menu (rename/delete).

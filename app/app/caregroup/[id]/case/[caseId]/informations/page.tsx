@@ -4,7 +4,6 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
-import BackButton from "@/components/ui/BackButton";
 import DotsMenu from "@/components/ui/DotsMenu";
 
 type CaseInformation = {
@@ -51,11 +50,11 @@ async function createCaseInformation(formData: FormData) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
             case: caseId,
-            category,
+            ...(category ? { category } : {}),
             title,
-            subtitle,
-            phone,
-            notes,
+            ...(subtitle ? { subtitle } : {}),
+            ...(phone ? { phone } : {}),
+            ...(notes ? { notes } : {}),
         }),
     });
 
@@ -105,7 +104,6 @@ export default async function CaseInformationsPage({
         <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold">Informations</h1>
-                <BackButton href={`/app/caregroup/${id}/case/${caseId}`} />
             </div>
 
             {/* Liste des informations */}
@@ -179,16 +177,6 @@ export default async function CaseInformationsPage({
                 <form action={createCaseInformation} className="flex flex-col gap-3">
                     <input type="hidden" name="case" value={caseId} />
                     <input type="hidden" name="careGroup" value={id} />
-
-                    {/* <div>
-                        <label className="text-xs text-muted">Catégorie</label>
-                        <select name="category" className="input w-full">
-                            <option value="doctor">Médecin</option>
-                            <option value="insurance">Mutuelle / Assurance</option>
-                            <option value="contact">Contact</option>
-                            <option value="other">Autre</option>
-                        </select>
-                    </div> */}
 
                     <div>
                         <label className="text-xs text-muted">Titre *</label>

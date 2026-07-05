@@ -31,7 +31,7 @@ export default function LogoutButton() {
             type="button"
             onClick={logout}
             disabled={loading}
-            variant="secondary"
+            variant="tertiary"
         >
             {loading ? "..." : "Logout"}
         </Button>

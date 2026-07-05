@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import Button from "@/components/ui/Button";
+
 export default function RegisterForm({
     nextUrl,
     initialEmail,
@@ -151,13 +153,9 @@ export default function RegisterForm({
                 </div>
             ) : null}
 
-            <button
-                type="submit"
-                disabled={loading}
-                className="btn-primary disabled:opacity-60"
-            >
+            <Button type="submit" variant="primary" size="md" disabled={loading}>
                 {loading ? "Création..." : "Créer mon compte"}
-            </button>
+            </Button>
 
             <div className="text-sm text-muted">
                 Déjà un compte ?{" "}

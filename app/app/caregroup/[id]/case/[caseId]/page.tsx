@@ -5,6 +5,7 @@ import PageSummary from "@/components/ui/PageSummary";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
+import { archiveCase, deleteCase } from "../../case/action"; 
 type Message = {
     id: string;
     content?: string;
@@ -346,49 +347,6 @@ export default async function CasePage({
                 String(b.title ?? b.id),
             );
         });
-
-    async function archiveCase(formData: FormData) {
-        "use server";
-        const caseID = String(formData.get("case") ?? "");
-        const careGroup = String(formData.get("careGroup") ?? "");
-        if (!caseID || !careGroup) return;
-
-        const user = await requireUser();
-        const membership = await payloadREST<{ docs: { role?: string }[] }>(
-            `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
-        ).then((r) => r.docs[0]);
-
-        if (membership?.role !== "owner") return;
-
-        await payloadREST(`/api/cases/${encodeURIComponent(caseID)}`, {
-            method: "PATCH",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ status: "archived" }),
-        });
-
-        revalidatePath(`/app/caregroup/${careGroup}/cases`);
-    }
-
-    async function deleteCase(formData: FormData) {
-        "use server";
-        const caseID = String(formData.get("case") ?? "");
-        const careGroup = String(formData.get("careGroup") ?? "");
-        if (!caseID || !careGroup) return;
-
-        const user = await requireUser();
-        const membership = await payloadREST<{ docs: { role?: string }[] }>(
-            `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
-        ).then((r) => r.docs[0]);
-
-        if (membership?.role !== "owner") return;
-
-        await payloadREST(`/api/cases/${encodeURIComponent(caseID)}`, {
-            method: "DELETE",
-        });
-
-        const { redirect } = await import("next/navigation");
-        redirect(`/app/caregroup/${careGroup}/cases`);
-    }
 
     return (
         <div>

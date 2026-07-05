@@ -20,7 +20,7 @@ export default function AddTaskAttachmentPanel({
             {!open ? (
                 <Button
                     type="button"
-                    variant="secondary"
+                    variant="primary"
                     size="md"
                     onClick={() => setOpen(true)}
                 >
@@ -31,7 +31,7 @@ export default function AddTaskAttachmentPanel({
                     {children}
                     <div className="mt-3 flex justify-start">
                         <Button
-                            variant="secondary"
+                            variant="tertiary"
                             type="button"
                             size="md"
                             onClick={() => setOpen(false)}

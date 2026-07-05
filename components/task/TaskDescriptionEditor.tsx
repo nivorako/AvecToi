@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import Button from "@/components/ui/Button";
+
 type Props = {
     taskID: string;
     initialDescription?: string;
@@ -48,13 +50,15 @@ export default function TaskDescriptionEditor({
                     <p className="text-sm text-muted">Aucune description.</p>
                 )}
                 {canEdit && (
-                    <button
+                    <Button
                         type="button"
-                        className="btn-secondary w-fit text-sm"
+                        variant="primary"
+                        size="md"
+                        className="w-fit"
                         onClick={() => setEditing(true)}
                     >
                         {value ? "Modifier" : "Ajouter une description"}
-                    </button>
+                    </Button>
                 )}
             </div>
         );
@@ -71,22 +75,24 @@ export default function TaskDescriptionEditor({
             />
             {error && <p className="text-sm text-danger">{error}</p>}
             <div className="flex gap-2">
-                <button
+                <Button
                     type="button"
-                    className="btn-primary text-sm"
+                    variant="secondary"
+                    size="md"
                     onClick={handleSave}
                     disabled={saving}
                 >
                     {saving ? "Enregistrement..." : "Enregistrer"}
-                </button>
-                <button
+                </Button>
+                <Button
                     type="button"
-                    className="btn-secondary text-sm"
+                    variant="tertiary"
+                    size="md"
                     onClick={() => { setEditing(false); setValue(initialDescription); }}
                     disabled={saving}
                 >
                     Annuler
-                </button>
+                </Button>
             </div>
         </div>
     );

@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import { redirect } from "next/navigation";
 
+import Button from "@/components/ui/Button";
+
 import { getPayload } from "payload";
 
 import config from "@/payload.config";
@@ -134,7 +136,7 @@ export default async function InvitePage({
                         Invitation introuvable.
                     </div>
                     <div className="mt-6">
-                        <Link href="/app" className="btn-secondary">
+                        <Link href="/app" className="btn-tertiary px-4 py-2 text-sm">
                             {"Aller à l'app"}
                         </Link>
                     </div>
@@ -193,13 +195,13 @@ export default async function InvitePage({
                                 <div className="mt-4">
                                     <div className="flex flex-wrap gap-2">
                                         <Link
-                                            className="btn-secondary"
+                                            className="btn-tertiary px-4 py-2 text-sm"
                                             href={`/login?next=${encodeURIComponent(`/invite/${token}`)}`}
                                         >
                                             Se connecter
                                         </Link>
                                         <Link
-                                            className="btn-secondary"
+                                            className="btn-tertiary px-4 py-2 text-sm"
                                             href={`/register?next=${encodeURIComponent(`/invite/${token}`)}&email=${encodeURIComponent(invite.email || "")}`}
                                         >
                                             Créer un compte
@@ -218,9 +220,9 @@ export default async function InvitePage({
                             action={acceptInvite.bind(null, invite)}
                             className="mt-6"
                         >
-                            <button type="submit" className="btn-primary">
+                            <Button type="submit" variant="primary" size="md">
                                 {"Accepter l'invitation"}
-                            </button>
+                            </Button>
                         </form>
                     )}
                 </div>

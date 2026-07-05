@@ -2,16 +2,16 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 
-export type IconButtonVariant = "secondary" | "ghost" | "danger";
+export type IconButtonVariant = "tertiary" | "ghost" | "danger";
 
 const variantClasses: Record<IconButtonVariant, string> = {
-    secondary: "bg-card text-foreground ring-1 ring-border hover:bg-white/70",
+    tertiary: "bg-card text-foreground ring-1 ring-border hover:bg-white/70",
     ghost: "bg-transparent text-foreground hover:bg-card",
     danger: "bg-danger text-danger-foreground hover:bg-danger/90",
 };
 
 export default function IconButton({
-    variant = "secondary",
+    variant = "tertiary",
     size = "md",
     isLoading = false,
     icon,

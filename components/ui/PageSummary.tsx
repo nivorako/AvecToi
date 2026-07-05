@@ -72,13 +72,10 @@ export default function PageSummary({
                         <Link
                             href={action.href}
                             className={cn(
-                                "inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors",
-                                isDanger
-                                    ? "bg-red-600 hover:bg-red-700"
-                                    : "bg-primary hover:bg-primary/90",
+                                "px-4 py-2 text-sm",
+                                isDanger ? "btn-danger" : "btn-primary",
                                 action.className,
                             )}
-                            style={{ color: "var(--color-primary-foreground)" }}
                         >
                             {action.label}
                         </Link>

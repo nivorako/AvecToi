@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import Button from "@/components/ui/Button";
+
 export function TaskAttachmentsUploader({ taskID }: { taskID: string }) {
     const router = useRouter();
     const [file, setFile] = useState<File | null>(null);
@@ -84,9 +86,9 @@ export function TaskAttachmentsUploader({ taskID }: { taskID: string }) {
                 onChange={(e) => setDescription(e.target.value)}
             />
             {error ? <div className="text-sm text-danger">{error}</div> : null}
-            <button type="submit" className="btn-primary" disabled={submitting}>
+            <Button type="submit" variant="primary" size="md" disabled={submitting}>
                 {submitting ? "Ajout..." : "Ajouter un document"}
-            </button>
+            </Button>
         </form>
     );
 }

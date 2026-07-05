@@ -178,33 +178,6 @@ export default async function CareGroupCasesPage({
                 extraAction={<AddDossierPanel careGroupId={id} action={createCase} />}
             />
 
-            {/* <div className="rounded-2xl bg-primary/10 p-4">
-                <h1 className="text-lg font-bold text-primary mb-3">Dossiers</h1>
-                <div className="flex flex-col gap-1.5 text-sm">
-                    <div className="flex items-center gap-2 font-semibold">
-                        <span>📁</span>
-                        <span>{cases.docs.length} dossiers actifs</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-amber-600">
-                        <span>🟠</span>
-                        <span> {tasksRes.docs.filter((t) => t.status !== "done").length} actions à effectuer</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted">
-                        <span>📅</span>
-                        <span>
-                             {tasksRes.docs.filter((t) => {
-                                if (!t.dueDate) return false;
-                                const d = new Date(t.dueDate as string);
-                                const weekEnd = new Date();
-                                weekEnd.setDate(weekEnd.getDate() + 7);
-                                return d <= weekEnd && t.status !== "done";
-                            }).length}échéances cette semaine
-                        </span>
-                    </div>
-                </div>
-                <AddDossierPanel careGroupId={id} action={createCase} />
-            </div> */}
-
             {/* Section 2 — Recherche */}
             <SearchInput placeholder="Rechercher un dossier..." />
 
@@ -232,6 +205,7 @@ export default async function CareGroupCasesPage({
                     </div>
                 )}
             </div>
+
         </div>
     );
 }

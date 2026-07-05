@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import Button from "@/components/ui/Button";
+
 type Props = {
     attachmentID: string;
     label: string;
@@ -114,14 +116,16 @@ export function TaskAttachmentRow({
 
                             {canManage ? (
                                 <div className="relative">
-                                    <button
+                                    <Button
                                         type="button"
-                                        className="btn-secondary !text-4xl"
+                                        variant="tertiary"
+                                        size="md"
+                                        className="!text-4xl"
                                         onClick={() => setMenuOpen((v) => !v)}
                                         disabled={pending}
                                     >
                                         ...
-                                    </button>
+                                    </Button>
 
                                     {menuOpen ? (
                                         <div className="absolute right-0 top-full z-10 mt-2 w-44 rounded-2xl border border-border bg-card p-1 shadow-sm">
