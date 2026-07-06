@@ -86,7 +86,7 @@ export function TaskAttachmentsUploader({ taskID }: { taskID: string }) {
                 onChange={(e) => setDescription(e.target.value)}
             />
             {error ? <div className="text-sm text-danger">{error}</div> : null}
-            <Button type="submit" variant="primary" size="md" disabled={submitting}>
+            <Button type="submit" variant="secondary" size="md" disabled={submitting} className="self-center">
                 {submitting ? "Ajout..." : "Ajouter un document"}
             </Button>
         </form>

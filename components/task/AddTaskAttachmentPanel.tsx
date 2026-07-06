@@ -16,11 +16,11 @@ export default function AddTaskAttachmentPanel({
     if (!canAdd) return null;
 
     return (
-        <div className="mt-4 flex justify-start">
+        <div className="mt-4 flex justify-center">
             {!open ? (
                 <Button
                     type="button"
-                    variant="primary"
+                    variant="secondary"
                     size="md"
                     onClick={() => setOpen(true)}
                 >

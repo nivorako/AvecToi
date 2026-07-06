@@ -245,14 +245,16 @@ export default function TaskSubtasksManager({
                     </Button>
                 </div>
             ) : (
-                <Button
-                    type="button"
-                    variant="primary"
-                    size="md"
-                    onClick={() => setIsAdding(true)}
-                >
-                    + Ajouter une sous-tâche
-                </Button>
+                <div className="flex justify-center">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="md"
+                        onClick={() => setIsAdding(true)}
+                    >
+                        + Ajouter une sous-tâche
+                    </Button>
+                </div>
             )}
         </div>
     );

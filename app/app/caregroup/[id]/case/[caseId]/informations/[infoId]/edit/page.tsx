@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
-import BackButton from "@/components/ui/BackButton";
+import PageSummary from "@/components/ui/PageSummary";
 
 type CaseInformation = {
     id: string;
@@ -83,15 +83,22 @@ export default async function EditCaseInformationPage({
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold">Modifier l&apos;information</h1>
-                <BackButton
-                    href={`/app/caregroup/${id}/case/${caseId}/informations`}
-                />
-            </div>
+            <PageSummary
+                title="Modifier l'information"
+                items={[]}
+                extraAction={
+                    <button
+                        type="submit"
+                        form="add-info-form"
+                        className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                    >
+                        Enregistrer les modifications
+                    </button>
+                }
+            />
 
             <div className="rounded-2xl border border-border bg-card p-4">
-                <form action={updateCaseInformation} className="flex flex-col gap-3">
+                <form id="add-info-form" action={updateCaseInformation} className="flex flex-col gap-3">
                     <input type="hidden" name="id" value={info.id} />
                     <input type="hidden" name="case" value={caseId} />
                     <input type="hidden" name="careGroup" value={id} />
@@ -153,13 +160,6 @@ export default async function EditCaseInformationPage({
                             placeholder="Adresse, infos complémentaires..."
                         />
                     </div>
-
-                    <button
-                        type="submit"
-                        className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                    >
-                        Enregistrer les modifications
-                    </button>
                 </form>
             </div>
         </div>

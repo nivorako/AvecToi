@@ -52,9 +52,9 @@ export default function TaskDescriptionEditor({
                 {canEdit && (
                     <Button
                         type="button"
-                        variant="primary"
+                        variant="secondary"
                         size="md"
-                        className="w-fit"
+                        className="w-fit self-center"
                         onClick={() => setEditing(true)}
                     >
                         {value ? "Modifier" : "Ajouter une description"}

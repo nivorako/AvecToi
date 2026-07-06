@@ -37,7 +37,8 @@ export default function DotsMenu({
                 onClick={() => setOpen((v) => !v)}
                 aria-label="Actions"
                 aria-expanded={open}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-lg leading-none text-foreground transition-colors hover:bg-card"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-4xl leading-none text-foreground transition-colors hover:bg-card"
+                style={{ fontSize: "12px" }}
             >
                 ⋮
             </button>

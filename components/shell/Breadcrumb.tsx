@@ -31,7 +31,12 @@ export default function Breadcrumb() {
         const seg = segments[i];
         const href = "/" + segments.slice(0, i + 1).join("/");
 
-        if (HIDDEN_SEGMENTS.has(seg)) continue; 
+        if (HIDDEN_SEGMENTS.has(seg)) continue;
+
+        // Masquer les segments dynamiques sans libellé juste avant /edit
+        if (segments[i + 1] === "edit" && !labels[seg] && !STATIC_LABELS[seg]) {
+            continue;
+        }
         
         if (seg === "case") {
             const careGroupId = segments[i - 1];

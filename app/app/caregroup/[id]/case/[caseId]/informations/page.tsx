@@ -4,6 +4,9 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
+
+import PageSummary from "@/components/ui/PageSummary";
+
 import DotsMenu from "@/components/ui/DotsMenu";
 
 type CaseInformation = {
@@ -102,12 +105,23 @@ export default async function CaseInformationsPage({
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold">Informations</h1>
-            </div>
+            <PageSummary
+                title="Informations"
+                items={[]}
+                extraAction={
+                    <button
+                        type="submit"
+                        form="add-info-form"
+                        className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                    >
+                        Enregistrer
+                    </button>
+                }
+            />
 
             {/* Liste des informations */}
             <div className="flex flex-col gap-2">
+                <h2 className="text-base font-bold">Liste des Informations</h2>
                 {informations.docs.length === 0 ? (
                     <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
                         Aucune information enregistrée.
@@ -174,7 +188,7 @@ export default async function CaseInformationsPage({
             {/* Formulaire d'ajout */}
             <div className="rounded-2xl border border-border bg-card p-4">
                 <h2 className="text-base font-bold mb-3">Ajouter une information</h2>
-                <form action={createCaseInformation} className="flex flex-col gap-3">
+                <form id="add-info-form" action={createCaseInformation} className="flex flex-col gap-3">
                     <input type="hidden" name="case" value={caseId} />
                     <input type="hidden" name="careGroup" value={id} />
 
@@ -218,12 +232,6 @@ export default async function CaseInformationsPage({
                         />
                     </div>
 
-                    <button
-                        type="submit"
-                        className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                    >
-                        Enregistrer
-                    </button>
                 </form>
             </div>
         </div>
