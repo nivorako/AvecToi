@@ -4,9 +4,7 @@ import { requireUser } from "@/lib/requireUser";
 import { findCareGroups } from "@/lib/payloadRest";
 
 export default async function AppHomePage() {
-    // Server Component (async): the initial dashboard is rendered on the server.
-    // This keeps access control + data fetching on the backend and avoids exposing tokens.
-
+   
     // Protected page: requires an authenticated Payload user.
     await requireUser();
 
