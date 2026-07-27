@@ -1,12 +1,6 @@
-import { ElementType, ReactNode } from "react";
+import { ElementType } from "react";
 import { headingVariants, HeadingVariant } from "./headingVariants";
-
-type HeadingProps<T extends ElementType = "h2"> = {
-  as?: T;
-  variant?: HeadingVariant;
-  children: ReactNode;
-  className?: string;
-};
+import type { HeadingProps } from "./type";
 
 export function Heading<T extends ElementType = "h2">({
   as,

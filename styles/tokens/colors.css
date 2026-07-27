@@ -1,0 +1,30 @@
+:root {
+  /* Surfaces */
+  --background: #f7f8fb;
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+
+  /* Texte */
+  --foreground: #101828;
+  --muted: #667085;
+
+  /* Bordures */
+  --border: #eaecf0;
+
+  /* Couleur principale */
+  --primary: #2a8cbe;
+  --primary-foreground: #ffffff;
+
+  /* États */
+  --success: #22c55e;
+  --success-foreground: #ffffff;
+
+  --warning: #f59e0b;
+  --warning-foreground: #ffffff;
+
+  --danger: #e5484d;
+  --danger-foreground: #ffffff;
+
+  --info: #3b82f6;
+  --info-foreground: #ffffff;
+}

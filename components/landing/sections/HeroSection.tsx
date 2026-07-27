@@ -1,8 +1,10 @@
+import { Heading } from "@/components/ui/Heading";
+import { Text } from "@/components/ui/Text";
+
 import { Section } from "../components/Section";
 import { LandingContainer } from "../components/LandingContainer";
 import { Placeholder } from "../components/Placeholder";
 import { ImagePlaceholder } from "../components/ImagePlaceholder";
-import { SectionHeader } from "../components/SectionHeader";
 
 export function HeroSection() {
     return (
@@ -13,8 +15,19 @@ export function HeroSection() {
 
                     <div className="flex flex-col items-center justify-center  min-h-[300px] space-y-8">
 
-                       <SectionHeader />
+                         <Heading
+                            as="h1"
+                            variant="display"
+                        >
+                            Prenez soin de vos proches,
+                            ensemble.
+                        </Heading>
 
+                        <Text variant="bodyLarge">
+                            Créez un espace partagé pour organiser
+                            l'accompagnement d'un proche avec votre
+                            famille et vos aidants.
+                        </Text>
                         <Placeholder type="button" />
 
                     </div>
