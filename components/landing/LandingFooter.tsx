@@ -1,26 +1,77 @@
+// @c:\Users\rakotondrabe\Documents\next js\avectoi\components\landing\LandingFooter.tsx
+import { Section } from "./components/Section";
+import { LandingContainer } from "./components/LandingContainer";
+import { Logo } from "./components/Logo";
+import { FooterColumn } from "./components/FooterColumn";
 import Link from "next/link";
 
 export function LandingFooter() {
     return (
-        <footer className="bg-gray-50 border-t border-gray-200 px-6 py-12 text-sm text-gray-500">
-            <div className="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between gap-8">
-                <div>
-                    <p className="font-bold text-gray-800 mb-2">Avec Toi</p>
-                    <p className="max-w-xs">
-                        Coordination de soins pour les aidants familiaux et les professionnels de santé.
+        <Section>
+            <LandingContainer>
+                <div className="flex flex-col justify-center items-center mb-12 gap-y-10">
+                    <Logo />
+                    <p className="text-center text-gray-600">Courte phrase</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mt-8 max-w-sm mx-auto md:max-w-none">
+                    <FooterColumn title="CareGroup">
+                        <p className="text-sm text-muted">Courte présentation careGroup.</p>
+                        {/* <ul className="flex space-x-2">
+                            <li>
+                                <Link href="#" className="text-muted hover:text-foreground">Facebook</Link>
+                            </li>
+                            <li>
+                                <Link href="#" className="text-muted hover:text-foreground">Twitter</Link>
+                            </li>
+                        </ul> */}
+                    </FooterColumn>
+
+                    <FooterColumn title="Produit">
+                        <nav>
+                            <ul className="space-y-2">
+                            <li>
+                                <Link href="#" className="text-muted hover:text-foreground">Fonctionnement</Link>
+                            </li>
+                            <li>
+                                <Link href="#" className="text-muted hover:text-foreground">Sécurité</Link>
+                            </li>
+                            <li>
+                                <Link href="#" className="text-muted hover:text-foreground">FAQ</Link>
+                            </li>
+                            <li>
+                                <Link href="#" className="text-muted hover:text-foreground">Connexion</Link>
+                            </li>
+                        </ul>
+                        </nav>
+                    </FooterColumn>
+
+                    <FooterColumn title="Légal">
+                        <nav>
+                            <ul className="space-y-2">
+                                <li>
+                                    <Link href="#" className="text-muted hover:text-foreground">confidentialité</Link>
+                                </li>
+                                <li>
+                                    <Link href="#" className="text-muted hover:text-foreground">Mentions légales</Link>
+                                </li>
+                                <li>
+                                    <Link href="#" className="text-muted hover:text-foreground">Contact</Link>
+                                </li>
+                            </ul>
+                        </nav>
+                    </FooterColumn>
+                </div>
+                <div className="border-t border-gray-300 m-14" />
+                <div className="flex flex-col md:flex-row justify-around  items-center gap-4 w-full max-w-sm mx-auto md:max-w-none mt-12">
+                    <p className="w-auto">
+                        © 2026 CareGroup
+                    </p>
+                    <p className="w-auto">
+                        Conçu pour faciliter l'accompagnement des proches.
                     </p>
                 </div>
-                <div className="flex flex-col gap-2">
-                    <p className="font-semibold text-gray-700">Liens</p>
-                    <Link href="#features" className="hover:text-gray-800 transition">Fonctionnalités</Link>
-                    <Link href="#faq" className="hover:text-gray-800 transition">FAQ</Link>
-                    <Link href="/login" className="hover:text-gray-800 transition">Connexion</Link>
-                    <Link href="/register" className="hover:text-gray-800 transition">Créer un compte</Link>
-                </div>
-            </div>
-            <div className="max-w-5xl mx-auto mt-8 pt-6 border-t border-gray-200 text-center text-xs">
-                © {new Date().getFullYear()} Avec Toi. Tous droits réservés.
-            </div>
-        </footer>
+            </LandingContainer>
+        </Section>
     );
 }

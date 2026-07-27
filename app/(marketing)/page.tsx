@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 
-import { HeroSection } from "@/components/landing/HeroSection";
-import { ProblemSolutionSection } from "@/components/landing/ProblemSolutionSection";
-import { FeaturesSection } from "@/components/landing/FeaturesSection";
-import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
-import { CtaSection } from "@/components/landing/CtaSection";
-import { FaqSection } from "@/components/landing/FaqSection";
+import { HeroSection } from "@/components/landing/sections/HeroSection";
+import { ProblemSection } from "@/components/landing/sections/ProblemSection";
+import { SolutionSection } from "@/components/landing/sections/SolutionSection";
+import { AppOverviewSection } from "@/components/landing/sections/AppOverviewSection";
+import { BenefitsSection } from "@/components/landing/sections/BenefitsSection";
+import { SecuritySection } from "@/components/landing/sections/SecuritySection";
+import { FinalCtaSection } from "@/components/landing/sections/FinalCtaSection";
+
 
 export const metadata: Metadata = {
     title: "Avec Toi – Coordination de soins pour aidants familiaux",
@@ -23,13 +25,14 @@ export const metadata: Metadata = {
 
 export default function LandingPage() {
     return (
-        <main className="flex flex-col">
+        <>
             <HeroSection />
-            <ProblemSolutionSection />
-            <FeaturesSection />
-            <TestimonialsSection />
-            <CtaSection />
-            <FaqSection />
-        </main>
+            <ProblemSection />
+            <SolutionSection />
+            <AppOverviewSection /> 
+            <BenefitsSection />
+            <SecuritySection />
+            <FinalCtaSection />
+        </>
     );
-}
+};

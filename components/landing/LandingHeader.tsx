@@ -26,17 +26,17 @@ export function LandingHeader() {
                 {/* Nav desktop */}
                 <nav className="hidden sm:flex items-center gap-6 text-sm text-muted">
                     <Link href="#features" className="hover:text-foreground transition">Fonctionnalités</Link>
-                    <Link href="#faq" className="hover:text-foreground transition">FAQ</Link>
+                    <Link href="#sécurité" className="hover:text-foreground transition">Sécurité</Link>
                     <Link href="/login" className="hover:text-foreground transition">Connexion</Link>
                     <LinkButton href="/register" className="btn-primary px-4 py-2 text-sm">
-                        Commencer
+                        Creer careGroup
                     </LinkButton>
                 </nav>
 
                 {/* Mobile : CTA visible + hamburger */}
                 <div className="flex sm:hidden items-center gap-3">
                     <LinkButton href="/register">
-                        Commencer
+                        Créer careGroup
                     </LinkButton>  
                     <button
                         type="button"
@@ -67,7 +67,7 @@ export function LandingHeader() {
             {menuOpen && (
                 <nav className="sm:hidden border-t border-gray-100 px-6 py-4 flex flex-col gap-4 text-sm text-muted bg-white">
                     <Link href="#features" onClick={() => setMenuOpen(false)} className="hover:text-foreground transition">Fonctionnalités</Link>
-                    <Link href="#faq" onClick={() => setMenuOpen(false)} className="hover:text-foreground transition">FAQ</Link>
+                    <Link href="#sécurité" onClick={() => setMenuOpen(false)} className="hover:text-foreground transition">Sécurité</Link>
                     <Link href="/login" onClick={() => setMenuOpen(false)} className="hover:text-foreground transition">Connexion</Link>
                 </nav>
             )}
