@@ -1,22 +1,40 @@
+import { Heading } from "@/components/ui/Heading";
+import { Text } from "@/components/ui/Text";
 
 import { Section } from "../components/Section";
 import { LandingContainer } from "../components/LandingContainer";
-import { SectionHeader } from "../components/SectionHeader";
-import { LandingInfosCard } from "../components/LandingInfosCard";
+import { LandingInfosCard } from "../components/LandingInfosCard/LandingInfosCard";
+
+import { benefits } from "../data/benefits";
 
 export function BenefitsSection() {
     return (
         <Section>
             <LandingContainer>
-                <div className="w-96 mx-auto mb-12">
-                    <SectionHeader/>
+
+                <div className="flex flex-col items-center gap-y-6 text-center max-w-3xl mx-auto mb-16">
+                     <Heading
+                        as="h2"
+                        variant="h2"
+                    >
+                        Les bénéfices
+                    </Heading>
+
+                    <Text variant="bodyLarge">
+                        Découvrez comment CareGroup simplifie l'organisation familiale et améliore la coordination entre tous les proches.
+                    </Text>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 w-3/4 mx-auto">
-                    <LandingInfosCard />
-                    <LandingInfosCard />
-                    <LandingInfosCard />
-                    <LandingInfosCard />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    {benefits.map((benefit) => (
+                        <LandingInfosCard
+                            key={benefit.title}
+                            title={benefit.title}
+                            description={benefit.description}
+                        />
+                    ))}
                 </div>
+
             </LandingContainer>
         </Section>
     );

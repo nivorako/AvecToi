@@ -6,26 +6,14 @@ import { Section } from "../components/Section";
 import { LandingContainer } from "../components/LandingContainer";
 import { SchemaPlaceholder } from "../components/SchemaPlaceholder";
 
-const steps = [
-    {
-        title: "Créez votre CareGroup",
-        description: "Mettez en place un espace partagé.",
-    },
-    {
-        title: "Invitez votre famille",
-        description: "Ajoutez les personnes concernées.",
-    },
-    {
-        title: "Organisez-vous ensemble",
-        description: "Suivez les informations et les tâches.",
-    },
-];
+import { steps } from "../data/steps";
 
 export function SolutionSection() {
     return (
         <Section>
             <LandingContainer>
                 <div className="flex flex-col items-center gap-y-16">
+
                     <div className="flex flex-col items-center gap-y-6 text-center max-w-3xl mx-auto">
                         <Heading as="h2" variant="h2">
                             Comment CareGroup vous accompagne au quotidien
@@ -54,6 +42,7 @@ export function SolutionSection() {
                             />
                         ))}
                     </div>
+
                 </div>
             </LandingContainer>
         </Section>

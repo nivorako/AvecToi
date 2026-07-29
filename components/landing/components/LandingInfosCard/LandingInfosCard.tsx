@@ -1,0 +1,34 @@
+import { Heading } from "@/components/ui/Heading";
+import { Text } from "@/components/ui/Text";
+import { LandingInfoscardProps } from "./type";
+
+import { Placeholder } from "../Placeholder";
+
+export function LandingInfosCard({title, subtitle, description}: LandingInfoscardProps) {
+    return (
+        <div className="flex flex-col justify-between gap-4 p-6 shadow-sm">
+
+            <div className="flex items-start  gap-2">
+                <div className="flex-shrink-0">
+                    <Placeholder type="icon"/>
+                </div>
+                
+                <div>
+                    <Heading as="h3" variant="h3">
+                        {title}
+                    </Heading>
+                    {subtitle && (
+                        <Text variant="small">
+                            {subtitle}
+                        </Text>
+                    )}
+                </div>
+            </div>
+
+            <Text variant="small">
+                {description}
+            </Text>
+
+        </div>
+    )
+} 
