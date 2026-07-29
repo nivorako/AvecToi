@@ -1,2 +1,2 @@
 export { Step } from "./Step";
-export type { StepProps } from "./step";
+export type { StepProps } from "./type";
