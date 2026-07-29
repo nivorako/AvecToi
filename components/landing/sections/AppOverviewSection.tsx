@@ -1,23 +1,63 @@
+import { Heading } from "@/components/ui/Heading";
+import { Text } from "@/components/ui/Text";
+
 import { Section } from "../components/Section";
 import { LandingContainer } from "../components/LandingContainer";
-import { SectionHeader } from "../components/SectionHeader";
 import { LandingFeaturedCard } from "../components/LandingFeaturedCard";
+
+const featuredCards = [
+    {
+        title: "Accueil",
+        description: "Découvrez une vue d'ensemble claire de vos activités.",
+        featured: true,
+    },
+    {
+        title: "Dossiers",
+        description: "Centralisez tous les dossiers de vos patients dans un seul endroit.",
+        featured: false,
+    },
+    {
+        title: "Messages",
+        description: "Communiquez avec votre équipe de manière sécurisée.",
+        featured: false,
+    },
+    {
+        title: "Calendrier",
+        description: "Planifiez et gérez vos rendez-vous en un clin d'œil.",
+        featured: false,
+    },
+    {
+        title: "Urgences",
+        description: "Accédez à toutes les informations importantes en un seul clic.",
+        featured: false,
+    }
+]
 
 export function AppOverviewSection() {
     return (
         <Section>
             <LandingContainer>
-                <div className="flex flex-col items-center justify-center mb-4 w-4/5 mx-auto">
-                    <SectionHeader/>
+                <div className="flex flex-col items-center justify-center mb-4 mx-auto gap-y-6">
+                    <Heading as="h2" variant="h2">
+                        Découvrez CareGroup
+                    </Heading>
+
+                    <Text
+                        variant="bodyLarge"
+                        className="max-w-3xl"
+                    >
+                        Un espace unique pour centraliser les dossiers, les échanges, les rendez-vous et les informations importantes.
+                    </Text>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 w-3/4 mx-auto">
-                    <div className="md:col-span-2">
-                        <LandingFeaturedCard />
-                    </div>
-                    <LandingFeaturedCard />
-                    <LandingFeaturedCard />
-                    <LandingFeaturedCard />
-                    <LandingFeaturedCard />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mx-auto">
+                    {featuredCards.map((card) => (
+                        <LandingFeaturedCard
+                            key={card.title}
+                            title={card.title}
+                            description={card.description}
+                            featured={card.featured}
+                        />
+                    ))}
                 </div>
             </LandingContainer>
         </Section>

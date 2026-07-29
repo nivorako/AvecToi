@@ -1,28 +1,59 @@
+import { Heading } from "@/components/ui/Heading";
+import { Text } from "@/components/ui/Text";
+import { Step } from "../components/Step";
+
 import { Section } from "../components/Section";
 import { LandingContainer } from "../components/LandingContainer";
-import { Placeholder } from "../components/Placeholder";
-import { StepPlaceholder } from "../components/StepPlaceholder";
 import { SchemaPlaceholder } from "../components/SchemaPlaceholder";
 
-import { SectionHeader } from "../components/SectionHeader";
-
-
+const steps = [
+    {
+        title: "Créez votre CareGroup",
+        description: "Mettez en place un espace partagé.",
+    },
+    {
+        title: "Invitez votre famille",
+        description: "Ajoutez les personnes concernées.",
+    },
+    {
+        title: "Organisez-vous ensemble",
+        description: "Suivez les informations et les tâches.",
+    },
+];
 
 export function SolutionSection() {
     return (
-        <Section >
+        <Section>
             <LandingContainer>
-                <div className="flex flex-col items-center justify-center space-y-2">
-                    <SectionHeader/>
-                    <SchemaPlaceholder/>           
-                </div>
-                <div className="flex flex-col items-center justify-center mt-14 space-y-6 w-96 mx-auto">
-                    <div>
-                        <Placeholder type="stepTitle" />
+                <div className="flex flex-col items-center gap-y-16">
+                    <div className="flex flex-col items-center gap-y-6 text-center max-w-3xl mx-auto">
+                        <Heading as="h2" variant="h2">
+                            Comment CareGroup vous accompagne au quotidien
+                        </Heading>
+
+                        <Text variant="bodyLarge">
+                            Plutôt que de multiplier les appels, les messages et les documents dispersés, CareGroup réunit les informations importantes dans un espace partagé. Chacun y accède selon son rôle, participe à l'organisation et suit ce qui le concerne.
+                        </Text>
                     </div>
-                    <StepPlaceholder />         
-                    <StepPlaceholder />
-                    <StepPlaceholder isLast/>
+
+                    <SchemaPlaceholder />
+
+                    <div className="flex flex-col items-center gap-y-6 w-96 mx-auto">
+                        <div>
+                            <Heading as="h2" variant="h2">
+                                Démarrer est simple
+                            </Heading>
+                                
+                        </div>
+                        {steps.map((step, index) => (
+                            <Step 
+                                key={step.title}
+                                title={step.title}
+                                description={step.description}
+                                isLast={index === steps.length - 1}
+                            />
+                        ))}
+                    </div>
                 </div>
             </LandingContainer>
         </Section>

@@ -37,12 +37,12 @@ export function ProblemSection() {
          <Section>        
                     <LandingContainer>      
                         <div className="grid grid-cols-1 gap-y-12">      
-                            <div className="flex flex-col justify-center items-center gap-y-6">      
+                            <div className="flex flex-col justify-center items-center gap-y-6 mx-auto">      
                                 <Heading as="h2" variant="h2">
                                     Le constat
                                 </Heading>
 
-                                <Text variant="bodyLarge">
+                                <Text variant="bodyLarge" className="max-w-3xl">
                                     Accompagner un proche devient vite complexe lorsque les informations sont dispersées.
                                 </Text>
                             </div>       
