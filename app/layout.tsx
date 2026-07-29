@@ -55,6 +55,7 @@ export const metadata: Metadata = {
         canonical: "/",
     },
     manifest: "/manifest.webmanifest",
+    colorScheme: "light",
 };
 
 export default function RootLayout({

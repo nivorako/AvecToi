@@ -1,4 +1,7 @@
 :root {
+  /*BG*/
+   color-scheme: light;
+   
   /* Surfaces */
   --background: #f7f8fb;
   --surface: #ffffff;
