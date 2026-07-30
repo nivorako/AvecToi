@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import Button from "@/components/ui/Button";
+import Button from "@/components/ui/Button/Button";
 
 export function CaseAttachmentsUploader({ caseID }: { caseID: string }) {
     const router = useRouter();

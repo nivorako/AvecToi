@@ -38,7 +38,7 @@ export function ProblemSection() {
          <Section>        
                     <LandingContainer>      
                         <div className="grid grid-cols-1 gap-y-12">      
-                            <div className="flex flex-col justify-center items-center gap-y-6 mx-auto">      
+                            <div className="flex flex-col justify-center items-center text-center gap-y-6 mx-auto">      
                                 <Heading as="h2" variant="h2">
                                     Le constat
                                 </Heading>

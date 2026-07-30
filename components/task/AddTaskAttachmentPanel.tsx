@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import Button from "@/components/ui/Button";
+import Button from "@/components/ui/Button/Button";
 
 export default function AddTaskAttachmentPanel({
     canAdd,

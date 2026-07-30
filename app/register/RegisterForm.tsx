@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import Button from "@/components/ui/Button";
+import Button from "@/components/ui/Button/Button";
 
 export default function RegisterForm({
     nextUrl,

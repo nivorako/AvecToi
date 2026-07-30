@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 
-import Button from "@/components/ui/Button";
+import Button from "@/components/ui/Button/Button";
 
 type InviteState =
     | {

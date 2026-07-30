@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import Button from "@/components/ui/Button";
+import Button from "@/components/ui/Button/Button";
 
 export function TaskAttachmentsUploader({ taskID }: { taskID: string }) {
     const router = useRouter();

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ComponentProps } from "react";
 import { cn } from "@/lib/cn";
-import type { ButtonVariant, ButtonSize } from "./Button";
+import type { ButtonVariant, ButtonSize } from "./Button/Button";
 
 // Au lieu de variantClasses[variant] dans un objet,
 // utilise une fonction avec des strings complètes visibles au scan :

@@ -1,19 +1,42 @@
+import { Heading } from "@/components/ui/Heading";
+import { Text } from "@/components/ui/Text";
+import { Button } from "@/components/ui/Button";
+
 import { Section } from "../components/Section";
 import { LandingContainer } from "../components/LandingContainer";
-import { SectionHeader } from "../components/SectionHeader";
-import { Placeholder } from "../components/Placeholder";
+
 
 export function FinalCtaSection() {
     return (
         <Section>
             <LandingContainer>
-                <div className="w-96 mx-auto mb-12">
-                    <SectionHeader/>
+                <div className="flex flex-col items-center gap-y-6 text-center max-w-3xl mx-auto mb-16">
+                    <Heading as="h2" variant="h2">
+                        Prêt à mieux organiser l'accompagnement de votre proche ?
+                    </Heading>
+                    <Text variant="body">
+                        Créez votre premier CareGroup et invitez les personnes qui accompagnent votre proche au quotidien. En quelques minutes, toute votre famille peut commencer à partager les informations importantes et mieux s'organiser.
+                    </Text>
                 </div>
-                <div className="flex flex-col space-y-8 items-center justify-center gap-4 w-3/4 mx-auto">
-                    <Placeholder type="cardTitle" />
-                    <Placeholder type="button" />
-                    <Placeholder type="smallText" />
+                <div className="flex flex-col gap-y-8 items-center justify-center">
+                    <Text
+                        variant="bodyLarge"
+                        className="font-medium"
+                    >
+                        Commencez en quelques minutes.
+                    </Text>
+                    <Button 
+                        size="lg"
+                        variant="primary"
+                    >
+                        Créer mon premier CareGroup
+                    </Button>
+                    <Text
+                        variant="small"
+                        className="text-muted"
+                    >
+                        Gratuit au démarrage • Invitez votre famille dès la création..
+                    </Text>
                 </div>
             </LandingContainer>
         </Section>
