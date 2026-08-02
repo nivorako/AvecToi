@@ -1,5 +1,5 @@
 import { Placeholder } from "./Placeholder";
-import { StepConnector } from "./StepConnector";
+import { StepConnector } from "./StepConnector/StepConnector";
 
 export function StepPlaceholder({ isLast = false }: { isLast?: boolean }) {
     return (

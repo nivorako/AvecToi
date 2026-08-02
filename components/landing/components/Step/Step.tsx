@@ -2,10 +2,11 @@ import { Heading } from "@/components/ui/Heading";
 import { Text } from "@/components/ui/Text";
 import { StepProps } from "./type";
 
-import { Placeholder } from "../Placeholder";
-import { StepConnector } from "../StepConnector";
+import { Icon } from "@/components/ui/Icon";
+import { StepConnector } from "../StepConnector/StepConnector";
 
 export function Step({
+    icon,
     title,
     description,
     isLast = false,
@@ -14,7 +15,7 @@ export function Step({
         <div className="flex items-start gap-4 w-full">
 
             <div className="flex flex-col items-center">
-                <Placeholder type="icon" />
+                <Icon icon={icon} />
 
                 {!isLast && <StepConnector />}
             </div>

@@ -1,18 +1,14 @@
 import { Heading } from "@/components/ui/Heading";
 import { Text } from "@/components/ui/Text";
 import { LandingInfoscardProps } from "./type";
+import { Icon } from "@/components/ui/Icon";
 
-import { Placeholder } from "../Placeholder";
-
-export function LandingInfosCard({title, subtitle, description}: LandingInfoscardProps) {
+export function LandingInfosCard({title, subtitle, description, icon }: LandingInfoscardProps) {
     return (
         <div className="flex flex-col justify-between gap-4 p-6 shadow-sm">
 
-            <div className="flex items-start  gap-2">
-                <div className="flex-shrink-0">
-                    <Placeholder type="icon"/>
-                </div>
-                
+            <div className="flex items-start  gap-3">
+                <Icon icon={icon} />
                 <div>
                     <Heading as="h3" variant="h3">
                         {title}
@@ -22,7 +18,7 @@ export function LandingInfosCard({title, subtitle, description}: LandingInfoscar
                             {subtitle}
                         </Text>
                     )}
-                </div>
+                </div> 
             </div>
 
             <Text variant="small">

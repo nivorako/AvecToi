@@ -13,7 +13,7 @@ export function HeroSection() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-                    <div className="flex flex-col items-center justify-center text-center min-h-[300px] space-y-8">
+                    <div className="flex flex-col items-center justify-center text-center min-h-[300px] max-w-3xl mx-auto gap-y-8">
 
                          <Heading
                             as="h1"

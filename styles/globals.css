@@ -17,7 +17,7 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-danger: var(--danger);
   --color-danger-foreground: var(--danger-foreground);
-
+  --color-border: var(--border);
   /* Radius */
   --radius-lg: var(--radius-lg);
 
@@ -29,6 +29,27 @@
   /* Polices */
   --font-sans: var(--font-family-sans);
   --font-mono: var(--font-family-mono);
+
+  /* Tailles */
+  --text-display: var(--font-size-display);
+  --text-h1: var(--font-size-h1);
+  --text-h2: var(--font-size-h2);
+  --text-h3: var(--font-size-h3);
+  --text-body-lg: var(--font-size-body-lg);
+  --text-body: var(--font-size-body);
+  --text-small: var(--font-size-small);
+ 
+  /* Graisses */
+  --font-weight-regular: var(--font-weight-regular);
+  --font-weight-medium: var(--font-weight-medium);
+  --font-weight-semibold: var(--font-weight-semibold);
+  --font-weight-bold: var(--font-weight-bold);
+
+  /* espacement */
+  --spacing-header: var(--header-height);
+  --spacing-section: var(--section-spacing);
+  --spacing-content: var(--content-spacing);
+  --container-content: var(--container-max-width);
 }
 
 html {

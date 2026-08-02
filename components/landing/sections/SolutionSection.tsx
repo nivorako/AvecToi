@@ -4,7 +4,7 @@ import { Step } from "../components/Step";
 
 import { Section } from "../components/Section";
 import { LandingContainer } from "../components/LandingContainer";
-import { SchemaPlaceholder } from "../components/SchemaPlaceholder";
+import { CareGroupDiagram } from "../components/CareGroupDiagram";
 
 import { steps } from "../data/steps";
 
@@ -24,7 +24,7 @@ export function SolutionSection() {
                         </Text>
                     </div>
 
-                    <SchemaPlaceholder />
+                    <CareGroupDiagram />
 
                     <div className="flex flex-col items-center gap-y-6 w-96 mx-auto">
                         <div>
@@ -36,9 +36,8 @@ export function SolutionSection() {
                         {steps.map((step, index) => (
                             <Step 
                                 key={step.title}
-                                title={step.title}
-                                description={step.description}
                                 isLast={index === steps.length - 1}
+                                {...step}
                             />
                         ))}
                     </div>

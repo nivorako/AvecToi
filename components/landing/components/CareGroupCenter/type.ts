@@ -1,9 +1,7 @@
 import { LucideIcon } from "lucide-react";
 
-export type LandingInfoscardProps = {
+export type CareGroupCenterPlaceholderProps = {
     icon: LucideIcon;
     title: string;
-    subtitle?: string;
     description: string;
 }
- 

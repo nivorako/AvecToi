@@ -28,6 +28,7 @@ export function BenefitsSection() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     {benefits.map((benefit) => (
                         <LandingInfosCard
+                            icon={benefit.icon}
                             key={benefit.title}
                             title={benefit.title}
                             description={benefit.description}

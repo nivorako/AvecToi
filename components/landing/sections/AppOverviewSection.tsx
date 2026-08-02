@@ -30,6 +30,8 @@ export function AppOverviewSection() {
                             title={card.title}
                             description={card.description}
                             featured={card.featured}
+                            image={card.image}
+                            imageAlt={card.title}
                         />
                     ))}
                 </div>

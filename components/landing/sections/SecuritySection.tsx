@@ -3,7 +3,6 @@ import { Text } from "@/components/ui/Text";
 
 import { Section } from "../components/Section";
 import { LandingContainer } from "../components/LandingContainer";
-import { SectionHeader } from "../components/SectionHeader";
 import { LandingInfosCard } from "../components/LandingInfosCard/LandingInfosCard";
 
 import { securityBenefits } from "../data/security";
@@ -23,8 +22,9 @@ export function SecuritySection() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                    {securityBenefits.map((benefit, index) => (
+                    {securityBenefits.map((benefit) => (
                         <LandingInfosCard
+                            icon={benefit.icon}
                             key={benefit.title}
                             title={benefit.title}
                             description={benefit.description}
