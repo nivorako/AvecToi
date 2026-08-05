@@ -1,7 +1,8 @@
 export type LandingFeatureCardProps = {
     title: string;
     description: string;
-    image?: string;
+    desktopImage?: string;
+    mobileImage?: string;
     imageAlt?: string;
     featured?: boolean;
 };

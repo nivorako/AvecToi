@@ -3,7 +3,7 @@ import { Text } from "@/components/ui/Text";
 
 import { Section } from "../components/Section";
 import { LandingContainer } from "../components/LandingContainer";
-import { LandingFeaturedCard } from "../components/LandingFeaturedCard";
+import { LandingFeatureCard } from "../components/LandingFeatureCard";
 
 import { featuredCards } from "../data/features";
 
@@ -25,12 +25,13 @@ export function AppOverviewSection() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mx-auto">
                     {featuredCards.map((card) => (
-                        <LandingFeaturedCard
+                        <LandingFeatureCard
                             key={card.title}
                             title={card.title}
                             description={card.description}
                             featured={card.featured}
-                            image={card.image}
+                            desktopImage={card.desktopImage}
+                            mobileImage={card.mobileImage}
                             imageAlt={card.title}
                         />
                     ))}
