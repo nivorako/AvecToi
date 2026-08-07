@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/Button";
 
 import { Section } from "../components/Section";
 import { LandingContainer } from "../components/LandingContainer";
-import { ImagePlaceholder } from "../components/ImagePlaceholder";
+import { HeroIllustration } from "../components/HeroIllustration";
+import { illustrations } from "../data/illustrations";
 
 export function HeroSection() {
     return (
@@ -39,7 +40,18 @@ export function HeroSection() {
 
                     <div>
 
-                        <ImagePlaceholder />
+                        <div className="relative max-w-[400px] h-[650px] my-4 md:w-full md:my-0 mx-auto">
+                            {illustrations.map((illus) => (
+                                <HeroIllustration
+                                    key={illus.src}
+                                    src={illus.src}
+                                    alt={illus.alt}
+                                    width={illus.width}
+                                    height={illus.height}
+                                    className={illus.className}
+                                />
+                            ))}
+                        </div>
 
                     </div>
 

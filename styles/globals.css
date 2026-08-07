@@ -7,30 +7,29 @@
 @import "./tokens/spacing.css";
 
 @theme inline {
-  /* Mapping des tokens vers Tailwind */
-
-   /* Couleurs */
+  /* Couleurs */
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
+  --color-border: var(--border);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-danger: var(--danger);
   --color-danger-foreground: var(--danger-foreground);
-  --color-border: var(--border);
-  /* Radius */
-  --radius-lg: var(--radius-lg);
-
-  /* Ombres */
-  --shadow-card: var(--shadow-card);
-  --shadow-floating: var(--shadow-floating);
-  --shadow-focus: var(--shadow-focus);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
 
   /* Polices */
   --font-sans: var(--font-family-sans);
   --font-mono: var(--font-family-mono);
 
-  /* Tailles */
+  /* Tailles de texte */
   --text-display: var(--font-size-display);
   --text-h1: var(--font-size-h1);
   --text-h2: var(--font-size-h2);
@@ -38,18 +37,41 @@
   --text-body-lg: var(--font-size-body-lg);
   --text-body: var(--font-size-body);
   --text-small: var(--font-size-small);
- 
+
   /* Graisses */
   --font-weight-regular: var(--font-weight-regular);
   --font-weight-medium: var(--font-weight-medium);
   --font-weight-semibold: var(--font-weight-semibold);
   --font-weight-bold: var(--font-weight-bold);
 
-  /* espacement */
+  /* Interligne */
+  --leading-tight: var(--line-height-tight);
+  --leading-normal: var(--line-height-normal);
+  --leading-relaxed: var(--line-height-relaxed);
+
+  /* Tracking */
+  --tracking-tight: var(--tracking-tight);
+  --tracking-normal: var(--tracking-normal);
+
+  /* Radius */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-full: var(--radius-full);
+
+  /* Ombres */
+  --shadow-card: var(--shadow-card);
+  --shadow-floating: var(--shadow-floating);
+  --shadow-focus: var(--shadow-focus);
+
+  /* Espacements */
   --spacing-header: var(--header-height);
   --spacing-section: var(--section-spacing);
   --spacing-content: var(--content-spacing);
-  --container-content: var(--container-max-width);
+
+  /* Largeur max du container */
+  --max-width-container: var(--container-max-width);
 }
 
 html {
