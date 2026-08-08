@@ -10,7 +10,7 @@ export function HeroIllustration ({ src, alt, width, height, className }: HelloI
                 width={width || 600}
                 height={height || 420}
                 loading={src === "/img/home.webp" ? "eager" : undefined}
-                className={cn("absolute z-10", className)}
+                className={cn("absolute", className)}
             />
     );
 }

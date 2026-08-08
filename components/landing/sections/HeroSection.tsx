@@ -38,23 +38,20 @@ export function HeroSection() {
 
                     </div> 
 
-                    <div>
-
-                        <div className="relative max-w-[400px] h-[650px] my-4 md:w-full md:my-0 mx-auto">
-                            {illustrations.map((illus) => (
-                                <HeroIllustration
-                                    key={illus.src}
-                                    src={illus.src}
-                                    alt={illus.alt}
-                                    width={illus.width}
-                                    height={illus.height}
-                                    className={illus.className}
-                                />
-                            ))}
-                        </div>
-
+                    
+                    <div className="relative max-w-[360px] lg:max-w-[520px] h-[560px] my-4 w-full md:my-0 mx-auto">
+                        {illustrations.map((illus) => (
+                            <HeroIllustration
+                                key={illus.src}
+                                src={illus.src}
+                                alt={illus.alt}
+                                width={illus.width}
+                                height={illus.height}
+                                className={illus.className}
+                            />
+                        ))}
                     </div>
-
+                   
                 </div>
 
             </LandingContainer>
