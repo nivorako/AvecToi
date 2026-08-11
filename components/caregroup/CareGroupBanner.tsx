@@ -18,7 +18,7 @@ export default async function CareGroupBanner({
     const careGroupName = careGroup?.name ?? careGroupId;
 
     return (
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
             <div className="text-2xl font-extrabold tracking-tight text-primary sm:text-3xl">
                 Bonjour, {user.name ?? user.email ?? user.id}
             </div>

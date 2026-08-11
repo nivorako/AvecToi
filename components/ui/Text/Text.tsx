@@ -1,6 +1,7 @@
 import { ElementType } from "react";
 import { textVariants } from "./textVariants";
 import { TextProps } from "./type";
+import { cn } from "@/lib/cn";
 
 export function Text<T extends ElementType = "p">({
     as,
@@ -13,7 +14,7 @@ export function Text<T extends ElementType = "p">({
 
     return (
         <Component
-            className={`${textVariants[variant]} ${className}`}
+            className={cn(textVariants[variant], className)}
         >
             {children}
         </Component>

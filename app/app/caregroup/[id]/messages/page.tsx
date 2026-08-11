@@ -186,7 +186,7 @@ export default async function CareGroupMessagesPage({
                 <input type="hidden" name="content" value="" />
                 <Link
                     href={`/app/caregroup/${id}/messages`}
-                    className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 text-2xl"
+                    className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-floating hover:bg-primary/90 text-2xl"
                     aria-label="Nouvelle conversation"
                 >
                     +

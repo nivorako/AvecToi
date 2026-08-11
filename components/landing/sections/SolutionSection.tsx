@@ -28,7 +28,7 @@ export function SolutionSection() {
 
                     <div className="flex flex-col items-center gap-y-6 w-96 mx-auto">
                         <div>
-                            <Heading as="h2" variant="h2">
+                            <Heading as="h3" variant="h3">
                                 Démarrer est simple
                             </Heading>
                                 

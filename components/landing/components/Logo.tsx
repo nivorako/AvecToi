@@ -1,5 +1,12 @@
+
 export function Logo(){
     return(
-        <div className="bg-gray-300 rounded-md mb-2 h-32 w-32" />
+        <img 
+            src="/icons/icon-192.png" 
+            alt="Avec Toi" 
+            width={128} 
+            height={128} 
+            className="rounded-md mb-2 mix-blend-multiply" 
+        />
     )
 };

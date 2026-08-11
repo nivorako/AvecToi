@@ -24,7 +24,7 @@ export default function TaskMetadataBar({
     const hasSubTasks = subTasks.length > 0;
 
     return (
-        <div className="mb-6 rounded-2xl border border-border bg-card shadow-sm p-4 flex flex-col gap-4">
+        <div className="mb-6 rounded-2xl border border-border bg-card shadow-card p-4 flex flex-col gap-4">
 
             {/* Statut — manuel si pas de sous-tâches, lecture seule si sous-tâches */}
             <TaskStatusIndicator

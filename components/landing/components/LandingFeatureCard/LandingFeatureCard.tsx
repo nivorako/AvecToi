@@ -19,14 +19,15 @@ export function LandingFeatureCard(
     }: LandingFeatureCardProps) { 
 
     return(
-        <div className={cn("flex flex-col items-center justify-center gap-4 p-6 shadow-sm", featured && "md:col-span-2")}>
+        <div className={cn("flex flex-col items-center justify-center gap-4 p-6 shadow-card", featured && "md:col-span-2")}>
             <Heading as="h3" variant="h3">
                 {title}
             </Heading>
+
             <div 
                 className={cn(
                     "relative w-full overflow-hidden rounded-xl",
-                    featured ? "h-[600px]" : "h-[420px]"
+                    featured ? "h-[600px] md:h-auto md:aspect-[1568/825]" : "h-[420px]"
                 )}    
             >
                 {mobileImage || desktopImage ? (

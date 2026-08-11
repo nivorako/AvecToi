@@ -44,7 +44,7 @@ export default function DotsMenu({
             </button>
 
             {open ? (
-                <div className="absolute right-0 top-full z-10 mt-1 min-w-[9rem] overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+                <div className="absolute right-0 top-full z-10 mt-1 min-w-[9rem] overflow-hidden rounded-xl border border-border bg-card shadow-floating">
                     <div className="flex flex-col py-1">{children}</div>
                 </div>
             ) : null}

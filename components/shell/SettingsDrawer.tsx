@@ -104,8 +104,8 @@ export default function SettingsDrawer() {
                                 type="button"
                                 onClick={handleLogout}
                                 disabled={loadingLogout}
-                                className={`flex items-center gap-3 px-5 py-3.5 text-sm hover:bg-gray-50 text-left w-full ${
-                                    item.danger ? "text-red-500" : "text-gray-800"
+                                className={`flex items-center gap-3 px-5 py-3.5 text-sm hover:bg-border text-left w-full ${
+                                    item.danger ? "text-red-500" : "text-muted"
                                 }`}
                             >
                                 <span className="text-xl w-7 shrink-0">{item.icon}</span>
@@ -118,8 +118,8 @@ export default function SettingsDrawer() {
                                 key={item.label}
                                 href={item.href ?? "#"} 
                                 onClick={() => setOpen(false)}
-                                className={`flex items-center gap-3 px-5 py-3.5 text-sm hover:bg-gray-50 ${
-                                    item.danger ? "text-red-500" : "text-gray-800"
+                                className={`flex items-center gap-3 px-5 py-3.5 text-sm hover:bg-border ${
+                                    item.danger ? "text-red-500" : "text-muted"
                                 }`}
                             >
                                 <span className="text-xl w-7 shrink-0">{item.icon}</span>

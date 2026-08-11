@@ -9,7 +9,7 @@ export function LandingHeader() {
     const [menuOpen, setMenuOpen] = useState(false);
 
     return (
-        <header className="sticky top-0 z-50 bg-white border-b border-gray-100">
+        <header className="sticky top-0 z-50 bg-white border-b border-border">
             <div className="px-6 py-3 flex items-center justify-between">
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2">
@@ -43,7 +43,7 @@ export function LandingHeader() {
                         aria-label="Menu"
                         aria-expanded={menuOpen}
                         onClick={() => setMenuOpen((v) => !v)}
-                        className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-gray-100 transition"
+                        className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-border transition"
                     >
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="h-5 w-5">
                             {menuOpen ? (
@@ -65,7 +65,7 @@ export function LandingHeader() {
 
             {/* Menu mobile déroulant */}
             {menuOpen && (
-                <nav className="sm:hidden border-t border-gray-100 px-6 py-4 flex flex-col gap-4 text-sm text-muted bg-white">
+                <nav className="sm:hidden border-t border-border px-6 py-4 flex flex-col gap-4 text-sm text-muted bg-white">
                     <Link href="#features" onClick={() => setMenuOpen(false)} className="hover:text-foreground transition">Fonctionnalités</Link>
                     <Link href="#sécurité" onClick={() => setMenuOpen(false)} className="hover:text-foreground transition">Sécurité</Link>
                     <Link href="/login" onClick={() => setMenuOpen(false)} className="hover:text-foreground transition">Connexion</Link>

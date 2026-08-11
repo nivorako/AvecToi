@@ -173,7 +173,7 @@ export default async function CareGroupMembersPage({
             <div>
                 <CareGroupBanner careGroupId={id} />
 
-                <div className="mt-4 rounded-2xl border border-border bg-card p-5 text-sm text-muted shadow-sm">
+                <div className="mt-4 rounded-2xl border border-border bg-card p-5 text-sm text-muted shadow-card">
                     Tu n’as pas accès à cette page.
                 </div>
             </div>
@@ -196,7 +196,7 @@ export default async function CareGroupMembersPage({
             <CareGroupBanner careGroupId={id} />
 
             {myMembership?.role === "owner" ? (
-                <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
+                <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-card">
                     <h2 className="text-base font-semibold">
                         Inviter un membre
                     </h2>
@@ -205,7 +205,7 @@ export default async function CareGroupMembersPage({
             ) : null}
 
             {myMembership?.role === "owner" ? (
-                <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
+                <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-card">
                     <h2 className="text-base font-semibold">
                         Invitations en attente
                     </h2>
@@ -224,7 +224,7 @@ export default async function CareGroupMembersPage({
                 </section>
             ) : null}
 
-            <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-card">
                 <h2 className="text-base font-semibold">Membres actuels</h2>
 
                 <div className="mt-4 flex flex-col gap-2">

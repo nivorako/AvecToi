@@ -1,8 +1,8 @@
 import Image from "next/image";
-import { HelloIllustrationProps } from "./type";
+import { HeroIllustrationProps } from "./type";
 import {cn} from "@/lib/cn";
 
-export function HeroIllustration ({ src, alt, width, height, className }: HelloIllustrationProps) {
+export function HeroIllustration ({ src, alt, width, height, className }: HeroIllustrationProps) {
     return (   
             <Image
                 src={src}

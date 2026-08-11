@@ -11,7 +11,7 @@ export function LandingProblemCard({
     icon,
 }: LandingProblemCardProps){
     return (
-        <div className="rounded-lg bg-gray-100 p-6 space-y-6">
+        <div className="rounded-lg bg-surface-muted p-6 space-y-6">
             <Icon icon={icon} />
             <Heading
                 as="h3"
@@ -24,13 +24,13 @@ export function LandingProblemCard({
                 {quote}
             </Text>
 
-            <div className="border-t border-gray-300" />
+            <div className="border-t border-border" />
 
             <Text variant="small">
                 {situation}
             </Text>
 
-            <div className="border-t border-gray-300" />
+            <div className="border-t border-border" />
             <Text variant="small">
                 {result}
             </Text>

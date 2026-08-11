@@ -12,7 +12,7 @@ export function BenefitsSection() {
         <Section>
             <LandingContainer>
 
-                <div className="flex flex-col items-center gap-y-6 text-center max-w-3xl mx-auto mb-16">
+                <div className="flex flex-col items-center gap-y-6 text-center max-w-3xl mx-auto mb-10">
                      <Heading
                         as="h2"
                         variant="h2"

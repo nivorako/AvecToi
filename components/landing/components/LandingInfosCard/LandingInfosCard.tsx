@@ -5,7 +5,7 @@ import { Icon } from "@/components/ui/Icon";
 
 export function LandingInfosCard({title, subtitle, description, icon }: LandingInfoscardProps) {
     return (
-        <div className="flex flex-col justify-between gap-4 p-6 shadow-sm">
+        <div className="flex flex-col justify-between gap-4 p-6 shadow-card">
 
             <div className="flex items-start  gap-3">
                 <Icon icon={icon} />
@@ -27,4 +27,4 @@ export function LandingInfosCard({title, subtitle, description, icon }: LandingI
 
         </div>
     )
-} 
+} ;

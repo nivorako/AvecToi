@@ -14,7 +14,7 @@ type PlaceholderType =
 | "logo";
 
 export function Placeholder({ type }: { type: PlaceholderType }) {
-  const base = "bg-gray-300 rounded-md mb-2";
+  const base = "bg-border rounded-md mb-2";
   const styles = {
     title: "h-12 w-full",
     subtitle: "h-6 w-96",

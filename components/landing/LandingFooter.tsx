@@ -11,20 +11,13 @@ export function LandingFooter() {
             <LandingContainer>
                 <div className="flex flex-col justify-center items-center mb-12 gap-y-10">
                     <Logo />
-                    <p className="text-center text-gray-600">Courte phrase</p>
+                    <p className="text-center text-muted">Courte phrase</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mt-8 max-w-sm mx-auto md:max-w-none">
                     <FooterColumn title="CareGroup">
                         <p className="text-sm text-muted">Courte présentation careGroup.</p>
-                        {/* <ul className="flex space-x-2">
-                            <li>
-                                <Link href="#" className="text-muted hover:text-foreground">Facebook</Link>
-                            </li>
-                            <li>
-                                <Link href="#" className="text-muted hover:text-foreground">Twitter</Link>
-                            </li>
-                        </ul> */}
+                        
                     </FooterColumn>
 
                     <FooterColumn title="Produit">
@@ -62,7 +55,7 @@ export function LandingFooter() {
                         </nav>
                     </FooterColumn>
                 </div>
-                <div className="border-t border-gray-300 m-14" />
+                <div className="border-t border-muted m-14" />
                 <div className="flex flex-col md:flex-row justify-around  items-center gap-4 w-full max-w-sm mx-auto md:max-w-none mt-12">
                     <p className="w-auto">
                         © 2026 CareGroup

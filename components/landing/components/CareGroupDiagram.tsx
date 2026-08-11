@@ -5,7 +5,7 @@ import { UserRound, Users, HeartPulse, Stethoscope, Network } from "lucide-react
 
 export function CareGroupDiagram() {
     return (
-        <div className="w-full max-w-lg md:max-w-xl mx-auto border border-gray-300 rounded-lg p-4 space-y-8">
+        <div className="w-full max-w-lg md:max-w-xl mx-auto border border-border rounded-lg p-4 space-y-8">
             {/* Cercle du haut, centré */}
             <CareGroupDiagramCard
                 icon={Users}

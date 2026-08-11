@@ -172,7 +172,7 @@ export default function TaskSubtasksManager({
     const progress = totalCount > 0 ? `${completedCount}/${totalCount}` : "0/0";
 
     return (
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-3">
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-card mb-3">
             <h2 className="text-lg font-semibold">Sous-tâches</h2>
 
             {totalCount > 0 && (

@@ -12,7 +12,7 @@ export function HeroSection() {
         <Section>        
             <LandingContainer>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                     <div className="flex flex-col items-center justify-center text-center min-h-[300px] max-w-3xl mx-auto gap-y-8">
 
@@ -32,6 +32,7 @@ export function HeroSection() {
 
                         <Button 
                             size="lg"
+                            className="mt-4"
                         >
                             Créer un CareGroup
                         </Button>

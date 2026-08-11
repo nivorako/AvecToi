@@ -128,7 +128,7 @@ export function TaskAttachmentRow({
                                     </Button>
 
                                     {menuOpen ? (
-                                        <div className="absolute right-0 top-full z-10 mt-2 w-44 rounded-2xl border border-border bg-card p-1 shadow-sm">
+                                        <div className="absolute right-0 top-full z-10 mt-2 w-44 rounded-2xl border border-border bg-card p-1 shadow-card">
                                             <button
                                                 type="button"
                                                 className="w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-muted"

@@ -173,7 +173,7 @@ export default async function CareGroupEmergencyPage({
             <div className="fixed bottom-24 right-4 z-30">
                 <Link
                     href={`${baseUrl}/emergency`}
-                    className="flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-lg hover:bg-red-700 text-2xl"
+                    className="flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-card hover:bg-red-700 text-2xl"
                     aria-label="Ajouter une information d'urgence"
                 >
                     +

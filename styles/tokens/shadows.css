@@ -1,6 +1,6 @@
 :root {
   --shadow-card:
-    0 1px 3px rgba(16, 24, 40, 0.08);
+    0 1px 3px rgba(0, 0, 0, 0.08);
 
   --shadow-floating:
     0 8px 20px rgba(16, 24, 40, 0.12);

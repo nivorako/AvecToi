@@ -1,10 +1,9 @@
 :root {
-
-  --container-max-width: 1200px;
-
+  /*layout*/
+  --container-max-width: 1024px;
   --header-height: 72px;
 
-  --section-spacing: 6rem;
-
-  --content-spacing: 2rem;
+/* Spacing — semantic */
+  --section-spacing: 96px;
+  --content-spacing: 32px;
 }

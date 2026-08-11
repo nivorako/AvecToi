@@ -49,7 +49,7 @@ export default function UserMenu() {
             />
 
             {open ? (
-                <div className="absolute right-0 top-full z-30 mt-2 w-52 rounded-2xl border border-border bg-card p-1 shadow-sm">
+                <div className="absolute right-0 top-full z-30 mt-2 w-52 rounded-2xl border border-border bg-card p-1 shadow-card">
                     <Link
                         href="/app/profile"
                         className="block w-full rounded-xl px-3 py-2 text-sm hover:bg-muted"

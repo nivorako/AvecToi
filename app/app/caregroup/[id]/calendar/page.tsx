@@ -259,7 +259,7 @@ export default async function CareGroupCalendarPage({
             <div className="fixed bottom-24 right-4 z-30">
                 <Link
                     href={`/app/caregroup/${id}/history`}
-                    className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 text-2xl"
+                    className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-card hover:bg-primary/90 text-2xl"
                     aria-label="Ajouter un événement"
                 >
                     +

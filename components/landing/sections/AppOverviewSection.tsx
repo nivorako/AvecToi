@@ -11,18 +11,19 @@ export function AppOverviewSection() {
     return (
         <Section>
             <LandingContainer>
-                <div className="flex flex-col items-center justify-center mb-4 mx-auto gap-y-6">
+
+                <div className="flex flex-col items-center justify-center text-center max-w-3xl mb-10 mx-auto gap-y-6">
                     <Heading as="h2" variant="h2">
                         Découvrez CareGroup
                     </Heading>
 
                     <Text
                         variant="bodyLarge"
-                        className="max-w-3xl"
                     >
                         Un espace unique pour centraliser les dossiers, les échanges, les rendez-vous et les informations importantes.
                     </Text>
                 </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mx-auto">
                     {featuredCards.map((card) => (
                         <LandingFeatureCard
@@ -36,6 +37,7 @@ export function AppOverviewSection() {
                         />
                     ))}
                 </div>
+
             </LandingContainer>
         </Section>
     );
