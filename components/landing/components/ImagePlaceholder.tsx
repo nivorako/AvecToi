@@ -1,7 +1,7 @@
-import {cn} from "@/lib/cn";
 
-export function ImagePlaceholder({featured=false} : {featured?: boolean}) {
+
+export function ImagePlaceholder() {
     return(
-        <div className={cn("h-[420px] w-full rounded-xl bg-border", featured ? "h-[600px]" : "h-[420px]")} />
+        <div className="w-full h-full rounded-xl bg-border" />
     )
 }

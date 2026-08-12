@@ -1,7 +1,7 @@
 import { Heading } from "@/components/ui/Heading";
 import { Text } from "@/components/ui/Text";
-import { Button } from "@/components/ui/Button";
 
+import LinkButton from "@/components/ui/LinkButton";
 import { Section } from "../components/Section";
 import { LandingContainer } from "../components/LandingContainer";
 
@@ -27,12 +27,13 @@ export function FinalCtaSection() {
                     >
                         Commencez en quelques minutes.
                     </Text>
-                    <Button 
+                    <LinkButton 
+                        href="/register"
                         size="lg"
                         variant="primary"
                     >
                         Créer mon premier CareGroup
-                    </Button>
+                    </LinkButton>
                     <Text
                         variant="small"
                         className="text-muted"

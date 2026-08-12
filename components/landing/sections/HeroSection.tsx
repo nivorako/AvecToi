@@ -1,6 +1,7 @@
 import { Heading } from "@/components/ui/Heading";
 import { Text } from "@/components/ui/Text";
-import { Button } from "@/components/ui/Button";
+
+import  LinkButton  from "@/components/ui/LinkButton";
 
 import { Section } from "../components/Section";
 import { LandingContainer } from "../components/LandingContainer";
@@ -8,6 +9,7 @@ import { HeroIllustration } from "../components/HeroIllustration";
 import { illustrations } from "../data/illustrations";
 
 export function HeroSection() {
+    
     return (
         <Section>        
             <LandingContainer>
@@ -30,12 +32,13 @@ export function HeroSection() {
                             famille et vos aidants.
                         </Text>
 
-                        <Button 
+                        <LinkButton
+                            href="/register"
                             size="lg"
                             className="mt-4"
                         >
                             Créer un CareGroup
-                        </Button>
+                        </LinkButton>
 
                     </div> 
 

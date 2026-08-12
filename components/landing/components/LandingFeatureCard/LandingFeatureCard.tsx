@@ -22,7 +22,7 @@ export function LandingFeatureCard(
         <div className={cn("flex flex-col items-center justify-center gap-4 p-6 shadow-card", featured && "md:col-span-2")}>
             <Heading as="h3" variant="h3">
                 {title}
-            </Heading>
+            </Heading> 
 
             <div 
                 className={cn(
@@ -54,7 +54,7 @@ export function LandingFeatureCard(
                         )}
                     </>
                 ) : (
-                    <ImagePlaceholder featured={featured} />
+                    <ImagePlaceholder  />
                 )}
             </div>
 
@@ -62,7 +62,7 @@ export function LandingFeatureCard(
                 variant="body"
             >
                 {description}
-            </Text> 
+            </Text>  
         </div>
     )
 }

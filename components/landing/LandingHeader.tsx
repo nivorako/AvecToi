@@ -29,7 +29,7 @@ export function LandingHeader() {
                     <Link href="#sécurité" className="hover:text-foreground transition">Sécurité</Link>
                     <Link href="/login" className="hover:text-foreground transition">Connexion</Link>
                     <LinkButton href="/register" className="btn-primary px-4 py-2 text-sm">
-                        Creer careGroup
+                        Creer un careGroup
                     </LinkButton>
                 </nav>
 

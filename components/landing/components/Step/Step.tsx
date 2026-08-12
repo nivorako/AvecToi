@@ -25,6 +25,7 @@ export function Step({
                 <Heading
                     as="h4"
                     variant="h3"
+                    className="text-body md:text-body-lg font-medium"
                 >
                     {title}
                 </Heading>
