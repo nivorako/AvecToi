@@ -1,10 +1,10 @@
 import { ImageProps } from "./type";
 
-export function Image({ image, title, className, width, height }: ImageProps) {
+export function Image({ image, alt, className, width, height }: ImageProps) {
     return (
         <img
             src={image}
-            alt={title} 
+            alt={alt ?? ""} 
             className={className}
             width={width}
             height={height}

@@ -1,16 +1,22 @@
 // @c:\Users\rakotondrabe\Documents\next js\avectoi\components\landing\LandingFooter.tsx
-import { Section } from "./components/Section";
+
 import { LandingContainer } from "./components/LandingContainer";
-import { Logo } from "./components/Logo";
+import { Logo } from "../ui/Logo/Logo";
 import { FooterColumn } from "./components/FooterColumn";
 import Link from "next/link";
 
 export function LandingFooter() {
     return (
-        <Section>
+        <footer>
             <LandingContainer>
                 <div className="flex flex-col justify-center items-center mb-12 gap-y-10">
-                    <Logo />
+                    <Logo 
+                        src="/icons/icon-192.png"
+                        alt="Avec Toi"
+                        width={128}
+                        height={128}
+                        className="rounded-md"
+                    />
                     <p className="text-center text-muted">Courte phrase</p>
                 </div>
 
@@ -65,6 +71,6 @@ export function LandingFooter() {
                     </p>
                 </div>
             </LandingContainer>
-        </Section>
+        </footer>
     );
 }

@@ -9,6 +9,7 @@ export function Icon({
     return (
         <IconComponent
             size={size}
+            aria-hidden="true"
             className={cn(
                 "text-primary shrink-0",
                 className

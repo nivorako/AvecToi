@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
+import { Logo } from "../ui/Logo/Logo";
 import Link from "next/link";
-import LinkButton from "@/components/ui/LinkButton";
+import LinkButton from "@/components/ui/LinkButton/LinkButton";
 import { useState } from "react";
 
 export function LandingHeader() {
@@ -13,11 +13,11 @@ export function LandingHeader() {
             <div className="px-6 py-3 flex items-center justify-between">
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2">
-                    <Image
+                    <Logo
                         src="/icons/icon-192.png"
                         alt="Avec Toi"
-                        width={32}
-                        height={32}
+                        width={64}
+                        height={64}
                         className="rounded-md"
                     />
                     <span className="text-lg font-bold text-foreground">Avec Toi</span>
@@ -25,8 +25,8 @@ export function LandingHeader() {
 
                 {/* Nav desktop */}
                 <nav className="hidden sm:flex items-center gap-6 text-sm text-muted">
-                    <Link href="#features" className="hover:text-foreground transition">Fonctionnalités</Link>
-                    <Link href="#sécurité" className="hover:text-foreground transition">Sécurité</Link>
+                    <Link href="#" className="hover:text-foreground transition">Fonctionnalités</Link>
+                    <Link href="#" className="hover:text-foreground transition">Sécurité</Link>
                     <Link href="/login" className="hover:text-foreground transition">Connexion</Link>
                     <LinkButton href="/register" className="btn-primary px-4 py-2 text-sm">
                         Creer un careGroup
@@ -36,12 +36,13 @@ export function LandingHeader() {
                 {/* Mobile : CTA visible + hamburger */}
                 <div className="flex sm:hidden items-center gap-3">
                     <LinkButton href="/register">
-                        Créer careGroup
+                        Créer un careGroup
                     </LinkButton>  
                     <button
                         type="button"
                         aria-label="Menu"
                         aria-expanded={menuOpen}
+                        aria-controls="mobile-menu"
                         onClick={() => setMenuOpen((v) => !v)}
                         className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-border transition"
                     >
@@ -65,9 +66,12 @@ export function LandingHeader() {
 
             {/* Menu mobile déroulant */}
             {menuOpen && (
-                <nav className="sm:hidden border-t border-border px-6 py-4 flex flex-col gap-4 text-sm text-muted bg-white">
-                    <Link href="#features" onClick={() => setMenuOpen(false)} className="hover:text-foreground transition">Fonctionnalités</Link>
-                    <Link href="#sécurité" onClick={() => setMenuOpen(false)} className="hover:text-foreground transition">Sécurité</Link>
+                <nav 
+                    className="sm:hidden border-t border-border px-6 py-4 flex flex-col gap-4 text-sm text-muted bg-white"
+                    id="mobile-menu"
+                >
+                    <Link href="#" onClick={() => setMenuOpen(false)} className="hover:text-foreground transition">Fonctionnalités</Link>
+                    <Link href="#" onClick={() => setMenuOpen(false)} className="hover:text-foreground transition">Sécurité</Link>
                     <Link href="/login" onClick={() => setMenuOpen(false)} className="hover:text-foreground transition">Connexion</Link>
                 </nav>
             )}

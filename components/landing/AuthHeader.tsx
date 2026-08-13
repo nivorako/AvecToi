@@ -1,5 +1,5 @@
 import { LandingContainer } from "./components/LandingContainer";
-import Image from "next/image";
+import { Logo } from "@/components/ui/Logo/Logo";
 import Link from "next/link";
 export function AuthHeader() {
     return (    
@@ -9,11 +9,12 @@ export function AuthHeader() {
                     href="/"
                     className="inline-block"
                 >
-                    <Image 
+                    <Logo 
                         src="/icons/icon-192.png" 
                         alt="Logo-retour à l'accueil" 
                         width={100} 
                         height={100} 
+                        className="rounded-md"
                     />
                 </Link>
             </div>

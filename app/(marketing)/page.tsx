@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 
 export default function LandingPage() {
     return (
-        <>
+        <main>
             <HeroSection />
             <ProblemSection />
             <SolutionSection />
@@ -33,6 +33,6 @@ export default function LandingPage() {
             <BenefitsSection />
             <SecuritySection />
             <FinalCtaSection />
-        </>
+        </main>
     );
 };

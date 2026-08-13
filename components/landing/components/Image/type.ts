@@ -1,6 +1,6 @@
 export type ImageProps = {
     image: string;
-    title: string;
+    alt: string;
     width?: number;
     height?: number;
     className?: string;

@@ -1,7 +1,7 @@
 import { Heading } from "@/components/ui/Heading";
 import { Text } from "@/components/ui/Text";
 
-import LinkButton from "@/components/ui/LinkButton";
+import LinkButton from "@/components/ui/LinkButton/LinkButton";
 import { Section } from "../components/Section";
 import { LandingContainer } from "../components/LandingContainer";
 
