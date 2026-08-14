@@ -10,7 +10,7 @@ import { FinalCtaSection } from "@/components/landing/sections/FinalCtaSection";
 
 
 export const metadata: Metadata = {
-    title: "Avec Toi – Coordination de soins pour aidants familiaux",
+    title: "Coordination de soins pour aidants familiaux",
     description: "Centralisez les dossiers médicaux, tâches et communications autour de votre proche. Simple, sécurisé, gratuit pour les familles.",
     openGraph: {
         title: "Avec Toi – Coordination de soins pour aidants familiaux",

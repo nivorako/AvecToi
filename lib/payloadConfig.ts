@@ -14,33 +14,6 @@ if (typeof window !== "undefined") {
 
 let payloadInstanceCache: Awaited<ReturnType<typeof getPayload>> | null = null;
  
-// function _getPayloadConfigPromise() {
-//     if (!payloadConfigPromiseCache) {
-//         payloadConfigPromiseCache = getPayload({
-//             config,
-//         }).then((payload) => payload.config);
-//     }
-//     return payloadConfigPromiseCache;
-// }
-
-// Export a lazy Promise that only initializes when awaited
-// Using a Thenable to delay getPayload() call until the promise is actually used
-
-// export const payloadConfigPromise = {
-//     then: (
-//         onFulfilled?: (value: SanitizedConfig) => unknown,
-//         onRejected?: (reason: unknown) => unknown,
-//     ) => {
-//         return _getPayloadConfigPromise().then(onFulfilled, onRejected);
-//     },
-//     catch: (onRejected?: (reason: unknown) => unknown) => {
-//         return _getPayloadConfigPromise().catch(onRejected);
-//     },
-//     finally: (onFinally?: () => void) => {
-//         return _getPayloadConfigPromise().finally(onFinally);
-//     },
-// } as Promise<SanitizedConfig>;
-
 export async function getPayloadInstance() {
     if (!payloadInstanceCache) {
         payloadInstanceCache = await getPayload({ config });

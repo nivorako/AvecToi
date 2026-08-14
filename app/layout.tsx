@@ -28,7 +28,7 @@ export const metadata: Metadata = {
         template: "%s | Avec Toi",
     },
     description:
-        "Avec Toi simplifie le suivi et la coordination des parcours de soins entre les proches et les professionnels de santé.",
+       "Centralisez les dossiers médicaux, tâches et communications autour de votre proche. Simple, sécurisé, gratuit pour les familles.",
     keywords: ["suivi de soins", "coordination", "aidants", "proches", "santé","Alzheimer"],
     authors: [{ name: "Avec Toi" }],
     robots: {
@@ -42,13 +42,13 @@ export const metadata: Metadata = {
         siteName: "Avec Toi",
         title: "Avec Toi",
         description:
-        "Avec Toi simplifie le suivi et la coordination des parcours de soins entre les proches et les professionnels de santé.",
+        "Centralisez les dossiers médicaux, tâches et communications autour de votre proche. Simple, sécurisé, gratuit pour les familles.",
     },
     twitter: {
         card: "summary_large_image",
         title: "Avec Toi",
         description:
-        "Avec Toi simplifie le suivi et la coordination des parcours de soins entre les proches et les professionnels de santé.",
+        "Centralisez les dossiers médicaux, tâches et communications autour de votre proche. Simple, sécurisé, gratuit pour les familles.",
     },
     alternates: {
         canonical: "/",
