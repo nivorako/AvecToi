@@ -129,7 +129,7 @@ export default async function InvitePage({
 
     if (!invite?.id) {
         return (
-            <div className="min-h-screen bg-background">
+            <div className="w-full bg-background">
                 <main className="mx-auto w-full max-w-2xl px-6 py-12">
                     <h1 className="text-2xl font-semibold">Invitation</h1>
                     <div className="mt-4 rounded-2xl border border-border bg-card p-5 shadow-sm text-sm text-muted">
@@ -163,8 +163,8 @@ export default async function InvitePage({
     const invalid = invite.status !== "pending" || wrongUser;
 
     return (
-        <div className="min-h-screen bg-background">
-            <main className="mx-auto w-full max-w-2xl px-6 py-12">
+        <div className="w-full bg-background">
+            <main className="mx-auto w-full max-w-2xl px-6 py-6">
                 <h1 className="text-2xl font-semibold">Invitation</h1>
 
                 <div className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">

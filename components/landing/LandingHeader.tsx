@@ -18,7 +18,7 @@ export function LandingHeader() {
                         alt="Avec Toi"
                         width={64}
                         height={64}
-                        className="rounded-md"
+                        className="rounded-md mix-blend-multiply"
                     />
                     <span className="text-lg font-bold text-foreground">Avec Toi</span>
                 </Link>

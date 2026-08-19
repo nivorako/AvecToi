@@ -49,6 +49,7 @@ type TaskAttachment = {
     createdAt: string;
     updatedAt: string;
 };
+
 export default async function TaskPage({
     params,
 }: {

@@ -15,7 +15,7 @@ export function LandingFooter() {
                         alt="Avec Toi"
                         width={128}
                         height={128}
-                        className="rounded-md"
+                        className="rounded-md mix-blend-multiply"
                     />
                     <p className="text-center text-muted">Courte phrase</p>
                 </div>

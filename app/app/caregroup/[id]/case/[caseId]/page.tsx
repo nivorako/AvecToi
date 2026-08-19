@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
 import { archiveCase, deleteCase } from "../../case/action"; 
+
 type Message = {
     id: string;
     content?: string;
@@ -76,116 +77,6 @@ function formatDateFR(iso: string) {
         year: "numeric",
     }).format(d);
 }
-
-// async function createTask(formData: FormData) {
-//     "use server";
-
-//     // Create Task server action for /app/cases/[id].
-//     //
-//     // Permissions (enforced here + by Payload ACL):
-//     // - owner/family: can create tasks for the case
-//     // - professional: can create tasks only when the case is medical
-
-//     // Read values from the form.
-//     // Note: everything is treated as untrusted input and re-validated on the server.
-//     const caseID = String(formData.get("case") ?? "");
-//     const careGroup = String(formData.get("careGroup") ?? "");
-//     const caseType = String(formData.get("caseType") ?? "");
-//     const title = String(formData.get("title") ?? "");
-//     const assignedTo = String(formData.get("assignedTo") ?? "");
-//     const dueDate = String(formData.get("dueDate") ?? "");
-
-//     const user = await requireUser();
-
-//     if (!caseID || !careGroup || !title) return;
-//     if (caseType !== "medical" && caseType !== "custom") return;
-
-//     // Determine the caller role inside the caregroup to decide if task creation is allowed.
-//     const membership = await payloadREST<{ docs: Membership[] }>(
-//         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
-//     ).then((r) => r.docs[0]);
-
-//     const role = membership?.role;
-
-//     const canCreate =
-//         role === "owner" ||
-//         role === "family" ||
-//         (role === "professional" && caseType === "medical");
-
-//     if (!canCreate) return;
-
-//     try {
-//         await payloadREST("/api/tasks", {
-//             method: "POST",
-//             headers: {
-//                 "content-type": "application/json",
-//             },
-//             body: JSON.stringify({
-//                 case: caseID,
-//                 title,
-//                 status: "todo",
-//                 ...(assignedTo ? { assignedTo } : {}),
-//                 ...(dueDate ? { dueDate } : {}),
-//             }),
-//         });
-//     } catch {
-//         return;
-//     }
-
-//     // Refresh this case page so the task list updates after the mutation.
-//     revalidatePath(`/app/caregroup/${careGroup}/case/${caseID}`);
-// }
-
-// async function updateCaseDescription(formData: FormData) {
-//     "use server";
-
-//     const caseID = String(formData.get("case") ?? "");
-//     const careGroup = String(formData.get("careGroup") ?? "");
-//     const description = String(formData.get("description") ?? "");
-
-//     const user = await requireUser();
-
-//     if (!caseID || !careGroup) return;
-
-//     const membership = await payloadREST<{ docs: Membership[] }>(
-//         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
-//     ).then((r) => r.docs[0]);
-
-//     const role = membership?.role;
-//     if (!role) return;
-
-//     const caseDoc = await payloadREST<CaseDoc>(
-//         `/api/cases/${encodeURIComponent(caseID)}?depth=0`,
-//     );
-
-//     const normalizedCaseType =
-//         caseDoc?.type === "medical" || caseDoc?.type === "custom"
-//             ? caseDoc.type
-//             : "";
-
-//     const canUpdate =
-//         role === "owner" ||
-//         role === "family" ||
-//         (role === "professional" && normalizedCaseType === "medical");
-
-//     if (!canUpdate) return;
-
-//     try {
-//         await payloadREST(`/api/cases/${encodeURIComponent(caseID)}`, {
-//             method: "PATCH",
-//             headers: {
-//                 "content-type": "application/json",
-//             },
-//             body: JSON.stringify({
-//                 description,
-//             }),
-//         });
-//     } catch {
-//         return;
-//     }
-
-//     revalidatePath(`/app/caregroup/${careGroup}/case/${caseID}`);
-// }
 
 export default async function CasePage({
     params,

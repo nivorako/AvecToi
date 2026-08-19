@@ -6,4 +6,4 @@ export function LandingContainer({children}: {children: React.ReactNode}){
             {children}
         </div>
     )
-} 
+}  

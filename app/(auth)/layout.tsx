@@ -4,10 +4,14 @@ import { AuthFooter } from "@/components/landing/AuthFooter";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
     return (
-        <>
+        <div className="flex min-h-dvh flex-col">
             <AuthHeader />
-            {children}
+
+            <main className="flex flex-1 items-center justify-center">
+                {children}
+            </main>
+            
             <AuthFooter />
-        </>
+        </div>
     );
 }

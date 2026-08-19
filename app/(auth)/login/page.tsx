@@ -10,7 +10,7 @@ export default async function LoginPage({
     const resolvedSearchParams = await searchParams;
 
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-6">
+        <div className="flex w-full flex-col items-center justify-center bg-zinc-50 px-6 py-6">
             <div className="w-full max-w-sm rounded-xl border border-zinc-200 bg-white p-6 shadow-card">
                 <h1 className="text-xl font-semibold">Connexion</h1>
                 <div className="mt-6">
