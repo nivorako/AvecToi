@@ -8,6 +8,29 @@ import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { buildConfig } from "payload";
 import type { Where } from "payload";
 
+function getRelationshipID(
+    value: unknown,
+): string | number | undefined {
+    if (typeof value === "string" || typeof value === "number") {
+        return value;
+    }
+
+    if (!value || typeof value !== "object") {
+        return undefined;
+    }
+
+    const relationship = value as {
+        id?: unknown;
+        value?: unknown;
+    };
+
+    const id = relationship.id ?? relationship.value;
+
+    return typeof id === "string" || typeof id === "number"
+        ? id
+        : undefined;
+}
+
 export default buildConfig({
     // Payload Admin configuration
     // - `user`: the auth-enabled collection used to log into /admin
@@ -918,12 +941,8 @@ export default buildConfig({
                         rawCase,
                     });
 
-                    const caseID =
-                        typeof rawCase === "string" ||
-                        typeof rawCase === "number"
-                            ? rawCase
-                            : ((rawCase as { id?: string | number }).id ??
-                              (rawCase as { value?: string | number }).value);
+                    const caseID = getRelationshipID(rawCase)
+                    
 
                     if (!caseID) return false;
 
@@ -1245,11 +1264,7 @@ export default buildConfig({
                         (req.body as { case?: unknown } | undefined)?.case ??
                         (req.query as { case?: unknown } | undefined)?.case;
 
-                    const caseID =
-                        typeof rawCase === "string" || typeof rawCase === "number"
-                            ? rawCase
-                            : ((rawCase as { id?: string | number }).id ??
-                              (rawCase as { value?: string | number }).value);
+                    const caseID = getRelationshipID(rawCase)
 
                     if (!caseID) return false;
 
@@ -1631,12 +1646,7 @@ export default buildConfig({
                         rawTask,
                     });
 
-                    const taskID =
-                        typeof rawTask === "string" ||
-                        typeof rawTask === "number"
-                            ? rawTask
-                            : ((rawTask as { id?: string | number }).id ??
-                              (rawTask as { value?: string | number }).value);
+                    const taskID = getRelationshipID(rawTask)
 
                     if (!taskID) return false;
 
@@ -2571,22 +2581,7 @@ export default buildConfig({
                 create: async ({ req, data }) => {
                     if (!req.user) return false;
 
-                    const caseID =
-                        typeof data?.case === "string" ||
-                        typeof data?.case === "number"
-                            ? data.case
-                            : ((
-                                  data?.case as {
-                                      id?: string | number;
-                                      value?: string | number;
-                                  }
-                              ).id ??
-                              (
-                                  data?.case as {
-                                      id?: string | number;
-                                      value?: string | number;
-                                  }
-                              ).value);
+                    const caseID = getRelationshipID(data?.case);
 
                     if (!caseID) return false;
 
