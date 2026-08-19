@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "@payloadcms/next/css";
-import "../styles/globals.css";
 
 import type { ReactNode } from "react";
 

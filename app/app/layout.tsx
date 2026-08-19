@@ -6,6 +6,8 @@ import { BreadcrumbProvider } from "@/components/shell/BreadcrumContext";
 import BottomNav from "@/components/shell/BottomNav";
 import { requireUser } from "@/lib/requireUser";
 
+import "../../styles/globals.css";
+
 export default async function AppLayout({ children }: { children: ReactNode }) {
 
     const user = await requireUser();
