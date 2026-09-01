@@ -20,7 +20,7 @@ export function SolutionSection() {
                         </Heading>
 
                         <Text variant="bodyLarge">
-                            Plutôt que de multiplier les appels, les messages et les documents dispersés, CareGroup réunit les informations importantes dans un espace partagé. Chacun y accède selon son rôle, participe à l'organisation et suit ce qui le concerne.
+                            Plutôt que de multiplier les appels, les messages et les documents dispersés, CareGroup réunit les informations importantes dans un espace partagé. Chacun y accède selon son rôle, participe à l&apos;organisation et suit ce qui le concerne.
                         </Text>
                     </div>
 

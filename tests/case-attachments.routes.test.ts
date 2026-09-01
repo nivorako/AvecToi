@@ -1,4 +1,4 @@
-import { jest } from "@jest/globals";
+import { afterAll, afterEach, beforeAll, describe, expect, jest, test } from "@jest/globals";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
 type PayloadTestClient = {
@@ -374,7 +374,7 @@ describe("Case attachments Next route handlers", () => {
             );
 
         const deleteOne = jest
-            .fn<() => Promise<{ deletedCount: number }>>()
+            .fn<(filter: { _id: string }) => Promise<{ deletedCount: number }>>()
             .mockResolvedValue({ deletedCount: 1 });
 
         const payloadAny = payload as unknown as {

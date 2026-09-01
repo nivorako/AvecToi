@@ -3,10 +3,7 @@ import { getPayloadInstance } from "@/lib/payloadConfig";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-export async function GET(
-    req: Request,
-    { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET() {
     try {
         const payload = await getPayloadInstance();
 

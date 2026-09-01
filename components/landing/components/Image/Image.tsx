@@ -1,10 +1,12 @@
+import NextImage from "next/image";
+
 import { ImageProps } from "./type";
 
 export function Image({ image, alt, className, width, height }: ImageProps) {
     return (
-        <img
+        <NextImage
             src={image}
-            alt={alt ?? ""} 
+            alt={alt ?? ""}
             className={className}
             width={width}
             height={height}

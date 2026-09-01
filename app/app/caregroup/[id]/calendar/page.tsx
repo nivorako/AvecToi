@@ -75,9 +75,7 @@ export default async function CareGroupCalendarPage({
     const upcomingTasks = tasks.docs.filter(
         (t) => t.dueDate && t.status !== "done" && new Date(t.dueDate) >= now,
     );
-    const urgentTasks = tasks.docs.filter(
-        (t) => t.status !== "done" && (t.urgency === "high" || !t.dueDate),
-    ).slice(0, 4);
+    
 
     const thisWeekTasks = upcomingTasks.filter((t) => {
         const d = new Date(t.dueDate!);

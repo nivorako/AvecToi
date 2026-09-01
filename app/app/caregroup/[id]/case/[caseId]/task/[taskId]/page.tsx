@@ -56,7 +56,7 @@ export default async function TaskPage({
     params: Promise<{ id: string; caseId: string; taskId: string }>;
 }) {
 
-    const { id, caseId, taskId } = await params;
+    const { caseId, taskId } = await params;
     const user = await requireUser();
     // Récupérer tasks pour obtenir le careGroupId
     const tasks = await payloadREST<{ docs: Task[] }>(
@@ -72,15 +72,7 @@ export default async function TaskPage({
     if (!careGroupId) {
         return <div>Task not found or not associated with a caregroup</div>;
     }
-
-    // récupérer les informations de la task
-    const caseData = caseId
-        ? await payloadREST<{ id: string; title: string }>(
-              `/api/cases/${caseId}`,
-          )
-        : null;
-    const caseTitle = caseData?.title || "Unknown case";
-
+   
     // récupérer task-attachments
     const taskAttachments = await payloadREST<{ docs: TaskAttachment[] }>(
         `/api/task-attachments?where[task][equals]=${encodeURIComponent(taskId)}&limit=50&depth=0`,

@@ -1,3 +1,4 @@
+import { expect } from "@jest/globals";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
 // ---------------------------------------------------------------------------

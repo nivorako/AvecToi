@@ -67,7 +67,7 @@ export function LandingFooter() {
                         © 2026 CareGroup
                     </p>
                     <p className="w-auto">
-                        Conçu pour faciliter l'accompagnement des proches.
+                        Conçu pour faciliter l&apos;accompagnement des proches.
                     </p>
                 </div>
             </LandingContainer>

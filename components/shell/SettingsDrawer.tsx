@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 
@@ -11,6 +11,8 @@ type Item = {
     icon: string;
     danger?: boolean;
 };
+
+const subscribeToNothing = () => () => {};
 
 const ITEMS: Item[] = [
     { icon: "👤", label: "Profil",        href: "/app/profile" },
@@ -26,7 +28,7 @@ const ITEMS: Item[] = [
 export default function SettingsDrawer() {
     const [open, setOpen] = useState(false);
     const [loadingLogout, setLoadingLogout] = useState(false);
-    const [mounted, setMounted] = useState(false);
+    const mounted = useSyncExternalStore(subscribeToNothing, () => true, () => false);
     const router = useRouter();
      async function handleLogout() {
         setLoadingLogout(true);
@@ -41,10 +43,6 @@ export default function SettingsDrawer() {
             setLoadingLogout(false);
         }
     }
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
 
     useEffect(() => {
         if (open) {

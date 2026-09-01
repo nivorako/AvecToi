@@ -1,5 +1,7 @@
+import NextImage from "next/image";
+
 export type LogoProps = {
-    src?: string;
+    src: string;
     alt: string;
     width: number;
     height: number;
@@ -8,7 +10,7 @@ export type LogoProps = {
 
 export function Logo({src, alt, width, height, className}: LogoProps){
     return(
-        <img 
+        <NextImage
             src={src} 
             alt={alt} 
             width={width} 

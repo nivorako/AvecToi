@@ -10,10 +10,9 @@ type LocationState =
     | { status: "error"; message: string };
 
 export default function LocationWidget() {
-    const [location, setLocation] = useState<LocationState>({ status: "idle" });
+    const [location, setLocation] = useState<LocationState>({ status: "loading" });
 
     function requestLocation() {
-        setLocation({ status: "loading" });
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 setLocation({
@@ -53,7 +52,10 @@ export default function LocationWidget() {
                     <div className="text-sm text-muted">Accès refusé. Active la localisation dans les paramètres.</div>
                     <button
                         type="button"
-                        onClick={requestLocation}
+                        onClick={() => {
+                            setLocation({ status: "loading" });
+                            requestLocation();
+                        }}
                         className="self-start rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
                     >
                         Réessayer

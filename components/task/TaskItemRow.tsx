@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useTransition, useState } from "react";
 
 type Urgency = "low" | "high";
 
@@ -34,28 +33,8 @@ export default function TaskItemRow({
     urgency = "low",
     assignedTo,
 }: Props) {
-    const [pending, startTransition] = useTransition();
-    const [currentUrgency, setCurrentUrgency] = useState<Urgency>(urgency);
 
-    const config = urgencyConfig[currentUrgency] || urgencyConfig.low;
-
-    const cycleUrgency = () => {
-        const nextUrgency = config.next;
-        startTransition(async () => {
-            try {
-                const res = await fetch(`/api/tasks/${taskID}`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ urgency: nextUrgency }),
-                });
-                if (res.ok) {
-                    setCurrentUrgency(nextUrgency);
-                }
-            } catch (error) {
-                console.error("Failed to update urgency:", error);
-            }
-        });
-    };
+    const config = urgencyConfig[urgency];
 
     // Build the task detail URL based on available context
     const taskHref =

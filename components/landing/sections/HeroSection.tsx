@@ -28,7 +28,7 @@ export function HeroSection() {
 
                         <Text variant="bodyLarge">
                             Créez un espace partagé pour organiser
-                            l'accompagnement d'un proche avec votre
+                            l&apos;accompagnement d&apos;un proche avec votre
                             famille et vos aidants.
                         </Text>
 

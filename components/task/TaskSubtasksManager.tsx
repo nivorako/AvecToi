@@ -50,9 +50,10 @@ export default function TaskSubtasksManager({
         }
         console.log("newStatus from toggleSubtask", newStatus);
         // Remove client-side id before sending to Payload (Payload manages its own IDs)
-        const subtasksForAPI = updatedSubtasks.map(
-            ({ id: _id, ...rest }) => rest,
-        );
+        const subtasksForAPI = updatedSubtasks.map(({ title, completed }) => ({
+            title,
+            completed,
+        }));
 
         await fetch(`/api/tasks/${taskID}`, {
             method: "PATCH",
@@ -104,9 +105,10 @@ export default function TaskSubtasksManager({
         }
 
         // Remove client-side id before sending to Payload (Payload manages its own IDs)
-        const subtasksForAPI = updatedSubtasks.map(
-            ({ id: _id, ...rest }) => rest,
-        );
+        const subtasksForAPI = updatedSubtasks.map(({ title, completed }) => ({
+            title,
+            completed,
+        }));
 
         await fetch(`/api/tasks/${taskID}`, {
             method: "PATCH",
@@ -148,9 +150,10 @@ export default function TaskSubtasksManager({
         }
 
         // Remove client-side id before sending to Payload (Payload manages its own IDs)
-        const subtasksForAPI = updatedSubtasks.map(
-            ({ id: _id, ...rest }) => rest,
-        );
+        const subtasksForAPI = updatedSubtasks.map(({ title, completed }) => ({
+            title,
+            completed,
+        }));
 
         await fetch(`/api/tasks/${taskID}`, {
             method: "PATCH",

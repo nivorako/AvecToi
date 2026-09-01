@@ -17,7 +17,7 @@ export function SecuritySection() {
                         Des informations sensibles, protégées avec soin
                     </Heading>
                     <Text variant="body">
-                        Les informations concernant un proche sont personnelles. CareGroup est conçu pour permettre leur partage uniquement avec les personnes concernées, tout en laissant à l'administrateur du CareGroup la maîtrise des accès.
+                        Les informations concernant un proche sont personnelles. CareGroup est conçu pour permettre leur partage uniquement avec les personnes concernées, tout en laissant à l&apos;administrateur du CareGroup la maîtrise des accès.
                     </Text>
                 </div>
 

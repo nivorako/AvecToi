@@ -1,4 +1,3 @@
-import { revalidatePath } from "next/cache";
 
 import Link from "next/link";
 import PageSummary from "@/components/ui/PageSummary";
@@ -80,12 +79,11 @@ function formatDateFR(iso: string) {
 
 export default async function CasePage({
     params,
-    searchParams,
 }: {
     params: Promise<{ id: string; caseId: string }>;
     searchParams: Promise<{ allTodo?: string; allDone?: string }>;
 }) {
-    // Route: /app/caregroup/:id/case/:caseId
+    // Route: /app/caregroup/:id/case/:caseId 
     // Displays a case details page with its tasks.
     // Tasks, and the create UI below, are filtered by role via Payload access control.
     const { id, caseId } = await params;
@@ -107,24 +105,6 @@ export default async function CasePage({
         `/api/tasks?where[case][equals]=${encodeURIComponent(caseId)}&limit=50&depth=0`,
     );
 
-    const { allTodo, allDone } = await searchParams;
-    const showAllTodo = allTodo === "1";
-    const showAllDone = allDone === "1";
-    const baseUrl = `/app/caregroup/${id}/case/${caseId}`;
-
-    function buildHref(next: { allTodo?: boolean; allDone?: boolean }) {
-        const parts: string[] = [];
-
-        const nextTodo = next.allTodo ?? showAllTodo;
-        const nextDone = next.allDone ?? showAllDone;
-
-        if (nextTodo) parts.push("allTodo=1");
-        if (nextDone) parts.push("allDone=1");
-
-        return parts.length ? `${baseUrl}?${parts.join("&")}` : baseUrl;
-    }
-
-    // Membership is optional here (case might not have a caregroup populated in edge cases).
     const membership = careGroupID
         ? await payloadREST<{ docs: Membership[] }>(
               `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroupID)}&limit=1&depth=0`,
@@ -146,16 +126,6 @@ export default async function CasePage({
         );
 
     const role = membership?.role;
-
-    const normalizedCaseType =
-        caseDoc?.type === "medical" || caseDoc?.type === "custom"
-            ? caseDoc.type
-            : "";
-
-    const canCreateTask =
-        role === "owner" ||
-        role === "family" ||
-        (role === "professional" && normalizedCaseType === "medical");
 
     // UI permissions:
     // - patients are read-only on dossiers (no tasks creation, no attachments upload, no notes edits)
@@ -211,21 +181,6 @@ export default async function CasePage({
 
     const upcomingTasks = tasks.docs
         .filter((t) => t.status !== "done")
-        .sort((a, b) => {
-            const aDue = a.dueDate
-                ? new Date(a.dueDate).getTime()
-                : Number.POSITIVE_INFINITY;
-            const bDue = b.dueDate
-                ? new Date(b.dueDate).getTime()
-                : Number.POSITIVE_INFINITY;
-            if (aDue !== bDue) return aDue - bDue;
-            return String(a.title ?? a.id).localeCompare(
-                String(b.title ?? b.id),
-            );
-        });
-
-    const doneTasks = tasks.docs
-        .filter((t) => t.status === "done")
         .sort((a, b) => {
             const aDue = a.dueDate
                 ? new Date(a.dueDate).getTime()
@@ -299,7 +254,7 @@ export default async function CasePage({
                     </div>
                 ) : (
                     <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
-                        Pas d'actions prévues pour la semaine à venir
+                        Pas d&apos;actions prévues pour la semaine à venir
                     </div>
                 )}
             </div>

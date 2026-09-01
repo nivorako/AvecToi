@@ -13,10 +13,10 @@ export function FinalCtaSection() {
 
                 <div className="flex flex-col items-center gap-y-6 text-center max-w-3xl mx-auto mb-16">
                     <Heading as="h2" variant="h2">
-                        Prêt à mieux organiser l'accompagnement de votre proche ?
+                        Prêt à mieux organiser l&apos;accompagnement de votre proche ?
                     </Heading>
                     <Text variant="body">
-                        Créez votre premier CareGroup et invitez les personnes qui accompagnent votre proche au quotidien. En quelques minutes, toute votre famille peut commencer à partager les informations importantes et mieux s'organiser.
+                        Créez votre premier CareGroup et invitez les personnes qui accompagnent votre proche au quotidien. En quelques minutes, toute votre famille peut commencer à partager les informations importantes et mieux s&apos;organiser.
                     </Text>
                 </div>
 

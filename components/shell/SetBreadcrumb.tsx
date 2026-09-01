@@ -16,6 +16,6 @@ export default function SetBreadcrumb({ labels }: { labels: Record<string, strin
                 return next;
             });
         };
-    }, [labels]);
+    }, [labels, setLabels]);
     return null;
 }

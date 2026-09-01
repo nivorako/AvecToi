@@ -1,35 +1,12 @@
 import Link from "next/link";
 
-import { revalidatePath } from "next/cache";
-
-import AddDossierPanel from "@/components/caregroup/AddDossierPanel";
-import AddTaskPanel from "@/components/caregroup/AddTaskPanel";
-import CareGroupBanner from "@/components/caregroup/CareGroupBanner";
-import TaskItemRow from "@/components/task/TaskItemRow";
-import { Card, CardContent, CardHeader } from "@/components/ui/Card";
-
 import PageSummary from "@/components/ui/PageSummary";
 
-import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
 type CareGroup = {
     id: string;
     name?: string;
-};
-
-type Patient = {
-    id: string;
-    fullName?: string;
-    firstName?: string;
-    lastName?: string;
-};
-
-type Membership = {
-    id: string;
-    role?: "owner" | "family" | "professional" | "patient";
-    user?: string | { id: string; name?: string };
-    careGroup?: string;
 };
 
 type Task = {
@@ -42,149 +19,6 @@ type Task = {
     urgency?: "low" | "high";
 };
 
-type Case = {
-    id: string;
-    title?: string;
-    type?: "medical" | "custom";
-};
-
-type CaseDoc = {
-    id: string;
-    type?: "medical" | "custom";
-    careGroup?: string | { id: string };
-};
-
-async function createTask(formData: FormData) {
-    "use server";
-
-    // Create Task server action for /app/caregroup/[id].
-    //
-    // Permissions (enforced here + by Payload ACL):
-    // - owner/family: can create tasks for any case in the caregroup
-    // - professional: can create tasks only for medical cases
-
-    // Form values (untrusted input): validate again on the server.
-    const careGroup = String(formData.get("careGroup") ?? "");
-    const caseID = String(formData.get("case") ?? "");
-    const title = String(formData.get("title") ?? "");
-    const assignedTo = String(formData.get("assignedTo") ?? "");
-    const dueDate = String(formData.get("dueDate") ?? "");
-
-    const user = await requireUser();
-
-    // Get caller role in this caregroup.
-    const membership = await payloadREST<{ docs: Membership[] }>(
-        `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
-    ).then((r) => r.docs[0]);
-
-    const role = membership?.role;
-    if (!role) return;
-    if (!caseID || !title) return;
-
-    // Fetch the target case to validate it belongs to this caregroup (anti-tampering guard).
-    const relatedCase = await payloadREST<CaseDoc>(
-        `/api/cases/${encodeURIComponent(caseID)}?depth=0`,
-    );
-
-    const relatedCaseCareGroup =
-        typeof relatedCase?.careGroup === "string"
-            ? relatedCase.careGroup
-            : relatedCase?.careGroup?.id;
-
-    // Prevent creating a task for a case outside of the current caregroup.
-    if (!relatedCaseCareGroup || relatedCaseCareGroup !== careGroup) return;
-
-    const canCreate =
-        role === "owner" ||
-        role === "family" ||
-        (role === "professional" && relatedCase?.type === "medical");
-
-    if (!canCreate) return;
-
-    try {
-        await payloadREST("/api/tasks", {
-            method: "POST",
-            headers: {
-                "content-type": "application/json",
-            },
-            body: JSON.stringify({
-                case: caseID,
-                title,
-                status: "todo",
-                ...(assignedTo ? { assignedTo } : {}),
-                ...(dueDate ? { dueDate } : {}),
-            }),
-        });
-    } catch {
-        return;
-    }
-
-    // Refresh the caregroup dashboard so the task list updates.
-    revalidatePath(`/app/caregroup/${careGroup}`);
-}
-
-async function createCase(formData: FormData) {
-    "use server";
-
-    // Only owner/family can create cases in the caregroup.
-    const careGroup = String(formData.get("careGroup") ?? "");
-    const title = String(formData.get("title") ?? "");
-    const type = String(formData.get("type") ?? "");
-
-    const user = await requireUser();
-
-    const membership = await payloadREST<{ docs: Membership[] }>(
-        `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
-    ).then((r) => r.docs[0]);
-
-    if (membership?.role !== "owner" && membership?.role !== "family") return;
-    if (!title || (type !== "medical" && type !== "custom")) return;
-
-    let defaultPatientID = await payloadREST<{ docs: Patient[] }>(
-        `/api/patients?where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
-    ).then((r) => r.docs[0]?.id);
-
-    if (!defaultPatientID && membership?.role === "owner") {
-        try {
-            const created = await payloadREST<{ id: string }>("/api/patients", {
-                method: "POST",
-                headers: {
-                    "content-type": "application/json",
-                },
-                body: JSON.stringify({
-                    careGroup,
-                    firstName: "Patient",
-                    lastName: "",
-                }),
-            });
-            defaultPatientID = created?.id;
-        } catch {
-            return;
-        }
-    }
-
-    if (!defaultPatientID) return;
-
-    try {
-        await payloadREST("/api/cases", {
-            method: "POST",
-            headers: {
-                "content-type": "application/json",
-            },
-            body: JSON.stringify({
-                careGroup,
-                patient: defaultPatientID,
-                title,
-                type,
-            }),
-        });
-    } catch {
-        return;
-    }
-
-    // Refresh to show the newly created case.
-    revalidatePath(`/app/caregroup/${careGroup}`);
-}
 
 function formatDateFR(iso: string) {
     const d = new Date(iso);
@@ -196,51 +30,6 @@ function formatDateFR(iso: string) {
     }).format(d);
 }
 
-function hashToIndex(input: string, modulo: number) {
-    let h = 0;
-    for (let i = 0; i < input.length; i += 1) {
-        h = (h * 31 + input.charCodeAt(i)) >>> 0;
-    }
-    return h % modulo;
-}
-
-function caseAccentClasses(caseId: string) {
-    const palette = [
-        {
-            border: "border-l-sky-300",
-            dot: "bg-sky-400",
-            dotRing: "ring-sky-200",
-        },
-        {
-            border: "border-l-emerald-300",
-            dot: "bg-emerald-400",
-            dotRing: "ring-emerald-200",
-        },
-        {
-            border: "border-l-violet-300",
-            dot: "bg-violet-400",
-            dotRing: "ring-violet-200",
-        },
-        {
-            border: "border-l-amber-300",
-            dot: "bg-amber-400",
-            dotRing: "ring-amber-200",
-        },
-        {
-            border: "border-l-rose-300",
-            dot: "bg-rose-400",
-            dotRing: "ring-rose-200",
-        },
-        {
-            border: "border-l-teal-300",
-            dot: "bg-teal-400",
-            dotRing: "ring-teal-200",
-        },
-    ] as const;
-
-    return palette[hashToIndex(caseId, palette.length)];
-}
-
 export default async function CareGroupPage({
     params,
 }: {
@@ -250,39 +39,13 @@ export default async function CareGroupPage({
     // Displays a caregroup dashboard (patients, cases, tasks).
     const { id } = await params;
 
-    // Protected page: redirect to login when user is not authenticated.
-    const user = await requireUser();
-
-    // Used for both UI permissions (which forms/actions to show) and basic navigation (Members page).
-    // Note: Payload ACL is the real security boundary; the UI only hides actions for convenience.
-    const membership = await payloadREST<{ docs: Membership[] }>(
-        `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(id)}&limit=1&depth=0`,
-    ).then((r) => r.docs[0]);
-
     // Caregroup data (depth=0 is enough here).
     await payloadREST<CareGroup>(`/api/caregroups/${id}?depth=0`);
-
-    // Cases and tasks are filtered by Payload access control.
-    // The UI can safely show what the API returns for the current user.
-    const cases = await payloadREST<{ docs: Case[] }>(
-        `/api/cases?where[careGroup][equals]=${encodeURIComponent(id)}&limit=3&sort=-createdAt&depth=0`,
-    );
 
     // Latest tasks for this caregroup.
     const tasks = await payloadREST<{ docs: Task[] }>(
         `/api/tasks?where[careGroup][equals]=${encodeURIComponent(id)}&limit=50&depth=0`,
     );
-
-    // Get caregroup members for task assignment
-    const careGroupMembers = await payloadREST<{ docs: Membership[] }>(
-        `/api/memberships?where[careGroup][equals]=${encodeURIComponent(id)}&limit=100&depth=1`,
-    );
-    const users = careGroupMembers.docs
-        .map((m) => m.user)
-        .filter(
-            (u): u is { id: string; name?: string } =>
-                u !== null && typeof u === "object",
-        );
 
     const upcomingTasks = tasks.docs
         .filter((t) => t.status !== "done")

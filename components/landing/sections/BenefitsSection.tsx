@@ -21,7 +21,7 @@ export function BenefitsSection() {
                     </Heading>
 
                     <Text variant="bodyLarge">
-                        Découvrez comment CareGroup simplifie l'organisation familiale et améliore la coordination entre tous les proches.
+                        Découvrez comment CareGroup simplifie l&apos;organisation familiale et améliore la coordination entre tous les proches.
                     </Text>
                 </div>
 

@@ -1,4 +1,3 @@
-import Link from "next/link";
 
 import AddDossierPanel from "@/components/caregroup/AddDossierPanel";
 import PageSummary from "@/components/ui/PageSummary";
@@ -49,17 +48,17 @@ export default async function CareGroupCasesPage({
     );
 
     const [tasksRes, attachmentsRes] = await Promise.all([
-        payloadREST<{ docs: { id: string; case?: string; status?: string; urgency?: string; dueDate?: string }[] }>(
+        payloadREST<{ docs: { id: string; case?: string | { id: string }; status?: string; urgency?: string; dueDate?: string }[] }>(
             `/api/tasks?where[careGroup][equals]=${encodeURIComponent(id)}&limit=500&depth=0`,
         ),
-        payloadREST<{ docs: { id: string; case?: string }[] }>(
+        payloadREST<{ docs: { id: string; case?: string | { id: string } }[] }>(
             `/api/case-attachments?where[careGroup][equals]=${encodeURIComponent(id)}&limit=500&depth=0`,
         ),
     ]);
 
     function computeStatus(caseId: string): "urgent" | "action" | "ok" {
         const caseTasks = tasksRes.docs.filter(
-            (t) => (typeof t.case === "string" ? t.case : (t.case as any)?.id) === caseId
+            (t) => (typeof t.case === "string" ? t.case : t.case?.id) === caseId
         );
         if (caseTasks.some((t) => t.urgency === "high")) return "urgent";
         if (caseTasks.some((t) => t.status !== "done")) return "action";
@@ -68,11 +67,11 @@ export default async function CareGroupCasesPage({
 
     function computeMeta(caseId: string): string {
         const caseTasks = tasksRes.docs.filter(
-            (t) => (typeof t.case === "string" ? t.case : (t.case as any)?.id) === caseId
+            (t) => (typeof t.case === "string" ? t.case : t.case?.id) === caseId
         );
         const pendingCount = caseTasks.filter((t) => t.status !== "done").length;
         const attachCount = attachmentsRes.docs.filter(
-            (a) => (typeof a.case === "string" ? a.case : (a.case as any)?.id) === caseId
+            (a) => (typeof a.case === "string" ? a.case : a.case?.id) === caseId
         ).length;
     
         const parts = [];
@@ -95,7 +94,7 @@ export default async function CareGroupCasesPage({
     function nearestDueDate(caseId: string): number {
     const dates = tasksRes.docs
         .filter((t) =>
-            (typeof t.case === "string" ? t.case : (t.case as any)?.id) === caseId
+            (typeof t.case === "string" ? t.case : t.case?.id) === caseId
             && t.status !== "done"
             && t.dueDate
         )

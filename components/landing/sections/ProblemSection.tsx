@@ -41,7 +41,7 @@ export function ProblemSection() {
                             variant="bodyLarge"
                             className="max-w-2xl text-center"
                         >
-                            C'est pour répondre à ces situations que CareGroup a été créé.
+                            C&apos;est pour répondre à ces situations que CareGroup a été créé.
                         </Text>
                     </div>     
                     
