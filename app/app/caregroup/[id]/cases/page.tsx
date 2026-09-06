@@ -128,7 +128,7 @@ export default async function CareGroupCasesPage({
             `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
         ).then((r) => r.docs[0]);
 
-        if (membership?.role !== "owner" && membership?.role !== "family") return;
+        if (membership?.role !== "admin" && membership?.role !== "family") return;
 
         const defaultPatient = await payloadREST<{ docs: { id: string }[] }>(
             `/api/patients?where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,

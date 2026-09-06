@@ -84,9 +84,9 @@ export const TaskAttachments: CollectionConfig = {
                     });
 
                     // Same permissions as tasks:
-                    // - owner/family: can always attach docs within their caregroup
+                    // - admin/family: can always attach docs within their caregroup
                     // - professional: can attach docs only to medical tasks
-                    if (role === "owner" || role === "family") return true;
+                    if (role === "admin" || role === "family") return true;
                     if (role === "professional") {
                         return relatedTask?.type === "medical";
                     }
@@ -108,9 +108,9 @@ export const TaskAttachments: CollectionConfig = {
                         },
                     });
 
-                    const ownerOrFamilyCareGroupIDs = myMemberships.docs
+                    const adminOrFamilyCareGroupIDs = myMemberships.docs
                         .filter(
-                            (m) => m.role === "owner" || m.role === "family",
+                            (m) => m.role === "admin" || m.role === "family",
                         )
                         .map((m) => m.careGroup)
                         .filter(Boolean);
@@ -121,7 +121,7 @@ export const TaskAttachments: CollectionConfig = {
                         .filter(Boolean);
 
                     if (
-                        ownerOrFamilyCareGroupIDs.length === 0 &&
+                        adminOrFamilyCareGroupIDs.length === 0 &&
                         professionalCareGroupIDs.length === 0
                     ) {
                         return {
@@ -133,10 +133,10 @@ export const TaskAttachments: CollectionConfig = {
 
                     const or: Where[] = [];
 
-                    if (ownerOrFamilyCareGroupIDs.length > 0) {
+                    if (adminOrFamilyCareGroupIDs.length > 0) {
                         or.push({
                             careGroup: {
-                                in: ownerOrFamilyCareGroupIDs,
+                                in: adminOrFamilyCareGroupIDs,
                             },
                         });
                     }
@@ -176,18 +176,18 @@ export const TaskAttachments: CollectionConfig = {
                         },
                     });
 
-                    const ownerOrFamilyCareGroupIDs = myMemberships.docs
+                    const adminOrFamilyCareGroupIDs = myMemberships.docs
                         .filter(
-                            (m) => m.role === "owner" || m.role === "family",
+                            (m) => m.role === "admin" || m.role === "family",
                         )
                         .map((m) => m.careGroup)
                         .filter(Boolean);
 
-                    if (!ownerOrFamilyCareGroupIDs.length) return false;
+                    if (!adminOrFamilyCareGroupIDs.length) return false;
 
                     return {
                         careGroup: {
-                            in: ownerOrFamilyCareGroupIDs,
+                            in: adminOrFamilyCareGroupIDs,
                         },
                     };
                 },

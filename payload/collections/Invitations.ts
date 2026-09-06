@@ -1,5 +1,7 @@
 import type { CollectionConfig, Where } from "payload";
 
+import { INVITABLE_ROLE_OPTIONS } from "@/domain/Roles";
+
 export const Invitations: CollectionConfig = {
             slug: "invitations",
             access: {
@@ -13,7 +15,7 @@ export const Invitations: CollectionConfig = {
 
                     if (!careGroupID) return false;
 
-                    const ownerMemberships = await req.payload.find({
+                    const adminMemberships = await req.payload.find({
                         collection: "memberships",
                         depth: 0,
                         limit: 1,
@@ -32,19 +34,19 @@ export const Invitations: CollectionConfig = {
                                 },
                                 {
                                     role: {
-                                        equals: "owner",
+                                        equals: "admin",
                                     },
                                 },
                             ],
                         },
                     });
 
-                    return ownerMemberships.docs.length > 0;
+                    return adminMemberships.docs.length > 0;
                 },
                 read: async ({ req }) => {
                     if (!req.user) return false;
 
-                    const ownerMemberships = await req.payload.find({
+                    const adminMemberships = await req.payload.find({
                         collection: "memberships",
                         depth: 0,
                         limit: 100,
@@ -58,14 +60,14 @@ export const Invitations: CollectionConfig = {
                                 },
                                 {
                                     role: {
-                                        equals: "owner",
+                                        equals: "admin",
                                     },
                                 },
                             ],
                         },
                     });
 
-                    const ownerCareGroupIDs = ownerMemberships.docs
+                    const adminCareGroupIDs = adminMemberships.docs
                         .map((m) =>
                             typeof m.careGroup === "string"
                                 ? m.careGroup
@@ -85,8 +87,8 @@ export const Invitations: CollectionConfig = {
 
                     or.push({
                         careGroup: {
-                            in: ownerCareGroupIDs.length
-                                ? ownerCareGroupIDs
+                            in: adminCareGroupIDs.length
+                                ? adminCareGroupIDs
                                 : ["__none__"],
                         },
                     });
@@ -96,7 +98,7 @@ export const Invitations: CollectionConfig = {
                 update: async ({ req }) => {
                     if (!req.user) return false;
 
-                    const ownerMemberships = await req.payload.find({
+                    const adminMemberships = await req.payload.find({
                         collection: "memberships",
                         depth: 0,
                         limit: 100,
@@ -110,14 +112,14 @@ export const Invitations: CollectionConfig = {
                                 },
                                 {
                                     role: {
-                                        equals: "owner",
+                                        equals: "admin",
                                     },
                                 },
                             ],
                         },
                     });
 
-                    const careGroupIDs = ownerMemberships.docs
+                    const careGroupIDs = adminMemberships.docs
                         .map((m) => m.careGroup)
                         .filter(Boolean);
 
@@ -132,7 +134,7 @@ export const Invitations: CollectionConfig = {
                 delete: async ({ req }) => {
                     if (!req.user) return false;
 
-                    const ownerMemberships = await req.payload.find({
+                    const adminMemberships = await req.payload.find({
                         collection: "memberships",
                         depth: 0,
                         limit: 100,
@@ -146,14 +148,14 @@ export const Invitations: CollectionConfig = {
                                 },
                                 {
                                     role: {
-                                        equals: "owner",
+                                        equals: "admin",
                                     },
                                 },
                             ],
                         },
                     });
 
-                    const careGroupIDs = ownerMemberships.docs
+                    const careGroupIDs = adminMemberships.docs
                         .map((m) => m.careGroup)
                         .filter(Boolean);
 
@@ -183,21 +185,8 @@ export const Invitations: CollectionConfig = {
                     type: "select",
                     required: true,
                     // Invitation role controls which membership role will be created when the invite is accepted.
-                    // We support "patient" so an owner can invite a read-only patient account.
-                    options: [
-                        {
-                            label: "Family",
-                            value: "family",
-                        },
-                        {
-                            label: "Professional",
-                            value: "professional",
-                        },
-                        {
-                            label: "Patient",
-                            value: "patient",
-                        },
-                    ],
+                    // We support "patient" so an admin can invite a read-only patient account.
+                    options: [...INVITABLE_ROLE_OPTIONS],
                 },
                 {
                     name: "token",

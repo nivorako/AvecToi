@@ -44,8 +44,8 @@ Lors de la création d'un CareGroup :
 
 **Création**
 
-- Uniquement les owners du caregroup spécifié
-- Pour l'admin Payload : permet création si user est owner d'au moins un caregroup (évite de cacher le bouton "Create new")
+- Uniquement les admins du caregroup spécifié
+- Pour l'admin Payload : permet création si user est admin d'au moins un caregroup (évite de cacher le bouton "Create new")
 
 **Lecture**
 
@@ -54,16 +54,16 @@ Lors de la création d'un CareGroup :
 
 **Modification**
 
-- Owner, Family, Professional peuvent modifier
+- Admin, Family, Professional peuvent modifier
 - Patient role est read-only (pas de modification)
 
 **Suppression**
 
-- Uniquement les owners du caregroup
+- Uniquement les admins du caregroup
 
 ### Rôles et permissions
 
-- **Owner** : création, lecture, modification, suppression
+- **Admin** : création, lecture, modification, suppression
 - **Family** : lecture, modification
 - **Professional** : lecture, modification
 - **Patient** : lecture seule (read-only)
@@ -74,7 +74,7 @@ Lors de la création d'un CareGroup :
 
 - Les dossiers sont rattachés à un patient
 - Patient par défaut utilisé si non spécifié
-- Owner/Family peuvent créer des dossiers pour les patients
+- Admin/Family peuvent créer des dossiers pour les patients
 
 **Interface utilisateur**
 

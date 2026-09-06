@@ -125,7 +125,7 @@ export async function GET(
     const taskType = doc?.taskType;
 
     const canRead =
-        role === "owner" ||
+        role === "admin" ||
         role === "family" ||
         (role === "professional" && taskType === "medical");
 

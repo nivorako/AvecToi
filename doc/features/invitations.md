@@ -2,7 +2,7 @@
 
 ### Concept
 
-Le système d'invitations permet aux owners d'un CareGroup d'inviter des nouveaux membres par email. Chaque invitation contient un token unique et définit le rôle que le membre aura lors de l'acceptation.
+Le système d'invitations permet aux admins d'un CareGroup d'inviter des nouveaux membres par email. Chaque invitation contient un token unique et définit le rôle que le membre aura lors de l'acceptation.
 
 ### Structure
 
@@ -27,7 +27,7 @@ Le système d'invitations permet aux owners d'un CareGroup d'inviter des nouveau
 
 ### Flux d'invitation
 
-1. **Création** (par owner)
+1. **Création** (par admin)
     - Formulaire avec email et rôle
     - Génération d'un token unique
     - Définition d'une date d'expiration
@@ -53,20 +53,20 @@ Le système d'invitations permet aux owners d'un CareGroup d'inviter des nouveau
 
 **Création**
 
-- Uniquement les owners du caregroup
+- Uniquement les admins du caregroup
 
 **Lecture**
 
-- Owners peuvent voir toutes les invitations de leurs caregroups
+- Admins peuvent voir toutes les invitations de leurs caregroups
 - Utilisateurs peuvent voir les invitations qui leur sont adressées (via leur email)
 
 **Modification**
 
-- Uniquement les owners du caregroup (pour révoquer)
+- Uniquement les admins du caregroup (pour révoquer)
 
 **Suppression**
 
-- Uniquement les owners du caregroup
+- Uniquement les admins du caregroup
 
 ### Page d'acceptation
 

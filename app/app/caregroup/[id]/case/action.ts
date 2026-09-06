@@ -14,7 +14,7 @@ export async function archiveCase(formData: FormData) {
         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
     ).then((r) => r.docs[0]);
 
-    if (membership?.role !== "owner") return;
+    if (membership?.role !== "admin") return;
 
     await payloadREST(`/api/cases/${encodeURIComponent(caseID)}`, {
         method: "PATCH",
@@ -35,7 +35,7 @@ export async function deleteCase(formData: FormData) {
         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
     ).then((r) => r.docs[0]);
 
-    if (membership?.role !== "owner") return;
+    if (membership?.role !== "admin") return;
 
     await payloadREST(`/api/cases/${encodeURIComponent(caseID)}`, {
         method: "DELETE",

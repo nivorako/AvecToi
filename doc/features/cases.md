@@ -43,48 +43,48 @@ La page `/app/cases/[id]` affiche :
 **Créer une tâche** (AddCaseTaskPanel)
 
 - Champs : titre, responsable (optionnel), date d'échéance
-- Permissions : Owner/Family (tous types), Professional (medical uniquement)
+- Permissions : Admin/Family (tous types), Professional (medical uniquement)
 - Patient : read-only (pas de création)
 
 **Ajouter un document** (AddCaseAttachmentPanel)
 
 - Upload de fichiers (PDF, images, etc.)
-- Permissions : Owner/Family (tous types), Professional (medical uniquement)
+- Permissions : Admin/Family (tous types), Professional (medical uniquement)
 - Patient : read-only (pas d'upload)
 
 **Modifier la description**
 
 - Édition de la description du case
-- Permissions : Owner/Family (tous types), Professional (medical uniquement)
+- Permissions : Admin/Family (tous types), Professional (medical uniquement)
 - Patient : read-only
 
 ### Access Control (Payload ACL)
 
 **Création**
 
-- Owner/Family uniquement
-- Pour l'admin Payload : permet création si user est owner/family d'au moins un caregroup
+- Admin/Family uniquement
+- Pour l'admin Payload : permet création si user est admin/family d'au moins un caregroup
 
 **Lecture**
 
-- Owner/Family : tous les cases dans leurs caregroups (medical + custom)
+- Admin/Family : tous les cases dans leurs caregroups (medical + custom)
 - Professional : uniquement les cases medical dans leurs caregroups
 - Patient : tous les cases dans leur caregroup
 
 **Modification**
 
-- Owner/Family : tous les cases dans leurs caregroups
+- Admin/Family : tous les cases dans leurs caregroups
 - Professional : uniquement les cases medical dans leurs caregroups
 - Patient : read-only (pas de modification)
 
 **Suppression**
 
-- Owner/Family uniquement
+- Admin/Family uniquement
 - Professional : pas de suppression
 
 ### Rôles et permissions
 
-- **Owner** : création, lecture, modification, suppression de tous les cases
+- **Admin** : création, lecture, modification, suppression de tous les cases
 - **Family** : création, lecture, modification, suppression de tous les cases
 - **Professional** : lecture, modification des cases medical uniquement
 - **Patient** : lecture seule de tous les cases

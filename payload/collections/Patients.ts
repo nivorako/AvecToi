@@ -6,7 +6,7 @@ import type { CollectionConfig, Where } from "payload";
         // Patients are scoped to one CareGroup.
         // In the MVP:
         // - any member can read patients within their caregroup
-        // - only owners can create/delete patients
+        // - only admins can create/delete patients
         // - patient role is read-only (no updates)
 
 export const Patients: CollectionConfig = {
@@ -20,9 +20,9 @@ export const Patients: CollectionConfig = {
 
                     // IMPORTANT: Payload admin checks create permission without passing `data`.
                     // To avoid hiding the "Create new" button, we allow create if the user is an
-                    // owner of at least one caregroup.
+                    // admin of at least one caregroup.
                     // When `data.careGroup` is present (API or form submission), we additionally
-                    // ensure the user is owner of that specific caregroup.
+                    // ensure the user is admin of that specific caregroup.
                     const andConditions: Where[] = [
                         {
                             user: {
@@ -31,7 +31,7 @@ export const Patients: CollectionConfig = {
                         },
                         {
                             role: {
-                                equals: "owner",
+                                equals: "admin",
                             },
                         },
                     ];
@@ -48,7 +48,7 @@ export const Patients: CollectionConfig = {
                         and: andConditions,
                     };
 
-                    const ownerMemberships = await req.payload.find({
+                    const adminMemberships = await req.payload.find({
                         collection: "memberships",
                         depth: 0,
                         limit: 1,
@@ -56,7 +56,7 @@ export const Patients: CollectionConfig = {
                         where,
                     });
 
-                    return ownerMemberships.docs.length > 0;
+                    return adminMemberships.docs.length > 0;
                 },
                 read: async ({ req }) => {
                     if (!req.user) return false;
@@ -97,7 +97,7 @@ export const Patients: CollectionConfig = {
                     if (!req.user) return false;
 
                     // Patient accounts must be read-only.
-                    // Keep update for owner/family/professional only.
+                    // Keep update for admin/family/professional only.
                     const myMemberships = await req.payload.find({
                         collection: "memberships",
                         depth: 0,
@@ -108,7 +108,7 @@ export const Patients: CollectionConfig = {
                                 { user: { equals: req.user.id } },
                                 {
                                     role: {
-                                        in: ["owner", "family", "professional"],
+                                        in: ["admin", "family", "professional"],
                                     },
                                 },
                             ],
@@ -130,8 +130,8 @@ export const Patients: CollectionConfig = {
                 delete: async ({ req }) => {
                     if (!req.user) return false;
 
-                    // Only owners can delete patients.
-                    const ownerMemberships = await req.payload.find({
+                    // Only admins can delete patients.
+                    const adminMemberships = await req.payload.find({
                         collection: "memberships",
                         depth: 0,
                         limit: 100,
@@ -145,14 +145,14 @@ export const Patients: CollectionConfig = {
                                 },
                                 {
                                     role: {
-                                        equals: "owner",
+                                        equals: "admin",
                                     },
                                 },
                             ],
                         },
                     });
 
-                    const careGroupIDs = ownerMemberships.docs
+                    const careGroupIDs = adminMemberships.docs
                         .map((m) => m.careGroup)
                         .filter(Boolean);
 

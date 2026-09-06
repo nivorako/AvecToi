@@ -53,7 +53,7 @@ export const CareGroups: CollectionConfig = {
         update: async ({ req }) => {
             if (!req.user) return false;
 
-            // Only owners can update CareGroups.
+            // Only admins can update CareGroups.
             const memberships = await req.payload.find({
                 collection: "memberships",
                 depth: 0,
@@ -68,7 +68,7 @@ export const CareGroups: CollectionConfig = {
                         },
                         {
                             role: {
-                                equals: "owner",
+                                equals: "admin",
                             },
                         },
                     ],
@@ -90,7 +90,7 @@ export const CareGroups: CollectionConfig = {
         delete: async ({ req }) => {
             if (!req.user) return false;
 
-            // Only owners can delete CareGroups.
+            // Only admins can delete CareGroups.
             const memberships = await req.payload.find({
                 collection: "memberships",
                 depth: 0,
@@ -105,7 +105,7 @@ export const CareGroups: CollectionConfig = {
                         },
                         {
                             role: {
-                                equals: "owner",
+                                equals: "admin",
                             },
                         },
                     ],
@@ -144,7 +144,7 @@ export const CareGroups: CollectionConfig = {
                 if (operation !== "create") return;
                 if (!req.user) return;
 
-                // On CareGroup creation, automatically create an `owner` Membership for the creator.
+                // On CareGroup creation, automatically create an `admin` Membership for the creator.
                 // This ensures the creator immediately has access to the CareGroup and can manage it.
                 // We also guard against accidental duplicates.
                 const existing = await req.payload.find({
@@ -175,7 +175,7 @@ export const CareGroups: CollectionConfig = {
                     data: {
                         user: req.user.id,
                         careGroup: doc.id,
-                        role: "owner",
+                        role: "admin",
                     },
                 });
 

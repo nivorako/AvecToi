@@ -5,12 +5,12 @@ import { getRelationshipID } from "../utils/getRelationshipID";
         // Tasks
         // ---------------------------------------------------------------------
         // A Task is linked to a Case.
-        // We store derived fields (`careGroup`, `patient`, `caseType`) so access control can be
-        // implemented without doing joins at query time.
+        // Derived fields (`careGroup`, `patient`, `caseType`) mirror the related case, but
+        // permission checks use the related Case as the source of truth.
         //
         // Role rules (MVP):
-        // - owner/family: can read and create tasks in their caregroups
-        // - professional: can read tasks only when caseType is medical
+        // - admin/family: can read and create tasks in their caregroups
+        // - professional: can read tasks only when the related case is medical
         // - professional: can create tasks only when the related case is medical
         // - patient: can read tasks in their caregroup, but cannot create/update/delete
         
@@ -66,7 +66,7 @@ export const Tasks: CollectionConfig = {
                     });
 
                     const role = membership.docs[0]?.role;
-                    if (role === "owner" || role === "family") return true;
+                    if (role === "admin" || role === "family") return true;
 
                     if (role === "professional") {
                         return relatedCase?.type === "medical";
@@ -94,9 +94,9 @@ export const Tasks: CollectionConfig = {
                         },
                     });
 
-                    const ownerOrFamilyCareGroupIDs = myMemberships.docs
+                    const adminOrFamilyCareGroupIDs = myMemberships.docs
                         .filter(
-                            (m) => m.role === "owner" || m.role === "family",
+                            (m) => m.role === "admin" || m.role === "family",
                         )
                         .map((m) => m.careGroup)
                         .filter(Boolean);
@@ -112,7 +112,7 @@ export const Tasks: CollectionConfig = {
                         .filter(Boolean);
 
                     if (
-                        ownerOrFamilyCareGroupIDs.length === 0 &&
+                        adminOrFamilyCareGroupIDs.length === 0 &&
                         professionalCareGroupIDs.length === 0 &&
                         patientCareGroupIDs.length === 0
                     ) {
@@ -125,15 +125,36 @@ export const Tasks: CollectionConfig = {
 
                     const or: Where[] = [];
 
-                    if (ownerOrFamilyCareGroupIDs.length > 0) {
+                    if (adminOrFamilyCareGroupIDs.length > 0) {
                         or.push({
                             careGroup: {
-                                in: ownerOrFamilyCareGroupIDs,
+                                in: adminOrFamilyCareGroupIDs,
                             },
                         });
                     }
 
                     if (professionalCareGroupIDs.length > 0) {
+                        const medicalCases = await req.payload.find({
+                            collection: "cases",
+                            depth: 0,
+                            pagination: false,
+                            overrideAccess: true,
+                            where: {
+                                and: [
+                                    {
+                                        careGroup: {
+                                            in: professionalCareGroupIDs,
+                                        },
+                                    },
+                                    {
+                                        type: {
+                                            equals: "medical",
+                                        },
+                                    },
+                                ],
+                            },
+                        });
+
                         or.push({
                             and: [
                                 {
@@ -142,8 +163,10 @@ export const Tasks: CollectionConfig = {
                                     },
                                 },
                                 {
-                                    caseType: {
-                                        equals: "medical",
+                                    case: {
+                                        in: medicalCases.docs.map(
+                                            (relatedCase) => relatedCase.id,
+                                        ),
                                     },
                                 },
                             ],
@@ -177,9 +200,9 @@ export const Tasks: CollectionConfig = {
                         },
                     });
 
-                    const ownerOrFamilyCareGroupIDs = myMemberships.docs
+                    const adminOrFamilyCareGroupIDs = myMemberships.docs
                         .filter(
-                            (m) => m.role === "owner" || m.role === "family",
+                            (m) => m.role === "admin" || m.role === "family",
                         )
                         .map((m) => m.careGroup)
                         .filter(Boolean);
@@ -190,7 +213,7 @@ export const Tasks: CollectionConfig = {
                         .filter(Boolean);
 
                     if (
-                        ownerOrFamilyCareGroupIDs.length === 0 &&
+                        adminOrFamilyCareGroupIDs.length === 0 &&
                         professionalCareGroupIDs.length === 0
                     ) {
                         return false;
@@ -198,15 +221,36 @@ export const Tasks: CollectionConfig = {
 
                     const or: Where[] = [];
 
-                    if (ownerOrFamilyCareGroupIDs.length > 0) {
+                    if (adminOrFamilyCareGroupIDs.length > 0) {
                         or.push({
                             careGroup: {
-                                in: ownerOrFamilyCareGroupIDs,
+                                in: adminOrFamilyCareGroupIDs,
                             },
                         });
                     }
 
                     if (professionalCareGroupIDs.length > 0) {
+                        const medicalCases = await req.payload.find({
+                            collection: "cases",
+                            depth: 0,
+                            pagination: false,
+                            overrideAccess: true,
+                            where: {
+                                and: [
+                                    {
+                                        careGroup: {
+                                            in: professionalCareGroupIDs,
+                                        },
+                                    },
+                                    {
+                                        type: {
+                                            equals: "medical",
+                                        },
+                                    },
+                                ],
+                            },
+                        });
+
                         or.push({
                             and: [
                                 {
@@ -215,8 +259,10 @@ export const Tasks: CollectionConfig = {
                                     },
                                 },
                                 {
-                                    caseType: {
-                                        equals: "medical",
+                                    case: {
+                                        in: medicalCases.docs.map(
+                                            (relatedCase) => relatedCase.id,
+                                        ),
                                     },
                                 },
                             ],
@@ -230,7 +276,7 @@ export const Tasks: CollectionConfig = {
                 delete: async ({ req }) => {
                     if (!req.user) return false;
 
-                    // MVP: only owner/family can delete tasks.
+                    // MVP: only admin/family can delete tasks.
                     const myMemberships = await req.payload.find({
                         collection: "memberships",
                         depth: 0,
@@ -245,7 +291,7 @@ export const Tasks: CollectionConfig = {
                                 },
                                 {
                                     role: {
-                                        in: ["owner", "family"],
+                                        in: ["admin", "family"],
                                     },
                                 },
                             ],
@@ -303,55 +349,6 @@ export const Tasks: CollectionConfig = {
                         };
                     },
                 ],
-                beforeChange: [
-                    async ({ data, originalDoc }) => {
-                        const subtasks = data.subtasks as
-                            | Array<{ completed: boolean }>
-                            | undefined;
-
-                        // Si pas de sous-tâches, laisser le statut manuel
-                        if (!subtasks || subtasks.length === 0) {
-                            return data;
-                        }
-
-                        // Si le statut est explicitement fourni par le frontend, le respecter
-                        if (data.status !== undefined) {
-                            return data;
-                        }
-
-                        // Si la tâche a déjà un statut et qu'on ne le change pas explicitement, le respecter
-                        if (
-                            originalDoc.status !== undefined &&
-                            data.status === undefined
-                        ) {
-                            return data;
-                        }
-
-                        // // Calculer le statut basé sur les sous-tâches
-                        // const completedCount = subtasks.filter(
-                        //     (st) => st.completed,
-                        // ).length;
-                        // const totalCount = subtasks.length;
-
-                        // if (completedCount === 0) {
-                        //     return { ...data, status: "todo" };
-                        // } else if (
-                        //     completedCount > 0 &&
-                        //     completedCount < totalCount
-                        // ) {
-                        //     return { ...data, status: "in_progress" };
-                        // }
-
-                        // Si le statut est explicitement fourni par le frontend, le respecter
-                        if (data.status !== undefined) {
-                            return data;
-                        }
-
-                        // Sinon, ne pas modifier le statut automatiquement
-                        // Le frontend gère la logique auto-status via useEffect
-                        return data;
-                    },
-                ],
             },
             fields: [
                 {
@@ -407,11 +404,6 @@ export const Tasks: CollectionConfig = {
                 {
                     name: "description",
                     type: "textarea",
-                    required: false,
-                },
-                {
-                    name: "responsable",
-                    type: "text",
                     required: false,
                 },
                 {

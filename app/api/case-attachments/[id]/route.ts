@@ -88,7 +88,7 @@ async function canManageAttachment(args: {
 
     const role = (membership.docs[0] as { role?: string } | undefined)?.role;
 
-    if (role !== "owner" && role !== "family") {
+    if (role !== "admin" && role !== "family") {
         return { ok: false, status: 403, message: "Forbidden" };
     }
 

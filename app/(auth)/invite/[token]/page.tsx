@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import Button from "@/components/ui/Button/Button";
+import type { InvitableRole } from "@/domain/Roles";
 
 import { getPayload } from "payload";
 
@@ -16,7 +17,7 @@ type Invitation = {
     id: string;
     careGroup?: string;
     email?: string;
-    role?: "family" | "professional" | "patient";
+    role?: InvitableRole;
     token?: string;
     status?: "pending" | "accepted" | "revoked";
     expiresAt?: string;

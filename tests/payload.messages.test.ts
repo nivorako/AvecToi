@@ -6,7 +6,7 @@ import {
     stopPayload,
     cleanCollections,
     createUser,
-    createCareGroupAsOwner,
+    createCareGroupAsAdmin,
     addMembership,
     relationshipToID,
 } from "./helpers/payload";
@@ -28,10 +28,10 @@ describe("Payload — Messages", () => {
     });
 
     it("patient can create and read messages in their caregroup", async () => {
-        const owner = await createUser(payload, {
-            email: "owner-patient-messages@example.com",
+        const admin = await createUser(payload, {
+            email: "admin-patient-messages@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
         const patientUser = await createUser(payload, {
@@ -40,13 +40,13 @@ describe("Payload — Messages", () => {
             name: "Patient",
         });
 
-        const careGroup = await createCareGroupAsOwner(payload, {
-            owner,
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CG",
         });
 
         await addMembership(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             userID: patientUser.id,
             role: "patient",
@@ -76,10 +76,10 @@ describe("Payload — Messages", () => {
     });
 
     it("patient cannot edit a message authored by someone else", async () => {
-        const owner = await createUser(payload, {
-            email: "owner-patient-message-edit@example.com",
+        const admin = await createUser(payload, {
+            email: "admin-patient-message-edit@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
         const family = await createUser(payload, {
@@ -94,20 +94,20 @@ describe("Payload — Messages", () => {
             name: "Patient",
         });
 
-        const careGroup = await createCareGroupAsOwner(payload, {
-            owner,
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CG",
         });
 
         await addMembership(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             userID: family.id,
             role: "family",
         });
 
         await addMembership(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             userID: patientUser.id,
             role: "patient",

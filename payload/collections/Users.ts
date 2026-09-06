@@ -15,7 +15,7 @@ export const Users: CollectionConfig = {
         create: async ({ req }) => {
             if (!req.user) return false;
 
-            const ownerMemberships = await req.payload.find({
+            const adminMemberships = await req.payload.find({
                 collection: "memberships",
                 depth: 0,
                 limit: 1,
@@ -29,19 +29,19 @@ export const Users: CollectionConfig = {
                         },
                         {
                             role: {
-                                equals: "owner",
+                                equals: "admin",
                             },
                         },
                     ],
                 },
             });
 
-            return ownerMemberships.docs.length > 0;
+            return adminMemberships.docs.length > 0;
         },
         read: async ({ req }) => {
             if (!req.user) return false;
 
-            const ownerMemberships = await req.payload.find({
+            const adminMemberships = await req.payload.find({
                 collection: "memberships",
                 depth: 0,
                 limit: 1,
@@ -55,14 +55,14 @@ export const Users: CollectionConfig = {
                         },
                         {
                             role: {
-                                equals: "owner",
+                                equals: "admin",
                             },
                         },
                     ],
                 },
             });
 
-            if (ownerMemberships.docs.length > 0) return true;
+            if (adminMemberships.docs.length > 0) return true;
 
             const myMemberships = await req.payload.find({
                 collection: "memberships",

@@ -6,7 +6,7 @@ import {
     stopPayload,
     cleanCollections,
     createUser,
-    createCareGroupAsOwner,
+    createCareGroupAsAdmin,
     addMembership,
     createPatient,
     createCase,
@@ -31,10 +31,10 @@ describe("Payload — Cases & Case Attachments", () => {
     });
 
     it("patient can read cases in their caregroup (medical + custom)", async () => {
-        const owner = await createUser(payload, {
-            email: "owner-patient-cases@example.com",
+        const admin = await createUser(payload, {
+            email: "admin-patient-cases@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
         const patientUser = await createUser(payload, {
@@ -43,27 +43,27 @@ describe("Payload — Cases & Case Attachments", () => {
             name: "Patient",
         });
 
-        const careGroup = await createCareGroupAsOwner(payload, {
-            owner,
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CG",
         });
 
         await addMembership(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             userID: patientUser.id,
             role: "patient",
         });
 
         const patient = await createPatient(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             firstName: "P",
             lastName: "T",
         });
 
         const medicalCase = await createCase(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             patientID: patient.id,
             title: "Medical",
@@ -71,7 +71,7 @@ describe("Payload — Cases & Case Attachments", () => {
         });
 
         const customCase = await createCase(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             patientID: patient.id,
             title: "Custom",
@@ -93,10 +93,10 @@ describe("Payload — Cases & Case Attachments", () => {
     });
 
     it("patient cannot update case description", async () => {
-        const owner = await createUser(payload, {
-            email: "owner-patient-case-update@example.com",
+        const admin = await createUser(payload, {
+            email: "admin-patient-case-update@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
         const patientUser = await createUser(payload, {
@@ -105,27 +105,27 @@ describe("Payload — Cases & Case Attachments", () => {
             name: "Patient",
         });
 
-        const careGroup = await createCareGroupAsOwner(payload, {
-            owner,
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CG",
         });
 
         await addMembership(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             userID: patientUser.id,
             role: "patient",
         });
 
         const patient = await createPatient(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             firstName: "P",
             lastName: "T",
         });
 
         const caseDoc = await createCase(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             patientID: patient.id,
             title: "Case",
@@ -144,10 +144,10 @@ describe("Payload — Cases & Case Attachments", () => {
     });
 
     it("lets family create cases but denies professionals creating cases", async () => {
-        const owner = await createUser(payload, {
-            email: "owner-case-create@example.com",
+        const admin = await createUser(payload, {
+            email: "admin-case-create@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
         const family = await createUser(payload, {
@@ -162,27 +162,27 @@ describe("Payload — Cases & Case Attachments", () => {
             name: "Pro",
         });
 
-        const careGroup = await createCareGroupAsOwner(payload, {
-            owner,
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CG",
         });
 
         await addMembership(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             userID: family.id,
             role: "family",
         });
 
         await addMembership(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             userID: professional.id,
             role: "professional",
         });
 
         const patient = await createPatient(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             firstName: "A",
             lastName: "B",
@@ -218,10 +218,10 @@ describe("Payload — Cases & Case Attachments", () => {
     });
 
     it("professional can read medical cases but not custom cases", async () => {
-        const owner = await createUser(payload, {
-            email: "owner-cases@example.com",
+        const admin = await createUser(payload, {
+            email: "admin-cases@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
         const professional = await createUser(payload, {
@@ -230,27 +230,27 @@ describe("Payload — Cases & Case Attachments", () => {
             name: "Pro",
         });
 
-        const careGroup = await createCareGroupAsOwner(payload, {
-            owner,
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CG",
         });
 
         await addMembership(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             userID: professional.id,
             role: "professional",
         });
 
         const patient = await createPatient(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             firstName: "Alice",
             lastName: "A",
         });
 
         const medicalCase = await createCase(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             patientID: patient.id,
             title: "Medical",
@@ -258,7 +258,7 @@ describe("Payload — Cases & Case Attachments", () => {
         });
 
         const customCase = await createCase(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             patientID: patient.id,
             title: "Custom",
@@ -280,23 +280,23 @@ describe("Payload — Cases & Case Attachments", () => {
     });
 
     it("forces case.careGroup from patient.careGroup on create", async () => {
-        const owner = await createUser(payload, {
-            email: "owner-case-force-create@example.com",
+        const admin = await createUser(payload, {
+            email: "admin-case-force-create@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
-        const cgA = await createCareGroupAsOwner(payload, {
-            owner,
+        const cgA = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CGA",
         });
-        const cgB = await createCareGroupAsOwner(payload, {
-            owner,
+        const cgB = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CGB",
         });
 
         const patientA = await createPatient(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: cgA.id,
             firstName: "P",
             lastName: "A",
@@ -310,7 +310,7 @@ describe("Payload — Cases & Case Attachments", () => {
                 title: "Case",
                 type: "medical",
             },
-            user: owner,
+            user: admin,
             overrideAccess: false,
         });
 
@@ -318,30 +318,30 @@ describe("Payload — Cases & Case Attachments", () => {
     });
 
     it("recalculates case.careGroup from patient when updating patient", async () => {
-        const owner = await createUser(payload, {
-            email: "owner-case-force-update@example.com",
+        const admin = await createUser(payload, {
+            email: "admin-case-force-update@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
-        const cgA = await createCareGroupAsOwner(payload, {
-            owner,
+        const cgA = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CGA",
         });
-        const cgB = await createCareGroupAsOwner(payload, {
-            owner,
+        const cgB = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CGB",
         });
 
         const patientA = await createPatient(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: cgA.id,
             firstName: "P",
             lastName: "A",
         });
 
         const patientB = await createPatient(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: cgB.id,
             firstName: "P",
             lastName: "B",
@@ -355,7 +355,7 @@ describe("Payload — Cases & Case Attachments", () => {
                 title: "Case",
                 type: "medical",
             },
-            user: owner,
+            user: admin,
             overrideAccess: false,
         });
 
@@ -363,7 +363,7 @@ describe("Payload — Cases & Case Attachments", () => {
             collection: "cases",
             id: createdCase.id,
             data: { patient: patientB.id },
-            user: owner,
+            user: admin,
             overrideAccess: false,
         });
 
@@ -371,14 +371,14 @@ describe("Payload — Cases & Case Attachments", () => {
     });
 
     it("rejects creating a case with an invalid patient id", async () => {
-        const owner = await createUser(payload, {
-            email: "owner-case-invalid-patient@example.com",
+        const admin = await createUser(payload, {
+            email: "admin-case-invalid-patient@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
-        const cg = await createCareGroupAsOwner(payload, {
-            owner,
+        const cg = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CG",
         });
 
@@ -391,33 +391,33 @@ describe("Payload — Cases & Case Attachments", () => {
                     title: "Case",
                     type: "medical",
                 },
-                user: owner,
+                user: admin,
                 overrideAccess: false,
             }),
         ).rejects.toBeTruthy();
     });
 
-    it("owner can upload an attachment and derived fields are populated", async () => {
-        const owner = await createUser(payload, {
-            email: "owner-attachments@example.com",
+    it("admin can upload an attachment and derived fields are populated", async () => {
+        const admin = await createUser(payload, {
+            email: "admin-attachments@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
-        const careGroup = await createCareGroupAsOwner(payload, {
-            owner,
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CG",
         });
 
         const patient = await createPatient(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             firstName: "Pat",
             lastName: "One",
         });
 
         const caseDoc = await createCase(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             patientID: patient.id,
             title: "Case",
@@ -425,10 +425,10 @@ describe("Payload — Cases & Case Attachments", () => {
         });
 
         const attachment = await createCaseAttachment(payload, {
-            actingUser: owner,
+            actingUser: admin,
             caseID: caseDoc.id,
             description: "Doc important",
-            filename: "owner.pdf",
+            filename: "admin.pdf",
         });
 
         expect(relationshipToID(attachment.careGroup)).toBe(careGroup.id);
@@ -439,10 +439,10 @@ describe("Payload — Cases & Case Attachments", () => {
     });
 
     it("family can upload, rename (displayName), and delete an attachment", async () => {
-        const owner = await createUser(payload, {
-            email: "owner-attachments-family@example.com",
+        const admin = await createUser(payload, {
+            email: "admin-attachments-family@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
         const family = await createUser(payload, {
@@ -451,27 +451,27 @@ describe("Payload — Cases & Case Attachments", () => {
             name: "Family",
         });
 
-        const careGroup = await createCareGroupAsOwner(payload, {
-            owner,
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CG",
         });
 
         await addMembership(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             userID: family.id,
             role: "family",
         });
 
         const patient = await createPatient(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             firstName: "Pat",
             lastName: "Two",
         });
 
         const caseDoc = await createCase(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             patientID: patient.id,
             title: "Case",
@@ -511,7 +511,7 @@ describe("Payload — Cases & Case Attachments", () => {
             depth: 0,
             limit: 10,
             pagination: false,
-            user: owner,
+            user: admin,
             overrideAccess: false,
         });
 

@@ -1,3 +1,4 @@
+import type { Role } from "@/domain/Roles";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 import { revalidatePath } from "next/cache";
@@ -15,7 +16,7 @@ type CaseDoc = {
 
 type Membership = {
   id: string;
-  role?: "owner" | "family" | "professional" | "patient";
+  role?: Role;
 };
 
 type Task = {
@@ -66,7 +67,7 @@ export default async function TasksPage({params}: {params: Promise <{id: string;
 
     // calculer les permissions
     const canCreateTask = 
-        membership?.role === "owner" || 
+        membership?.role === "admin" ||
         membership?.role === "family" || 
         (membership?.role === "professional" && isMedical);
 

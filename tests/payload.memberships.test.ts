@@ -6,7 +6,7 @@ import {
     stopPayload,
     cleanCollections,
     createUser,
-    createCareGroupAsOwner,
+    createCareGroupAsAdmin,
     addMembership,
     createInvitation,
 } from "./helpers/payload";
@@ -27,11 +27,11 @@ describe("Payload — Memberships & Invitations", () => {
         await cleanCollections(payload);
     });
 
-    it("denies creating memberships unless acting user is owner of that caregroup", async () => {
-        const owner = await createUser(payload, {
-            email: "owner-acl@example.com",
+    it("denies creating memberships unless acting user is admin of that caregroup", async () => {
+        const admin = await createUser(payload, {
+            email: "admin-acl@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
         const family = await createUser(payload, {
@@ -46,13 +46,13 @@ describe("Payload — Memberships & Invitations", () => {
             name: "Pro",
         });
 
-        const careGroup = await createCareGroupAsOwner(payload, {
-            owner,
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CG",
         });
 
         await addMembership(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             userID: family.id,
             role: "family",
@@ -68,11 +68,11 @@ describe("Payload — Memberships & Invitations", () => {
         ).rejects.toBeTruthy();
     });
 
-    it("lets owner create an invitation and lets invited email read it", async () => {
-        const owner = await createUser(payload, {
-            email: "owner-invite@example.com",
+    it("lets admin create an invitation and lets invited email read it", async () => {
+        const admin = await createUser(payload, {
+            email: "admin-invite@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
         const invited = await createUser(payload, {
@@ -87,13 +87,13 @@ describe("Payload — Memberships & Invitations", () => {
             name: "Other",
         });
 
-        const careGroup = await createCareGroupAsOwner(payload, {
-            owner,
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CG",
         });
 
         const invitation = await createInvitation(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             email: invited.email,
             role: "family",
@@ -124,11 +124,11 @@ describe("Payload — Memberships & Invitations", () => {
         expect(otherRead.docs).toHaveLength(0);
     });
 
-    it("denies deleting invitations unless acting user is owner of that caregroup", async () => {
-        const owner = await createUser(payload, {
-            email: "owner-invite-delete@example.com",
+    it("denies deleting invitations unless acting user is admin of that caregroup", async () => {
+        const admin = await createUser(payload, {
+            email: "admin-invite-delete@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
         const family = await createUser(payload, {
@@ -137,20 +137,20 @@ describe("Payload — Memberships & Invitations", () => {
             name: "Family",
         });
 
-        const careGroup = await createCareGroupAsOwner(payload, {
-            owner,
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CG",
         });
 
         await addMembership(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             userID: family.id,
             role: "family",
         });
 
         const invitation = await createInvitation(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             email: "someone@example.com",
             role: "family",
@@ -169,7 +169,7 @@ describe("Payload — Memberships & Invitations", () => {
         await payload.delete({
             collection: "invitations",
             id: invitation.id,
-            user: owner,
+            user: admin,
             overrideAccess: false,
             depth: 0,
         });
@@ -179,7 +179,7 @@ describe("Payload — Memberships & Invitations", () => {
             depth: 0,
             limit: 10,
             pagination: false,
-            user: owner,
+            user: admin,
             overrideAccess: false,
             where: { id: { equals: invitation.id } },
         });

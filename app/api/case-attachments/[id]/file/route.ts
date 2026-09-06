@@ -125,7 +125,7 @@ export async function GET(
     const caseType = doc?.caseType;
 
     const canRead =
-        role === "owner" ||
+        role === "admin" ||
         role === "family" ||
         (role === "professional" && caseType === "medical");
 

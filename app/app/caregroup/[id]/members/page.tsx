@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 
 import CareGroupBanner from "@/components/caregroup/CareGroupBanner";
+import type { InvitableRole, Role } from "@/domain/Roles";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
@@ -11,7 +12,7 @@ import { PendingInvitesList } from "./PendingInvitesList";
 
 type Membership = {
     id: string;
-    role?: "owner" | "family" | "professional" | "patient";
+    role?: Role;
     user?: string | { id: string; email?: string; name?: string };
     careGroup?: string;
 };
@@ -22,7 +23,7 @@ type Invitation = {
     id: string;
     careGroup?: string;
     email?: string;
-    role?: "family" | "professional" | "patient";
+    role?: InvitableRole;
     token?: string;
     status?: "pending" | "accepted" | "revoked";
     expiresAt?: string;
@@ -46,12 +47,12 @@ async function deleteInvitation(invitationID: string, careGroupID: string) {
 
     if (!invitationID) return;
 
-    // Only owners can revoke invitations for their caregroup.
+    // Only admins can revoke invitations for their caregroup.
     const myMembership = await payloadREST<{ docs: Membership[] }>(
         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroupID)}&limit=1&depth=0`,
     ).then((r) => r.docs[0]);
 
-    if (myMembership?.role !== "owner") {
+    if (myMembership?.role !== "admin") {
         return;
     }
 
@@ -80,15 +81,15 @@ async function inviteMember(prevState: InviteState, formData: FormData) {
         return { ok: false, message: "Rôle invalide." };
     }
 
-    // Security gate: only owners can invite new members.
+    // Security gate: only admins can invite new members.
     const myMembership = await payloadREST<{ docs: Membership[] }>(
         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
     ).then((r) => r.docs[0]);
 
-    if (myMembership?.role !== "owner") {
+    if (myMembership?.role !== "admin") {
         return {
             ok: false,
-            message: "Seul un owner peut inviter des membres.",
+            message: "Seul un admin peut inviter des membres.",
         };
     }
 
@@ -156,7 +157,7 @@ export default async function CareGroupMembersPage({
     const user = await requireUser();
 
     // Access gate:
-    // - owner: can manage (invite + revoke + list)
+    // - admin: can manage (invite + revoke + list)
     // - family: can view list
     // - patient: can view list (read-only)
     // - professional: no access (MVP)
@@ -165,7 +166,7 @@ export default async function CareGroupMembersPage({
     ).then((r) => r.docs[0]);
 
     if (
-        myMembership?.role !== "owner" &&
+        myMembership?.role !== "admin" &&
         myMembership?.role !== "family" &&
         myMembership?.role !== "patient"
     ) {
@@ -185,7 +186,7 @@ export default async function CareGroupMembersPage({
     );
 
     const invitations =
-        myMembership?.role === "owner"
+        myMembership?.role === "admin"
             ? await payloadREST<{ docs: Invitation[] }>(
                   `/api/invitations?where[careGroup][equals]=${encodeURIComponent(id)}&where[status][equals]=pending&limit=50&depth=0`,
               )
@@ -195,7 +196,7 @@ export default async function CareGroupMembersPage({
         <div>
             <CareGroupBanner careGroupId={id} />
 
-            {myMembership?.role === "owner" ? (
+            {myMembership?.role === "admin" ? (
                 <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-card">
                     <h2 className="text-base font-semibold">
                         Inviter un membre
@@ -204,7 +205,7 @@ export default async function CareGroupMembersPage({
                 </section>
             ) : null}
 
-            {myMembership?.role === "owner" ? (
+            {myMembership?.role === "admin" ? (
                 <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-card">
                     <h2 className="text-base font-semibold">
                         Invitations en attente

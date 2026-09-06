@@ -30,6 +30,27 @@ export default buildConfig({
     },
 
     onInit: async (payload) => {
+        const legacyAdminMemberships = await payload.find({
+            collection: "memberships",
+            depth: 0,
+            pagination: false,
+            where: {
+                role: {
+                    equals: "owner",
+                },
+            },
+        });
+
+        for (const membership of legacyAdminMemberships.docs) {
+            await payload.update({
+                collection: "memberships",
+                id: membership.id,
+                data: {
+                    role: "admin",
+                },
+            });
+        }
+
         const limit = 100;
         let page = 1;
 
@@ -130,7 +151,7 @@ export default buildConfig({
     //
     // Multi-tenancy model (MVP):
     // - `caregroups`: tenant boundary / shared space
-    // - `memberships`: joins users to caregroups with a role (owner/family/professional)
+    // - `memberships`: joins users to caregroups with a role (admin/family/professional)
     // - `patients`: belongs to a caregroup
     // - `cases`: belongs to a patient + caregroup, and has a type (medical/custom)
     // - `tasks`: belongs to a case

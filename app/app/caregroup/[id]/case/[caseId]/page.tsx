@@ -1,6 +1,7 @@
 
 import Link from "next/link";
 import PageSummary from "@/components/ui/PageSummary";
+import type { Role } from "@/domain/Roles";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
@@ -15,7 +16,7 @@ type Message = {
 
 type Membership = {
     id: string;
-    role?: "owner" | "family" | "professional" | "patient";
+    role?: Role;
     user?: string | { id: string; name?: string };
     careGroup?: string;
 };
@@ -393,7 +394,7 @@ export default async function CasePage({
             </div>
 
             {/* daanger zone */}
-            {role === "owner" && (
+            {role === "admin" && (
                 <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4">
                     <h2 className="text-sm font-semibold text-rose-700 mb-3">Zone de danger</h2>
                     <div className="flex flex-col gap-2">

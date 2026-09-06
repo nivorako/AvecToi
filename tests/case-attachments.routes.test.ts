@@ -108,13 +108,13 @@ describe("Case attachments Next route handlers", () => {
         }
     });
 
-    async function seedOwnerWithAttachment() {
-        const owner = (await payload.create({
+    async function seedAdminWithAttachment() {
+        const admin = (await payload.create({
             collection: "users",
             data: {
-                email: "owner@example.com",
+                email: "admin@example.com",
                 password: "password",
-                name: "Owner",
+                name: "Admin",
             },
             overrideAccess: true,
         })) as { id: string };
@@ -131,8 +131,8 @@ describe("Case attachments Next route handlers", () => {
             collection: "memberships",
             data: {
                 careGroup: careGroup.id,
-                user: owner.id,
-                role: "owner",
+                user: admin.id,
+                role: "admin",
             },
             overrideAccess: true,
         });
@@ -179,11 +179,11 @@ describe("Case attachments Next route handlers", () => {
             mimeType?: string;
         };
 
-        return { owner, careGroup, patient, caseDoc, attachment };
+        return { admin, careGroup, patient, caseDoc, attachment };
     }
 
     test("GET /api/case-attachments/:id/file returns the file (proxy)", async () => {
-        const seeded = await seedOwnerWithAttachment();
+        const seeded = await seedAdminWithAttachment();
 
         jest.resetModules();
 
@@ -209,7 +209,7 @@ describe("Case attachments Next route handlers", () => {
                     if (authHeader !== `JWT ${COOKIE_VALUE}`) {
                         return new Response("Unauthorized", { status: 401 });
                     }
-                    return Response.json({ user: { id: seeded.owner.id } });
+                    return Response.json({ user: { id: seeded.admin.id } });
                 }
 
                 if (url === `${ORIGIN}${seeded.attachment.url ?? ""}`) {
@@ -244,7 +244,7 @@ describe("Case attachments Next route handlers", () => {
     });
 
     test("PATCH /api/case-attachments/:id renames attachment", async () => {
-        const seeded = await seedOwnerWithAttachment();
+        const seeded = await seedAdminWithAttachment();
 
         jest.resetModules();
 
@@ -261,7 +261,7 @@ describe("Case attachments Next route handlers", () => {
             async (input: RequestInfo | URL) => {
                 const url = String(input);
                 if (url === `${ORIGIN}/api/users/me`) {
-                    return Response.json({ user: { id: seeded.owner.id } });
+                    return Response.json({ user: { id: seeded.admin.id } });
                 }
                 return new Response("Not found", { status: 404 });
             },
@@ -288,7 +288,7 @@ describe("Case attachments Next route handlers", () => {
     });
 
     test("DELETE /api/case-attachments/:id deletes attachment", async () => {
-        const seeded = await seedOwnerWithAttachment();
+        const seeded = await seedAdminWithAttachment();
 
         jest.resetModules();
 
@@ -305,7 +305,7 @@ describe("Case attachments Next route handlers", () => {
             async (input: RequestInfo | URL) => {
                 const url = String(input);
                 if (url === `${ORIGIN}/api/users/me`) {
-                    return Response.json({ user: { id: seeded.owner.id } });
+                    return Response.json({ user: { id: seeded.admin.id } });
                 }
                 return new Response("Not found", { status: 404 });
             },
@@ -337,7 +337,7 @@ describe("Case attachments Next route handlers", () => {
     });
 
     test("DELETE /api/case-attachments/:id falls back when file deletion fails", async () => {
-        const seeded = await seedOwnerWithAttachment();
+        const seeded = await seedAdminWithAttachment();
 
         jest.resetModules();
 
@@ -354,7 +354,7 @@ describe("Case attachments Next route handlers", () => {
             async (input: RequestInfo | URL) => {
                 const url = String(input);
                 if (url === `${ORIGIN}/api/users/me`) {
-                    return Response.json({ user: { id: seeded.owner.id } });
+                    return Response.json({ user: { id: seeded.admin.id } });
                 }
                 return new Response("Not found", { status: 404 });
             },

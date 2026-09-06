@@ -95,7 +95,7 @@ export async function POST(req: Request) {
     const caseType = relatedCase?.type;
 
     const canCreate =
-        role === "owner" ||
+        role === "admin" ||
         role === "family" ||
         (role === "professional" && caseType === "medical");
 

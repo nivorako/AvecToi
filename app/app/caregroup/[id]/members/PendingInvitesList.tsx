@@ -3,11 +3,12 @@
 import { useState } from "react";
 
 import Button from "@/components/ui/Button/Button";
+import type { InvitableRole } from "@/domain/Roles";
 
 type Invitation = {
     id: string;
     email?: string;
-    role?: "family" | "professional" | "patient";
+    role?: InvitableRole;
     token?: string;
     expiresAt?: string;
 };

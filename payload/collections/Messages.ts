@@ -5,7 +5,7 @@ import type { CollectionConfig, Where } from "payload";
         // ---------------------------------------------------------------------
         // Simple caregroup-scoped chat.
         // - any member (including patient) can read + create
-        // - only the author (self-service edit/delete) or a caregroup owner can update/delete
+        // - only the author (self-service edit/delete) or a caregroup admin can update/delete
         // Implementation notes:
         // - `beforeValidate` sets `author` from req.user and verifies membership (anti-tampering)
         // - reads are always filtered by careGroup membership

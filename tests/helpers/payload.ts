@@ -1,6 +1,8 @@
 import { expect } from "@jest/globals";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
+import type { InvitableRole, Role } from "@/domain/Roles";
+
 // ---------------------------------------------------------------------------
 // Types partagés
 // ---------------------------------------------------------------------------
@@ -171,14 +173,14 @@ export async function createUser(
     return { id: created.id, email, name };
 }
 
-export async function createCareGroupAsOwner(
+export async function createCareGroupAsAdmin(
     payload: PayloadTestClient,
-    args: { owner: CreatedUser; name: string },
+    args: { admin: CreatedUser; name: string },
 ): Promise<CreatedCareGroup> {
     const created = await payload.create({
         collection: "caregroups",
         data: { name: args.name },
-        user: args.owner,
+        user: args.admin,
         overrideAccess: false,
     });
 
@@ -199,7 +201,7 @@ export async function addMembership(
         actingUser: CreatedUser;
         careGroupID: string;
         userID: string;
-        role: "owner" | "family" | "professional" | "patient";
+        role: Role;
     },
 ): Promise<void> {
     await payload.create({
@@ -341,7 +343,7 @@ export async function createInvitation(
         actingUser: CreatedUser;
         careGroupID: string;
         email: string;
-        role: "family" | "professional" | "patient";
+        role: InvitableRole;
     },
 ): Promise<{ id: string; token: string }> {
     const token = `token-${Math.random().toString(16).slice(2)}`;

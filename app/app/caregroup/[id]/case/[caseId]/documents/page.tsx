@@ -1,3 +1,4 @@
+import type { Role } from "@/domain/Roles";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
@@ -36,7 +37,7 @@ type Task = {
 
 type Membership = {
   id: string;
-  role?: "owner" | "family" | "professional" | "patient";
+  role?: Role;
 };
  
 type CaseDoc = {
@@ -76,7 +77,7 @@ export default async function DocumentsPage({
     const isMedical = caseDoc?.type === "medical";
 
     const canManage =
-        membership?.role === "owner" ||
+        membership?.role === "admin" ||
         membership?.role === "family" ||
         (membership?.role === "professional" && isMedical);
 

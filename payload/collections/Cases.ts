@@ -69,7 +69,7 @@ export const Cases : CollectionConfig = {
                     if (!req.user) return false;
 
                     // Admin UI may check create permission without data.
-                    // Allow the button if the user is owner/family of at least one caregroup.
+                    // Allow the button if the user is admin/family of at least one caregroup.
                     const andConditions: Where[] = [
                         {
                             user: {
@@ -78,7 +78,7 @@ export const Cases : CollectionConfig = {
                         },
                         {
                             role: {
-                                in: ["owner", "family"],
+                                in: ["admin", "family"],
                             },
                         },
                     ];
@@ -91,7 +91,7 @@ export const Cases : CollectionConfig = {
                         });
                     }
 
-                    const ownerOrFamily = await req.payload.find({
+                    const adminOrFamily = await req.payload.find({
                         collection: "memberships",
                         depth: 0,
                         limit: 1,
@@ -101,7 +101,7 @@ export const Cases : CollectionConfig = {
                         },
                     });
 
-                    return ownerOrFamily.docs.length > 0;
+                    return adminOrFamily.docs.length > 0;
                 },
                 read: async ({ req }) => {
                     if (!req.user) return false;
@@ -118,9 +118,9 @@ export const Cases : CollectionConfig = {
                         },
                     });
 
-                    const ownerOrFamilyCareGroupIDs = myMemberships.docs
+                    const adminOrFamilyCareGroupIDs = myMemberships.docs
                         .filter(
-                            (m) => m.role === "owner" || m.role === "family",
+                            (m) => m.role === "admin" || m.role === "family",
                         )
                         .map((m) => m.careGroup)
                         .filter(Boolean);
@@ -137,7 +137,7 @@ export const Cases : CollectionConfig = {
 
                     // Keep collection visible even if user has no memberships.
                     if (
-                        ownerOrFamilyCareGroupIDs.length === 0 &&
+                        adminOrFamilyCareGroupIDs.length === 0 &&
                         professionalCareGroupIDs.length === 0 &&
                         patientCareGroupIDs.length === 0
                     ) {
@@ -148,15 +148,15 @@ export const Cases : CollectionConfig = {
                         } as Where;
                     }
 
-                    // owner/family: can read all cases in their caregroups (medical + custom)
+                    // admin/family: can read all cases in their caregroups (medical + custom)
                     // professional: can only read medical cases in their caregroups
                     // patient: can read all cases in their caregroup
                     const or: Where[] = [];
 
-                    if (ownerOrFamilyCareGroupIDs.length > 0) {
+                    if (adminOrFamilyCareGroupIDs.length > 0) {
                         or.push({
                             careGroup: {
-                                in: ownerOrFamilyCareGroupIDs,
+                                in: adminOrFamilyCareGroupIDs,
                             },
                         });
                     }
@@ -205,9 +205,9 @@ export const Cases : CollectionConfig = {
                         },
                     });
 
-                    const ownerOrFamilyCareGroupIDs = myMemberships.docs
+                    const adminOrFamilyCareGroupIDs = myMemberships.docs
                         .filter(
-                            (m) => m.role === "owner" || m.role === "family",
+                            (m) => m.role === "admin" || m.role === "family",
                         )
                         .map((m) => m.careGroup)
                         .filter(Boolean);
@@ -218,7 +218,7 @@ export const Cases : CollectionConfig = {
                         .filter(Boolean);
 
                     if (
-                        ownerOrFamilyCareGroupIDs.length === 0 &&
+                        adminOrFamilyCareGroupIDs.length === 0 &&
                         professionalCareGroupIDs.length === 0
                     ) {
                         return false;
@@ -226,10 +226,10 @@ export const Cases : CollectionConfig = {
 
                     const or: Where[] = [];
 
-                    if (ownerOrFamilyCareGroupIDs.length > 0) {
+                    if (adminOrFamilyCareGroupIDs.length > 0) {
                         or.push({
                             careGroup: {
-                                in: ownerOrFamilyCareGroupIDs,
+                                in: adminOrFamilyCareGroupIDs,
                             },
                         });
                     }
@@ -258,7 +258,7 @@ export const Cases : CollectionConfig = {
                 delete: async ({ req }) => {
                     if (!req.user) return false;
 
-                    // MVP: only owner/family can delete cases.
+                    // MVP: only admin/family can delete cases.
                     const myMemberships = await req.payload.find({
                         collection: "memberships",
                         depth: 0,
@@ -273,7 +273,7 @@ export const Cases : CollectionConfig = {
                                 },
                                 {
                                     role: {
-                                        in: ["owner", "family"],
+                                        in: ["admin", "family"],
                                     },
                                 },
                             ],

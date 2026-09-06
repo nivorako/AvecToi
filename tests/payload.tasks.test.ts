@@ -6,7 +6,7 @@ import {
     stopPayload,
     cleanCollections,
     createUser,
-    createCareGroupAsOwner,
+    createCareGroupAsAdmin,
     addMembership,
     createPatient,
     createCase,
@@ -31,10 +31,10 @@ describe("Payload — Tasks", () => {
     });
 
     it("patient can read tasks in their caregroup but cannot create tasks", async () => {
-        const owner = await createUser(payload, {
-            email: "owner-patient-tasks@example.com",
+        const admin = await createUser(payload, {
+            email: "admin-patient-tasks@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
         const patientUser = await createUser(payload, {
@@ -43,27 +43,27 @@ describe("Payload — Tasks", () => {
             name: "Patient",
         });
 
-        const careGroup = await createCareGroupAsOwner(payload, {
-            owner,
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CG",
         });
 
         await addMembership(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             userID: patientUser.id,
             role: "patient",
         });
 
         const patient = await createPatient(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             firstName: "P",
             lastName: "T",
         });
 
         const caseDoc = await createCase(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             patientID: patient.id,
             title: "Case",
@@ -71,9 +71,9 @@ describe("Payload — Tasks", () => {
         });
 
         const task = await createTask(payload, {
-            actingUser: owner,
+            actingUser: admin,
             caseID: caseDoc.id,
-            title: "Owner task",
+            title: "Admin task",
         });
 
         const read = await payload.find({
@@ -98,26 +98,26 @@ describe("Payload — Tasks", () => {
     });
 
     it("task.beforeValidate populates derived fields (careGroup/patient/caseType)", async () => {
-        const owner = await createUser(payload, {
-            email: "owner-task-derived@example.com",
+        const admin = await createUser(payload, {
+            email: "admin-task-derived@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
-        const careGroup = await createCareGroupAsOwner(payload, {
-            owner,
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CG",
         });
 
         const patient = await createPatient(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             firstName: "Bob",
             lastName: "B",
         });
 
         const medicalCase = await createCase(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             patientID: patient.id,
             title: "Medical",
@@ -125,7 +125,7 @@ describe("Payload — Tasks", () => {
         });
 
         const task = await createTask(payload, {
-            actingUser: owner,
+            actingUser: admin,
             caseID: medicalCase.id,
             title: "Task",
         });
@@ -136,10 +136,10 @@ describe("Payload — Tasks", () => {
     });
 
     it("professional can read medical tasks but not custom tasks", async () => {
-        const owner = await createUser(payload, {
-            email: "owner-tasks@example.com",
+        const admin = await createUser(payload, {
+            email: "admin-tasks@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
         const professional = await createUser(payload, {
@@ -148,27 +148,27 @@ describe("Payload — Tasks", () => {
             name: "Pro",
         });
 
-        const careGroup = await createCareGroupAsOwner(payload, {
-            owner,
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CG",
         });
 
         await addMembership(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             userID: professional.id,
             role: "professional",
         });
 
         const patient = await createPatient(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             firstName: "Cara",
             lastName: "C",
         });
 
         const medicalCase = await createCase(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             patientID: patient.id,
             title: "Medical",
@@ -176,7 +176,7 @@ describe("Payload — Tasks", () => {
         });
 
         const customCase = await createCase(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: careGroup.id,
             patientID: patient.id,
             title: "Custom",
@@ -184,13 +184,13 @@ describe("Payload — Tasks", () => {
         });
 
         const medicalTask = await createTask(payload, {
-            actingUser: owner,
+            actingUser: admin,
             caseID: medicalCase.id,
             title: "Medical Task",
         });
 
         const customTask = await createTask(payload, {
-            actingUser: owner,
+            actingUser: admin,
             caseID: customCase.id,
             title: "Custom Task",
         });
@@ -209,31 +209,141 @@ describe("Payload — Tasks", () => {
         expect(ids).not.toContain(customTask.id);
     });
 
-    it("overrides task derived fields even if caller provides wrong values", async () => {
-        const owner = await createUser(payload, {
-            email: "owner-task-override-derived@example.com",
+    it("uses the related case type instead of the derived task caseType for professional access", async () => {
+        const admin = await createUser(payload, {
+            email: "admin-task-case-type-source@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
-        const cgA = await createCareGroupAsOwner(payload, {
-            owner,
+        const professional = await createUser(payload, {
+            email: "pro-task-case-type-source@example.com",
+            password: "password",
+            name: "Pro",
+        });
+
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
+            name: "CG",
+        });
+
+        await addMembership(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            userID: professional.id,
+            role: "professional",
+        });
+
+        const patient = await createPatient(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            firstName: "Case",
+            lastName: "Type",
+        });
+
+        const medicalCase = await createCase(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            patientID: patient.id,
+            title: "Medical",
+            type: "medical",
+        });
+
+        const customCase = await createCase(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            patientID: patient.id,
+            title: "Custom",
+            type: "custom",
+        });
+
+        const medicalTask = await createTask(payload, {
+            actingUser: admin,
+            caseID: medicalCase.id,
+            title: "Medical Task",
+        });
+
+        const customTask = await createTask(payload, {
+            actingUser: admin,
+            caseID: customCase.id,
+            title: "Custom Task",
+        });
+
+        await payload.update({
+            collection: "cases",
+            id: medicalCase.id,
+            data: { type: "custom" },
+            user: admin,
+            overrideAccess: false,
+        });
+
+        await payload.update({
+            collection: "cases",
+            id: customCase.id,
+            data: { type: "medical" },
+            user: admin,
+            overrideAccess: false,
+        });
+
+        const res = await payload.find({
+            collection: "tasks",
+            depth: 0,
+            limit: 100,
+            pagination: false,
+            user: professional,
+            overrideAccess: false,
+        });
+
+        const ids = res.docs.map((d) => d.id);
+        expect(ids).not.toContain(medicalTask.id);
+        expect(ids).toContain(customTask.id);
+
+        await expect(
+            payload.update({
+                collection: "tasks",
+                id: medicalTask.id,
+                data: { title: "Forbidden update" },
+                user: professional,
+                overrideAccess: false,
+            }),
+        ).rejects.toBeTruthy();
+
+        const updated = await payload.update({
+            collection: "tasks",
+            id: customTask.id,
+            data: { title: "Allowed update" },
+            user: professional,
+            overrideAccess: false,
+        });
+
+        expect(updated.title).toBe("Allowed update");
+    });
+
+    it("overrides task derived fields even if caller provides wrong values", async () => {
+        const admin = await createUser(payload, {
+            email: "admin-task-override-derived@example.com",
+            password: "password",
+            name: "Admin",
+        });
+
+        const cgA = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CGA",
         });
-        const cgB = await createCareGroupAsOwner(payload, {
-            owner,
+        const cgB = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CGB",
         });
 
         const patientA = await createPatient(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: cgA.id,
             firstName: "P",
             lastName: "A",
         });
 
         const caseMedical = await createCase(payload, {
-            actingUser: owner,
+            actingUser: admin,
             careGroupID: cgA.id,
             patientID: patientA.id,
             title: "Medical",
@@ -250,7 +360,7 @@ describe("Payload — Tasks", () => {
                 patient: "000000000000000000000000",
                 caseType: "custom",
             },
-            user: owner,
+            user: admin,
             overrideAccess: false,
         });
 

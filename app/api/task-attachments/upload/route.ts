@@ -95,7 +95,7 @@ export async function POST(req: Request) {
     const taskType = relatedTask?.type;
 
     const canCreate =
-        role === "owner" ||
+        role === "admin" ||
         role === "family" ||
         (role === "professional" && taskType === "medical");
 

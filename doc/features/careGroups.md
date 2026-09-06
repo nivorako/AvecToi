@@ -14,7 +14,7 @@ Un CareGroup est l'espace de travail partagé pour une famille (et éventuelleme
 
 Lors de la création d'un CareGroup :
 
-- Création automatique d'un membership `owner` pour le créateur
+- Création automatique d'un membership `admin` pour le créateur
 - Création automatique d'un patient par défaut ("Patient Care")
 
 ### Dashboard
@@ -30,13 +30,13 @@ Le dashboard affiche :
 
 **Créer un dossier** (AddDossierPanel)
 
-- Owner/Family uniquement
+- Admin/Family uniquement
 - Champs : titre, type (medical/custom)
 - Attache automatiquement au patient par défaut du caregroup
 
 **Créer une tâche** (AddTaskPanel)
 
-- Owner/Family/Professional
+- Admin/Family/Professional
 - Champs : titre, responsable (optionnel), case, date d'échéance
 - Professional limité aux cases médicales uniquement
 
@@ -52,11 +52,11 @@ Le dashboard affiche :
 
 **Modification/Suppression**
 
-- Uniquement les owners du caregroup
+- Uniquement les admins du caregroup
 
 ### Rôles et permissions UI
 
-- **Owner** : gestion complète, création de dossiers/tâches
+- **Admin** : gestion complète, création de dossiers/tâches
 - **Family** : collaboration, création de dossiers/tâches
 - **Professional** : création de tâches (cases médicales uniquement)
 - **Patient** : lecture seule, pas de création

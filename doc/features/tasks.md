@@ -39,31 +39,31 @@ Une Task représente une action à accomplir liée à un Case (dossier). Les cha
 
 **Création**
 
-- Owner/Family : peuvent créer des tâches dans leurs caregroups
+- Admin/Family : peuvent créer des tâches dans leurs caregroups
 - Professional : peut créer des tâches uniquement pour les cases medical
 - Patient : read-only (pas de création)
 
 **Lecture**
 
-- Owner/Family : toutes les tâches dans leurs caregroups
+- Admin/Family : toutes les tâches dans leurs caregroups
 - Professional : uniquement les tâches des cases medical dans leurs caregroups
 - Patient : toutes les tâches dans leur caregroup
 
 **Modification**
 
-- Owner/Family : toutes les tâches dans leurs caregroups
+- Admin/Family : toutes les tâches dans leurs caregroups
 - Professional : uniquement les tâches des cases medical dans leurs caregroups
 - Patient : read-only (pas de modification)
 
 **Suppression**
 
-- Owner/Family uniquement
+- Admin/Family uniquement
 - Professional : pas de suppression
 - Patient : read-only (pas de suppression)
 
 ### Rôles et permissions
 
-- **Owner** : création, lecture, modification, suppression de toutes les tâches
+- **Admin** : création, lecture, modification, suppression de toutes les tâches
 - **Family** : création, lecture, modification, suppression de toutes les tâches
 - **Professional** : lecture, modification des tâches des cases medical uniquement
 - **Patient** : lecture seule de toutes les tâches
@@ -73,7 +73,7 @@ Une Task représente une action à accomplir liée à un Case (dossier). Les cha
 **Dashboard CareGroup**
 
 - Affichage des 3 prochaines tâches triées par date d'échéance
-- Owner/Family/Professional peuvent créer des tâches
+- Admin/Family/Professional peuvent créer des tâches
 - Patient : read-only
 
 **Page de Case**

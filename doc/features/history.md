@@ -33,13 +33,13 @@ La page affiche deux sections principales :
 **Créer une tâche** (AddTaskPanel)
 
 - Formulaire avec titre, responsable, case, date d'échéance
-- Disponible pour Owner, Family, Professional
+- Disponible pour Admin, Family, Professional
 - Patient : read-only (pas de création)
 - Rafraîchit automatiquement la page après création
 
 ### Permissions
 
-- **Owner** : lecture, création de tâches
+- **Admin** : lecture, création de tâches
 - **Family** : lecture, création de tâches
 - **Professional** : lecture, création de tâches
 - **Patient** : lecture seule

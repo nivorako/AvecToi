@@ -8,13 +8,14 @@ import TaskItemRow from "@/components/task/TaskItemRow";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 
 import { payloadREST } from "@/lib/payloadRest";
+import type { Role } from "@/domain/Roles";
 import { requireUser } from "@/lib/requireUser";
 
 type Case = { id: string; title?: string };
 
 type Membership = {
     id: string;
-    role?: "owner" | "family" | "professional" | "patient";
+    role?: Role;
     user?: string | { id: string; name?: string };
     careGroup?: string;
 };
@@ -49,7 +50,7 @@ async function createTask(formData: FormData) {
     if (!caseID || !title) return;
 
     const canCreate =
-        role === "owner" || role === "family" || role === "professional";
+        role === "admin" || role === "family" || role === "professional";
     if (!canCreate) return;
 
     try {
@@ -205,7 +206,7 @@ export default async function CareGroupHistoryPage({
                     </div>
 
                     {membership?.role &&
-                    ["owner", "family", "professional"].includes(
+                    ["admin", "family", "professional"].includes(
                         membership.role,
                     ) ? (
                         <AddTaskPanel

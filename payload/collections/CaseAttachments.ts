@@ -85,9 +85,9 @@ export const CaseAttachments: CollectionConfig = {
                     });
 
                     // Same permissions as cases/tasks:
-                    // - owner/family: can always attach docs within their caregroup
+                    // - admin/family: can always attach docs within their caregroup
                     // - professional: can attach docs only to medical cases
-                    if (role === "owner" || role === "family") return true;
+                    if (role === "admin" || role === "family") return true;
                     if (role === "professional") {
                         return relatedCase?.type === "medical";
                     }
@@ -109,9 +109,9 @@ export const CaseAttachments: CollectionConfig = {
                         },
                     });
 
-                    const ownerOrFamilyCareGroupIDs = myMemberships.docs
+                    const adminOrFamilyCareGroupIDs = myMemberships.docs
                         .filter(
-                            (m) => m.role === "owner" || m.role === "family",
+                            (m) => m.role === "admin" || m.role === "family",
                         )
                         .map((m) => m.careGroup)
                         .filter(Boolean);
@@ -122,7 +122,7 @@ export const CaseAttachments: CollectionConfig = {
                         .filter(Boolean);
 
                     if (
-                        ownerOrFamilyCareGroupIDs.length === 0 &&
+                        adminOrFamilyCareGroupIDs.length === 0 &&
                         professionalCareGroupIDs.length === 0
                     ) {
                         return {
@@ -134,10 +134,10 @@ export const CaseAttachments: CollectionConfig = {
 
                     const or: Where[] = [];
 
-                    if (ownerOrFamilyCareGroupIDs.length > 0) {
+                    if (adminOrFamilyCareGroupIDs.length > 0) {
                         or.push({
                             careGroup: {
-                                in: ownerOrFamilyCareGroupIDs,
+                                in: adminOrFamilyCareGroupIDs,
                             },
                         });
                     }
@@ -176,18 +176,18 @@ export const CaseAttachments: CollectionConfig = {
                         },
                     });
 
-                    const ownerOrFamilyCareGroupIDs = myMemberships.docs
+                    const adminOrFamilyCareGroupIDs = myMemberships.docs
                         .filter(
-                            (m) => m.role === "owner" || m.role === "family",
+                            (m) => m.role === "admin" || m.role === "family",
                         )
                         .map((m) => m.careGroup)
                         .filter(Boolean);
 
-                    if (!ownerOrFamilyCareGroupIDs.length) return false;
+                    if (!adminOrFamilyCareGroupIDs.length) return false;
 
                     return {
                         careGroup: {
-                            in: ownerOrFamilyCareGroupIDs,
+                            in: adminOrFamilyCareGroupIDs,
                         },
                     };
                 },

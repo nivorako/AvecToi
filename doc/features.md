@@ -46,7 +46,7 @@ Traçabilité
 
 ## Rôles et permissions
 
-Owner : gestion complète du careGroup
+Admin : gestion complète du careGroup
 Family : collaboration, création de tâches
 Professional : lecture seule sur contenu médical, tâches médicales uniquement
 Patient : lecture seule, messages

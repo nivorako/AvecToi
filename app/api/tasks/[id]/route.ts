@@ -115,7 +115,7 @@ export async function PATCH(
     if (!auth.ok) return new Response(auth.message, { status: auth.status });
 
     const canUpdate =
-        auth.role === "owner" ||
+        auth.role === "admin" ||
         auth.role === "family" ||
         (auth.role === "professional" && auth.task?.caseType === "medical");
 
@@ -202,7 +202,7 @@ export async function DELETE(
     const auth = await authorizeTask({ token, taskID: id, origin });
     if (!auth.ok) return new Response(auth.message, { status: auth.status });
 
-    const canDelete = auth.role === "owner" || auth.role === "family";
+    const canDelete = auth.role === "admin" || auth.role === "family";
     if (!canDelete) return new Response("Forbidden", { status: 403 });
 
     if (auth.task?.status === "done") {

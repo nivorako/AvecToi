@@ -1,3 +1,4 @@
+import type { Role } from "@/domain/Roles";
 import { requireUser } from "@/lib/requireUser";
 
 import TaskDescriptionEditor from "@/components/task/TaskDescriptionEditor";
@@ -18,7 +19,7 @@ type CaseDoc = {
 
 type Membership = {
     id: string;
-    role?: "owner" | "family" | "professional" | "patient";
+    role?: Role;
     user?: string | { id: string; name?: string };
     careGroup?: string;
 };
@@ -100,7 +101,7 @@ export default async function TaskPage({
             ? caseDoc.type
             : "";
     const canCreateTask =
-        role === "owner" ||
+        role === "admin" ||
         role === "family" ||
         (role === "professional" && normalizedCaseType === "medical");
 
@@ -189,7 +190,7 @@ export default async function TaskPage({
                                         }
                                         description={a.description}
                                         canManage={
-                                            role === "owner" ||
+                                            role === "admin" ||
                                             role === "family"
                                         }
                                     />
@@ -201,7 +202,7 @@ export default async function TaskPage({
                             )}
                         </div>
 
-                        {/* Attachments management is restricted to owner/family in the UI.
+                        {/* Attachments management is restricted to admin/family in the UI.
                                 Payload ACL also enforces write permissions server-side.
                                 Patients are read-only and cannot add documents. */}
                         {canUpdateCase ? (

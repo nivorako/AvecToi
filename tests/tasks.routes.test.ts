@@ -95,15 +95,15 @@ describe("Tasks Next route handlers", () => {
     });
 
     // -------------------------------------------------------------------------
-    // Helper : crée un owner + caregroup + patient + case + task
+    // Helper : crée un admin + caregroup + patient + case + task
     // Le hook beforeValidate de Payload peuple automatiquement task.careGroup
     // à partir du case, ce qui permet à authorizeTask() (dans la route) de
     // retrouver le membership et de valider le rôle.
     // -------------------------------------------------------------------------
-    async function seedOwnerWithTask(taskStatus = "todo") {
-        const owner = (await payload.create({
+    async function seedAdminWithTask(taskStatus = "todo") {
+        const admin = (await payload.create({
             collection: "users",
-            data: { email: "owner@test.com", password: "password", name: "Owner" },
+            data: { email: "admin@test.com", password: "password", name: "Admin" },
             overrideAccess: true,
         })) as { id: string };
 
@@ -115,7 +115,7 @@ describe("Tasks Next route handlers", () => {
 
         await payload.create({
             collection: "memberships",
-            data: { careGroup: careGroup.id, user: owner.id, role: "owner" },
+            data: { careGroup: careGroup.id, user: admin.id, role: "admin" },
             overrideAccess: true,
         });
 
@@ -143,7 +143,7 @@ describe("Tasks Next route handlers", () => {
             overrideAccess: true,
         })) as { id: string; status: string };
 
-        return { owner, careGroup, task };
+        return { admin, careGroup, task };
     }
 
     // -------------------------------------------------------------------------
@@ -151,7 +151,7 @@ describe("Tasks Next route handlers", () => {
     // - next/headers : simule cookies() qui retourne le token JWT
     // - fetch /api/users/me : retourne l'user courant (authentification)
     // -------------------------------------------------------------------------
-    function mockAuthAs(ownerID: string) {
+    function mockAuthAs(adminID: string) {
         jest.unstable_mockModule("next/headers", () => ({
             cookies: async () => ({
                 get: (name: string) =>
@@ -164,7 +164,7 @@ describe("Tasks Next route handlers", () => {
         jest.spyOn(globalThis, "fetch").mockImplementation(
             async (input: RequestInfo | URL) => {
                 if (String(input) === `${ORIGIN}/api/users/me`) {
-                    return Response.json({ user: { id: ownerID } });
+                    return Response.json({ user: { id: adminID } });
                 }
                 return new Response("Not found", { status: 404 });
             },
@@ -174,11 +174,11 @@ describe("Tasks Next route handlers", () => {
     // =========================================================================
     // PATCH — mise à jour du statut
     // =========================================================================
-    test("PATCH /api/tasks/:id met à jour le statut (owner)", async () => {
-        const seeded = await seedOwnerWithTask();
+    test("PATCH /api/tasks/:id met à jour le statut (admin)", async () => {
+        const seeded = await seedAdminWithTask();
 
         jest.resetModules();
-        mockAuthAs(seeded.owner.id);
+        mockAuthAs(seeded.admin.id);
 
         const mod = await import("@/app/api/tasks/[id]/route");
 
@@ -200,11 +200,11 @@ describe("Tasks Next route handlers", () => {
     // =========================================================================
     // PATCH — mise à jour de l'urgence
     // =========================================================================
-    test("PATCH /api/tasks/:id met à jour l'urgence (owner)", async () => {
-        const seeded = await seedOwnerWithTask();
+    test("PATCH /api/tasks/:id met à jour l'urgence (admin)", async () => {
+        const seeded = await seedAdminWithTask();
 
         jest.resetModules();
-        mockAuthAs(seeded.owner.id);
+        mockAuthAs(seeded.admin.id);
 
         const mod = await import("@/app/api/tasks/[id]/route");
 
@@ -226,11 +226,11 @@ describe("Tasks Next route handlers", () => {
     // =========================================================================
     // PATCH — mise à jour des sous-tâches
     // =========================================================================
-    test("PATCH /api/tasks/:id met à jour les sous-tâches (owner)", async () => {
-        const seeded = await seedOwnerWithTask();
+    test("PATCH /api/tasks/:id met à jour les sous-tâches (admin)", async () => {
+        const seeded = await seedAdminWithTask();
 
         jest.resetModules();
-        mockAuthAs(seeded.owner.id);
+        mockAuthAs(seeded.admin.id);
 
         const mod = await import("@/app/api/tasks/[id]/route");
 
@@ -262,7 +262,7 @@ describe("Tasks Next route handlers", () => {
     // La route retourne 403 car canUpdate = false pour role "patient"
     // =========================================================================
     test("PATCH /api/tasks/:id retourne 403 pour un patient", async () => {
-        const seeded = await seedOwnerWithTask();
+        const seeded = await seedAdminWithTask();
 
         const patientUser = (await payload.create({
             collection: "users",
@@ -303,13 +303,13 @@ describe("Tasks Next route handlers", () => {
     });
 
     // =========================================================================
-    // DELETE — l'owner peut supprimer une tâche non terminée
+    // DELETE — l'admin peut supprimer une tâche non terminée
     // =========================================================================
-    test("DELETE /api/tasks/:id supprime la tâche (owner)", async () => {
-        const seeded = await seedOwnerWithTask("todo");
+    test("DELETE /api/tasks/:id supprime la tâche (admin)", async () => {
+        const seeded = await seedAdminWithTask("todo");
 
         jest.resetModules();
-        mockAuthAs(seeded.owner.id);
+        mockAuthAs(seeded.admin.id);
 
         const mod = await import("@/app/api/tasks/[id]/route");
 
@@ -329,10 +329,10 @@ describe("Tasks Next route handlers", () => {
     // Règle métier : on ne supprime pas ce qui est terminé
     // =========================================================================
     test("DELETE /api/tasks/:id retourne 400 si la tâche est déjà terminée", async () => {
-        const seeded = await seedOwnerWithTask("done");
+        const seeded = await seedAdminWithTask("done");
 
         jest.resetModules();
-        mockAuthAs(seeded.owner.id);
+        mockAuthAs(seeded.admin.id);
 
         const mod = await import("@/app/api/tasks/[id]/route");
 

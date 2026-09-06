@@ -6,7 +6,7 @@ import {
     stopPayload,
     cleanCollections,
     createUser,
-    createCareGroupAsOwner,
+    createCareGroupAsAdmin,
 } from "./helpers/payload";
 
 describe("Payload — Patients", () => {
@@ -26,14 +26,14 @@ describe("Payload — Patients", () => {
     });
 
     it("computes and persists patients.fullName on create", async () => {
-        const owner = await createUser(payload, {
-            email: "owner@example.com",
+        const admin = await createUser(payload, {
+            email: "admin@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
-        const careGroup = await createCareGroupAsOwner(payload, {
-            owner,
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "Maman",
         });
 
@@ -44,7 +44,7 @@ describe("Payload — Patients", () => {
                 firstName: "Rahaa",
                 lastName: "Tina",
             },
-            user: owner,
+            user: admin,
             overrideAccess: false,
         });
 
@@ -54,7 +54,7 @@ describe("Payload — Patients", () => {
             collection: "patients",
             id: patient.id,
             depth: 0,
-            user: owner,
+            user: admin,
             overrideAccess: false,
         });
 
@@ -62,29 +62,29 @@ describe("Payload — Patients", () => {
     });
 
     it("denies reading patients from a different caregroup (multi-tenant)", async () => {
-        const ownerA = await createUser(payload, {
-            email: "ownerA@example.com",
+        const adminA = await createUser(payload, {
+            email: "adminA@example.com",
             password: "password",
-            name: "Owner A",
+            name: "Admin A",
         });
 
-        const ownerB = await createUser(payload, {
-            email: "ownerB@example.com",
+        const adminB = await createUser(payload, {
+            email: "adminB@example.com",
             password: "password",
-            name: "Owner B",
+            name: "Admin B",
         });
 
         const careGroupA = await payload.create({
             collection: "caregroups",
             data: { name: "CareGroup A" },
-            user: ownerA,
+            user: adminA,
             overrideAccess: false,
         });
 
         await payload.create({
             collection: "caregroups",
             data: { name: "CareGroup B" },
-            user: ownerB,
+            user: adminB,
             overrideAccess: false,
         });
 
@@ -95,7 +95,7 @@ describe("Payload — Patients", () => {
                 firstName: "Alice",
                 lastName: "A",
             },
-            user: ownerA,
+            user: adminA,
             overrideAccess: false,
         });
 
@@ -104,7 +104,7 @@ describe("Payload — Patients", () => {
             depth: 0,
             limit: 100,
             pagination: false,
-            user: ownerB,
+            user: adminB,
             overrideAccess: false,
             where: { id: { equals: patientA.id } },
         });
@@ -116,7 +116,7 @@ describe("Payload — Patients", () => {
             depth: 0,
             limit: 100,
             pagination: false,
-            user: ownerA,
+            user: adminA,
             overrideAccess: false,
             where: { id: { equals: patientA.id } },
         });
@@ -124,15 +124,15 @@ describe("Payload — Patients", () => {
         expect(res2.docs).toHaveLength(1);
     });
 
-    it("auto-creates owner membership when creating a caregroup", async () => {
-        const owner = await createUser(payload, {
-            email: "owner-membership@example.com",
+    it("auto-creates admin membership when creating a caregroup", async () => {
+        const admin = await createUser(payload, {
+            email: "admin-membership@example.com",
             password: "password",
-            name: "Owner",
+            name: "Admin",
         });
 
-        const careGroup = await createCareGroupAsOwner(payload, {
-            owner,
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
             name: "CG",
         });
 
@@ -141,13 +141,13 @@ describe("Payload — Patients", () => {
             depth: 0,
             limit: 50,
             pagination: false,
-            user: owner,
+            user: admin,
             overrideAccess: false,
             where: {
                 and: [
                     { careGroup: { equals: careGroup.id } },
-                    { user: { equals: owner.id } },
-                    { role: { equals: "owner" } },
+                    { user: { equals: admin.id } },
+                    { role: { equals: "admin" } },
                 ],
             },
         });
