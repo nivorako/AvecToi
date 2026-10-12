@@ -8,7 +8,7 @@ import TaskItemRow from "@/components/task/TaskItemRow";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 
 import { payloadREST } from "@/lib/payloadRest";
-import type { Role } from "@/domain/Roles";
+import type { Role } from "@/domain/roles";
 import { requireUser } from "@/lib/requireUser";
 
 type Case = { id: string; title?: string };

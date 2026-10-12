@@ -1,4 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "@jest/globals";
+import { MongoClient, ObjectId } from "mongodb";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import {
     type PayloadTestClient,
@@ -23,6 +24,131 @@ describe("Payload — Patients", () => {
 
     afterEach(async () => {
         await cleanCollections(payload);
+    });
+
+    it("creates a unique sparse MongoDB index for patients.user", async () => {
+        const client = new MongoClient(mongod.getUri("payload-tests"));
+
+        try {
+            await client.connect();
+            const indexes = await client
+                .db("payload-tests")
+                .collection("patients")
+                .indexes();
+
+            expect(indexes).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        key: { user: 1 },
+                        sparse: true,
+                        unique: true,
+                    }),
+                ]),
+            );
+        } finally {
+            await client.close();
+        }
+    });
+
+    it("allows multiple patients without a user", async () => {
+        const admin = await createUser(payload, {
+            email: "admin-optional-user@example.com",
+            password: "password",
+            name: "Admin",
+        });
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
+            name: "Optional user",
+        });
+
+        const firstPatient = await payload.create({
+            collection: "patients",
+            data: {
+                careGroup: careGroup.id,
+                firstName: "First",
+                lastName: "Patient",
+            },
+            overrideAccess: true,
+        });
+        const secondPatient = await payload.create({
+            collection: "patients",
+            data: {
+                careGroup: careGroup.id,
+                firstName: "Second",
+                lastName: "Patient",
+            },
+            overrideAccess: true,
+        });
+
+        expect(firstPatient.id).not.toBe(secondPatient.id);
+        expect(firstPatient.user ?? null).toBeNull();
+        expect(secondPatient.user ?? null).toBeNull();
+    });
+
+    it("rejects a duplicate patients.user at the MongoDB level", async () => {
+        const admin = await createUser(payload, {
+            email: "admin-unique-user@example.com",
+            password: "password",
+            name: "Admin",
+        });
+        const patientUser = await createUser(payload, {
+            email: "patient-unique-user@example.com",
+            password: "password",
+            name: "Patient",
+        });
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
+            name: "Unique user",
+        });
+        const patient = await payload.create({
+            collection: "patients",
+            data: {
+                careGroup: careGroup.id,
+                firstName: "First",
+                lastName: "Linked",
+            },
+            overrideAccess: true,
+        });
+
+        await payload.update({
+            collection: "patients",
+            id: patient.id,
+            data: {
+                user: patientUser.id,
+            },
+            user: admin,
+            overrideAccess: true,
+        });
+
+        const client = new MongoClient(mongod.getUri("payload-tests"));
+
+        try {
+            await client.connect();
+            await expect(
+                client.db("payload-tests").collection("patients").insertOne({
+                    careGroup: new ObjectId(careGroup.id),
+                    firstName: "Second",
+                    lastName: "Linked",
+                    user: new ObjectId(patientUser.id),
+                }),
+            ).rejects.toMatchObject({ code: 11000 });
+        } finally {
+            await client.close();
+        }
+
+        const linkedPatients = await payload.find({
+            collection: "patients",
+            depth: 0,
+            pagination: false,
+            overrideAccess: true,
+            where: {
+                user: {
+                    equals: patientUser.id,
+                },
+            },
+        });
+
+        expect(linkedPatients.docs).toHaveLength(1);
     });
 
     it("computes and persists patients.fullName on create", async () => {

@@ -124,6 +124,90 @@ describe("Payload — Memberships & Invitations", () => {
         expect(otherRead.docs).toHaveLength(0);
     });
 
+    it("lets family create invitations without read or cancel access", async () => {
+        const admin = await createUser(payload, {
+            email: "admin-family-invite@example.com",
+            password: "password",
+            name: "Admin",
+        });
+        const family = await createUser(payload, {
+            email: "family-create-invite@example.com",
+            password: "password",
+            name: "Family",
+        });
+        const professional = await createUser(payload, {
+            email: "professional-create-invite@example.com",
+            password: "password",
+            name: "Professional",
+        });
+        const patient = await createUser(payload, {
+            email: "patient-create-invite@example.com",
+            password: "password",
+            name: "Patient",
+        });
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
+            name: "CG",
+        });
+
+        await addMembership(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            userID: family.id,
+            role: "family",
+        });
+        await addMembership(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            userID: professional.id,
+            role: "professional",
+        });
+        await addMembership(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            userID: patient.id,
+            role: "patient",
+        });
+
+        const invitation = await createInvitation(payload, {
+            actingUser: family,
+            careGroupID: careGroup.id,
+            email: "family-invited@example.com",
+            role: "patient",
+        });
+
+        const familyRead = await payload.find({
+            collection: "invitations",
+            depth: 0,
+            pagination: false,
+            user: family,
+            overrideAccess: false,
+            where: { id: { equals: invitation.id } },
+        });
+        expect(familyRead.docs).toHaveLength(0);
+
+        await expect(
+            payload.delete({
+                collection: "invitations",
+                id: invitation.id,
+                user: family,
+                overrideAccess: false,
+                depth: 0,
+            }),
+        ).rejects.toBeTruthy();
+
+        for (const actingUser of [professional, patient]) {
+            await expect(
+                createInvitation(payload, {
+                    actingUser,
+                    careGroupID: careGroup.id,
+                    email: `${actingUser.name.toLowerCase()}-invited@example.com`,
+                    role: "family",
+                }),
+            ).rejects.toBeTruthy();
+        }
+    });
+
     it("denies deleting invitations unless acting user is admin of that caregroup", async () => {
         const admin = await createUser(payload, {
             email: "admin-invite-delete@example.com",

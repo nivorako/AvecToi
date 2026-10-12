@@ -7,6 +7,12 @@ import { mongooseAdapter } from "@payloadcms/db-mongodb";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { buildConfig } from "payload";
 
+import {
+  commitTransaction,
+  initTransaction,
+  killTransaction,
+} from "payload";
+
 import { CareGroups } from "@/payload/collections/CareGroups";
 import { Memberships } from "@/payload/collections/Memberships";
 import { Users } from "@/payload/collections/Users";
@@ -18,6 +24,8 @@ import { Patients } from "@/payload/collections/Patients";
 import { Cases } from "@/payload/collections/Cases";
 import { Tasks } from "@/payload/collections/Tasks";
 import { Messages } from "@/payload/collections/Messages";
+
+import { acceptInvitation } from "@/payload/services/invitations/acceptInvitation";
 
 export default buildConfig({
     // Payload Admin configuration
@@ -186,10 +194,108 @@ export default buildConfig({
         
     ],
 
+    endpoints: [
+        {
+            path: "/invitations/accept",
+            method: "post",
+            handler: async (req) => {
+                let input: {
+                    token?: string;
+                    email?: string;
+                    password?: string;
+                };
+
+                try {
+                    input = (await req.json!()) as typeof input;
+                } catch {
+                    return Response.json(
+                        { ok: false, message: "Corps JSON invalide." },
+                        { status: 400 },
+                    );
+                }
+
+                const token = input.token?.trim();
+                const email = input.email?.trim().toLowerCase();
+                const password = input.password;
+
+                if (
+                    !token ||
+                    !email ||
+                    typeof password !== "string" ||
+                    !password
+                ) {
+                    return Response.json(
+                        { ok: false, message: "Données manquantes." },
+                        { status: 400 },
+                    );
+                }
+
+
+                let ownsTransaction = false;
+
+                try {
+                    // Démarre une transaction ou réutilise celle déjà présente.
+                    ownsTransaction = await initTransaction(req);
+
+                    req.payload.logger.info({
+                        ownsTransaction,
+                        hasTransactionID: Boolean(req.transactionID),
+                        msg: "Diagnostic transaction invitation",
+                    });
+
+                    // Ne pas poursuivre si aucune transaction n'est disponible.
+                    if (!ownsTransaction && !req.transactionID) {
+                        throw new Error(
+                            "Impossible de démarrer une transaction MongoDB.",
+                        );
+                    }
+
+                    const result = await acceptInvitation(req, {
+                        token,
+                        email,
+                        password,
+                    });
+
+                    // Seul le propriétaire de la transaction peut la valider.
+                    if (ownsTransaction) {
+                        await commitTransaction(req);
+                    }
+
+                    return Response.json({
+                        ok: true,
+                        invitationId: result.invitationId,
+                    });
+                } catch (error) {
+                    // Une opération Payload peut déjà avoir annulé
+                    // et supprimé la transaction partagée.
+                    if (ownsTransaction) { 
+                        await killTransaction(req);
+                    }
+
+                    req.payload.logger.error({
+                        err: error,
+                        msg: "Échec de l'acceptation d'une invitation.",
+                    });
+
+                    return Response.json(
+                        {
+                            ok: false,
+                            message: "Impossible d'accepter cette invitation.",
+                        },
+                        { status: 400 },
+                    );
+                }
+
+            },
+        },
+    ],
+
     // Database adapter (MongoDB via Mongoose).
     // `MONGODB_URI` must point to the correct DB name (case-sensitive in Atlas in some situations).
+    // garantit que les index définis par le modèle sont effectivement synchronisés dans l'environnement de test/d'exécution.
     db: mongooseAdapter({
         url: process.env.MONGODB_URI || "",
+        ensureIndexes: true,
     }),
 
     // Rich text editor adapter for Payload.

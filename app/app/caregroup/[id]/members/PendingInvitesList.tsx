@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import Button from "@/components/ui/Button/Button";
-import type { InvitableRole } from "@/domain/Roles";
+import type { InvitableRole } from "@/domain/roles";
 
 type Invitation = {
     id: string;

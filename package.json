@@ -8,6 +8,7 @@
         "start": "next start",
         "lint": "eslint",
         "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --forceExit",
+        "test:patients": "cross-env NODE_OPTIONS=--experimental-vm-modules jest tests/payload.patients.test.ts --runInBand --forceExit",
         "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch --forceExit",
         "test:debug": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --detectOpenHandles --runInBand",
         "generate-icons": "node scripts/generate-icons.js"

@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 
 import CareGroupBanner from "@/components/caregroup/CareGroupBanner";
-import type { InvitableRole, Role } from "@/domain/Roles";
+import type { InvitableRole, Role } from "@/domain/roles";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
@@ -81,15 +81,18 @@ async function inviteMember(prevState: InviteState, formData: FormData) {
         return { ok: false, message: "Rôle invalide." };
     }
 
-    // Security gate: only admins can invite new members.
+    // Security gate: only admins and family members can invite new members.
     const myMembership = await payloadREST<{ docs: Membership[] }>(
         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
     ).then((r) => r.docs[0]);
 
-    if (myMembership?.role !== "admin") {
+    if (
+        myMembership?.role !== "admin" &&
+        myMembership?.role !== "family"
+    ) {
         return {
             ok: false,
-            message: "Seul un admin peut inviter des membres.",
+            message: "Seuls les admins et la famille peuvent inviter des membres.",
         };
     }
 
@@ -158,7 +161,7 @@ export default async function CareGroupMembersPage({
 
     // Access gate:
     // - admin: can manage (invite + revoke + list)
-    // - family: can view list
+    // - family: can invite and view the member list
     // - patient: can view list (read-only)
     // - professional: no access (MVP)
     const myMembership = await payloadREST<{ docs: Membership[] }>(
@@ -196,7 +199,8 @@ export default async function CareGroupMembersPage({
         <div>
             <CareGroupBanner careGroupId={id} />
 
-            {myMembership?.role === "admin" ? (
+            {myMembership?.role === "admin" ||
+            myMembership?.role === "family" ? (
                 <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-card">
                     <h2 className="text-base font-semibold">
                         Inviter un membre

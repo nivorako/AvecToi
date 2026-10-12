@@ -1,491 +1,458 @@
 import type { CollectionConfig, Where } from "payload";
-import { getRelationshipID } from "../utils/getRelationshipID";
-
-        // ---------------------------------------------------------------------
-        // Tasks
-        // ---------------------------------------------------------------------
-        // A Task is linked to a Case.
-        // Derived fields (`careGroup`, `patient`, `caseType`) mirror the related case, but
-        // permission checks use the related Case as the source of truth.
-        //
-        // Role rules (MVP):
-        // - admin/family: can read and create tasks in their caregroups
-        // - professional: can read tasks only when the related case is medical
-        // - professional: can create tasks only when the related case is medical
-        // - patient: can read tasks in their caregroup, but cannot create/update/delete
-        
+import { getRelationshipID } from "@/payload/utils/getRelationshipID";
 
 export const Tasks: CollectionConfig = {
-            slug: "tasks",
-            admin: {
-                useAsTitle: "title",
-            },
-          
-            defaultPopulate: {
-                careGroup: true,
-                patient: true,
-                case: true,
-            },
-            access: {
-                create: async ({ req, data }) => {
-                    if (!req.user) return false;
+    slug: "tasks",
 
-                    const caseID = getRelationshipID(data?.case);
+    admin: {
+        useAsTitle: "title",
+    },
 
-                    if (!caseID) return false;
+    defaultPopulate: {
+        careGroup: true,
+        patient: true,
+        case: true,
+        assignedTo: true,
+    },
 
-                    const relatedCase = await req.payload.findByID({
-                        collection: "cases",
-                        id: caseID,
-                        depth: 0,
-                    });
+    access: {
+        create: async ({ req, data }) => {
+            if (!req.user) return false;
 
-                    const careGroupID =
-                        typeof relatedCase?.careGroup === "string" ||
-                        typeof relatedCase?.careGroup === "number"
-                            ? relatedCase.careGroup
-                            : (
-                                  relatedCase?.careGroup as {
-                                      id?: string | number;
-                                  }
-                              )?.id;
+            const caseID = getRelationshipID(data?.case);
 
-                    if (!careGroupID) return false;
+            if (!caseID) return false;
 
-                    const membership = await req.payload.find({
-                        collection: "memberships",
-                        depth: 0,
-                        limit: 1,
-                        pagination: false,
-                        where: {
-                            and: [
-                                { user: { equals: req.user.id } },
-                                { careGroup: { equals: careGroupID } },
-                            ],
-                        },
-                    });
+            const relatedCase = await req.payload.findByID({
+                collection: "cases",
+                id: caseID,
+                depth: 0,
+            });
 
-                    const role = membership.docs[0]?.role;
-                    if (role === "admin" || role === "family") return true;
+            if (!relatedCase) return false;
 
-                    if (role === "professional") {
-                        return relatedCase?.type === "medical";
-                    }
+            const careGroupID = getRelationshipID(
+                relatedCase.careGroup,
+            );
 
-                    // Patient accounts are read-only (no task creation).
-                    if (role === "patient") {
-                        return false;
-                    }
+            if (!careGroupID) return false;
 
-                    return false;
-                },
-                read: async ({ req }) => {
-                    if (!req.user) return false;
-
-                    const myMemberships = await req.payload.find({
-                        collection: "memberships",
-                        depth: 0,
-                        limit: 100,
-                        pagination: false,
-                        where: {
+            const membership = await req.payload.find({
+                collection: "memberships",
+                depth: 0,
+                limit: 1,
+                pagination: false,
+                where: {
+                    and: [
+                        {
                             user: {
                                 equals: req.user.id,
                             },
                         },
-                    });
-
-                    const adminOrFamilyCareGroupIDs = myMemberships.docs
-                        .filter(
-                            (m) => m.role === "admin" || m.role === "family",
-                        )
-                        .map((m) => m.careGroup)
-                        .filter(Boolean);
-
-                    const professionalCareGroupIDs = myMemberships.docs
-                        .filter((m) => m.role === "professional")
-                        .map((m) => m.careGroup)
-                        .filter(Boolean);
-
-                    const patientCareGroupIDs = myMemberships.docs
-                        .filter((m) => m.role === "patient")
-                        .map((m) => m.careGroup)
-                        .filter(Boolean);
-
-                    if (
-                        adminOrFamilyCareGroupIDs.length === 0 &&
-                        professionalCareGroupIDs.length === 0 &&
-                        patientCareGroupIDs.length === 0
-                    ) {
-                        return {
-                            id: {
-                                in: [] as string[],
-                            },
-                        } as Where;
-                    }
-
-                    const or: Where[] = [];
-
-                    if (adminOrFamilyCareGroupIDs.length > 0) {
-                        or.push({
+                        {
                             careGroup: {
-                                in: adminOrFamilyCareGroupIDs,
+                                equals: careGroupID,
                             },
-                        });
-                    }
+                        },
+                    ],
+                },
+            });
 
-                    if (professionalCareGroupIDs.length > 0) {
-                        const medicalCases = await req.payload.find({
-                            collection: "cases",
-                            depth: 0,
-                            pagination: false,
-                            overrideAccess: true,
-                            where: {
-                                and: [
-                                    {
-                                        careGroup: {
-                                            in: professionalCareGroupIDs,
-                                        },
-                                    },
-                                    {
-                                        type: {
-                                            equals: "medical",
-                                        },
-                                    },
-                                ],
-                            },
-                        });
+            const role = membership.docs[0]?.role;
 
-                        or.push({
-                            and: [
-                                {
-                                    careGroup: {
-                                        in: professionalCareGroupIDs,
-                                    },
-                                },
-                                {
-                                    case: {
-                                        in: medicalCases.docs.map(
-                                            (relatedCase) => relatedCase.id,
-                                        ),
-                                    },
-                                },
-                            ],
-                        });
-                    }
+            /*
+             * Patient accounts are read-only.
+             */
+            if (role === "patient") return false;
 
-                    if (patientCareGroupIDs.length > 0) {
-                        or.push({
+            /*
+             * Admin and family can create tasks
+             * within their CareGroup.
+             */
+            if (role === "admin" || role === "family") {
+                return true;
+            }
+
+            /*
+             * Professional creation remains subject to
+             * the access-control layer and the related Case.
+             */
+            if (role === "professional") {
+                return true;
+            }
+
+            return false;
+        },
+
+        read: async ({ req }) => {
+            if (!req.user) return false;
+
+            const myMemberships = await req.payload.find({
+                collection: "memberships",
+                depth: 0,
+                limit: 100,
+                pagination: false,
+                where: {
+                    user: {
+                        equals: req.user.id,
+                    },
+                },
+            });
+
+            if (myMemberships.docs.length === 0) {
+                return {
+                    id: {
+                        in: [] as string[],
+                    },
+                } as Where;
+            }
+
+            const adminOrFamilyCareGroupIDs = myMemberships.docs
+                .filter(
+                    (membership) =>
+                        membership.role === "admin" ||
+                        membership.role === "family",
+                )
+                .map((membership) =>
+                    getRelationshipID(membership.careGroup),
+                )
+                .filter(Boolean);
+
+            const professionalCareGroupIDs = myMemberships.docs
+                .filter(
+                    (membership) =>
+                        membership.role === "professional",
+                )
+                .map((membership) =>
+                    getRelationshipID(membership.careGroup),
+                )
+                .filter(Boolean);
+
+            const patientCareGroupIDs = myMemberships.docs
+                .filter(
+                    (membership) =>
+                        membership.role === "patient",
+                )
+                .map((membership) =>
+                    getRelationshipID(membership.careGroup),
+                )
+                .filter(Boolean);
+
+            const or: Where[] = [];
+
+            /*
+             * Admin / Family
+             *
+             * Can read tasks belonging to their CareGroups.
+             */
+            if (adminOrFamilyCareGroupIDs.length > 0) {
+                or.push({
+                    careGroup: {
+                        in: adminOrFamilyCareGroupIDs,
+                    },
+                });
+            }
+
+            /*
+             * Professional
+             *
+             * Case-level access remains responsible for
+             * determining which Cases the professional may access.
+             */
+            if (professionalCareGroupIDs.length > 0) {
+                or.push({
+                    careGroup: {
+                        in: professionalCareGroupIDs,
+                    },
+                });
+            }
+
+            /*
+             * Patient
+             *
+             * A patient can consult tasks concerning them
+             * or tasks explicitly assigned to them.
+             */
+            if (patientCareGroupIDs.length > 0) {
+                or.push({
+                    and: [
+                        {
                             careGroup: {
                                 in: patientCareGroupIDs,
                             },
-                        });
-                    }
-
-                    return {
-                        or,
-                    } as Where;
-                },
-                update: async ({ req }) => {
-                    if (!req.user) return false;
-
-                    const myMemberships = await req.payload.find({
-                        collection: "memberships",
-                        depth: 0,
-                        limit: 100,
-                        pagination: false,
-                        where: {
-                            user: {
-                                equals: req.user.id,
-                            },
                         },
-                    });
-
-                    const adminOrFamilyCareGroupIDs = myMemberships.docs
-                        .filter(
-                            (m) => m.role === "admin" || m.role === "family",
-                        )
-                        .map((m) => m.careGroup)
-                        .filter(Boolean);
-
-                    const professionalCareGroupIDs = myMemberships.docs
-                        .filter((m) => m.role === "professional")
-                        .map((m) => m.careGroup)
-                        .filter(Boolean);
-
-                    if (
-                        adminOrFamilyCareGroupIDs.length === 0 &&
-                        professionalCareGroupIDs.length === 0
-                    ) {
-                        return false;
-                    }
-
-                    const or: Where[] = [];
-
-                    if (adminOrFamilyCareGroupIDs.length > 0) {
-                        or.push({
-                            careGroup: {
-                                in: adminOrFamilyCareGroupIDs,
-                            },
-                        });
-                    }
-
-                    if (professionalCareGroupIDs.length > 0) {
-                        const medicalCases = await req.payload.find({
-                            collection: "cases",
-                            depth: 0,
-                            pagination: false,
-                            overrideAccess: true,
-                            where: {
-                                and: [
-                                    {
-                                        careGroup: {
-                                            in: professionalCareGroupIDs,
-                                        },
-                                    },
-                                    {
-                                        type: {
-                                            equals: "medical",
-                                        },
-                                    },
-                                ],
-                            },
-                        });
-
-                        or.push({
-                            and: [
+                        {
+                            or: [
                                 {
-                                    careGroup: {
-                                        in: professionalCareGroupIDs,
-                                    },
-                                },
-                                {
-                                    case: {
-                                        in: medicalCases.docs.map(
-                                            (relatedCase) => relatedCase.id,
-                                        ),
-                                    },
-                                },
-                            ],
-                        });
-                    }
-
-                    return {
-                        or,
-                    };
-                },
-                delete: async ({ req }) => {
-                    if (!req.user) return false;
-
-                    // MVP: only admin/family can delete tasks.
-                    const myMemberships = await req.payload.find({
-                        collection: "memberships",
-                        depth: 0,
-                        limit: 100,
-                        pagination: false,
-                        where: {
-                            and: [
-                                {
-                                    user: {
+                                    patient: {
                                         equals: req.user.id,
                                     },
                                 },
                                 {
-                                    role: {
-                                        in: ["admin", "family"],
+                                    assignedTo: {
+                                        equals: req.user.id,
                                     },
                                 },
                             ],
                         },
-                    });
+                    ],
+                });
+            }
 
-                    const careGroupIDs = myMemberships.docs
-                        .map((m) => m.careGroup)
-                        .filter(Boolean);
-
-                    if (!careGroupIDs.length) return false;
-
-                    return {
-                        careGroup: {
-                            in: careGroupIDs,
-                        },
-                    };
-                },
-            },
-            hooks: {
-                beforeValidate: [
-                    async ({ req, data }) => {
-                        if (!data?.case) return data;
-
-                        const caseID =
-                            typeof data.case === "string" ||
-                            typeof data.case === "number"
-                                ? data.case
-                                : ((
-                                      data.case as {
-                                          id?: string | number;
-                                          value?: string | number;
-                                      }
-                                  ).id ??
-                                  (
-                                      data.case as {
-                                          id?: string | number;
-                                          value?: string | number;
-                                      }
-                                  ).value);
-
-                        if (!caseID) return data;
-
-                        const relatedCase = await req.payload.findByID({
-                            collection: "cases",
-                            id: caseID,
-                            depth: 0,
-                        });
-
-                        return {
-                            ...data,
-                            careGroup: relatedCase.careGroup,
-                            patient: relatedCase.patient,
-                            caseType: relatedCase.type,
-                        };
+            if (or.length === 0) {
+                return {
+                    id: {
+                        in: [] as string[],
                     },
-                ],
-            },
-            fields: [
-                {
-                    name: "careGroup",
-                    type: "relationship",
-                    relationTo: "caregroups",
-                    required: true,
-                    admin: {
-                        readOnly: true,
-                        position: "sidebar",
+                } as Where;
+            }
+
+            return {
+                or,
+            } as Where;
+        },
+
+        update: async ({ req }) => {
+            if (!req.user) return false;
+
+            const myMemberships = await req.payload.find({
+                collection: "memberships",
+                depth: 0,
+                limit: 100,
+                pagination: false,
+                where: {
+                    user: {
+                        equals: req.user.id,
                     },
                 },
-                {
-                    name: "patient",
-                    type: "relationship",
-                    relationTo: "patients",
-                    required: true,
-                    admin: {
-                        readOnly: true,
-                        position: "sidebar",
-                    },
+            });
+
+            const editableCareGroupIDs = myMemberships.docs
+                .filter(
+                    (membership) =>
+                        membership.role === "admin" ||
+                        membership.role === "family" ||
+                        membership.role === "professional",
+                )
+                .map((membership) =>
+                    getRelationshipID(membership.careGroup),
+                )
+                .filter(Boolean);
+
+            if (editableCareGroupIDs.length === 0) {
+                return false;
+            }
+
+            return {
+                careGroup: {
+                    in: editableCareGroupIDs,
                 },
-                {
-                    name: "case",
-                    type: "relationship",
-                    relationTo: "cases",
-                    required: true,
-                },
-                {
-                    name: "caseType",
-                    type: "select",
-                    required: true,
-                    admin: {
-                        readOnly: true,
-                        position: "sidebar",
-                    },
-                    options: [
+            } as Where;
+        },
+
+        delete: async ({ req }) => {
+            if (!req.user) return false;
+
+            /*
+             * Task deletion is intentionally restricted
+             * to admin and family in the MVP.
+             */
+            const myMemberships = await req.payload.find({
+                collection: "memberships",
+                depth: 0,
+                limit: 100,
+                pagination: false,
+                where: {
+                    and: [
                         {
-                            label: "Medical",
-                            value: "medical",
+                            user: {
+                                equals: req.user.id,
+                            },
                         },
                         {
-                            label: "Custom",
-                            value: "custom",
+                            role: {
+                                in: ["admin", "family"],
+                            },
                         },
                     ],
                 },
+            });
+
+            const careGroupIDs = myMemberships.docs
+                .map((membership) =>
+                    getRelationshipID(membership.careGroup),
+                )
+                .filter(Boolean);
+
+            if (careGroupIDs.length === 0) {
+                return false;
+            }
+
+            return {
+                careGroup: {
+                    in: careGroupIDs,
+                },
+            } as Where;
+        },
+    },
+
+    hooks: {
+        beforeValidate: [
+            async ({ req, data }) => {
+                if (!data?.case) return data;
+
+                const caseID = getRelationshipID(data.case);
+
+                if (!caseID) return data;
+
+                const relatedCase = await req.payload.findByID({
+                    collection: "cases",
+                    id: caseID,
+                    depth: 0,
+                });
+
+                if (!relatedCase) return data;
+
+                return {
+                    ...data,
+                    case: caseID,
+                    careGroup: relatedCase.careGroup,
+                    patient: relatedCase.patient,
+                };
+            },
+        ],
+    },
+
+    fields: [
+        {
+            name: "careGroup",
+            type: "relationship",
+            relationTo: "caregroups",
+            required: true,
+            admin: {
+                readOnly: true,
+                position: "sidebar",
+            },
+        },
+
+        {
+            name: "patient",
+            type: "relationship",
+            relationTo: "patients",
+            required: true,
+            admin: {
+                readOnly: true,
+                position: "sidebar",
+            },
+        },
+
+        {
+            name: "case",
+            type: "relationship",
+            relationTo: "cases",
+            required: true,
+        },
+
+        {
+            name: "title",
+            type: "text",
+            required: true,
+        },
+
+        {
+            name: "description",
+            type: "textarea",
+            required: false,
+        },
+
+        {
+            name: "status",
+            type: "select",
+            required: true,
+            defaultValue: "todo",
+            options: [
+                {
+                    label: "À faire",
+                    value: "todo",
+                },
+                {
+                    label: "En cours",
+                    value: "in_progress",
+                },
+                {
+                    label: "Fait",
+                    value: "done",
+                },
+            ],
+        },
+
+        {
+            name: "dueDate",
+            type: "date",
+            required: false,
+        },
+
+        {
+            name: "assignedTo",
+            type: "relationship",
+            relationTo: "users",
+            required: false,
+        },
+
+        {
+            name: "urgency",
+            type: "select",
+            required: true,
+            defaultValue: "low",
+            options: [
+                {
+                    label: "Peut attendre",
+                    value: "low",
+                },
+                {
+                    label: "Très urgent",
+                    value: "high",
+                },
+            ],
+        },
+
+        {
+            name: "subtasks",
+            type: "array",
+            required: false,
+            fields: [
                 {
                     name: "title",
                     type: "text",
                     required: true,
                 },
+
                 {
                     name: "description",
                     type: "textarea",
                     required: false,
                 },
-                {
-                    name: "status",
-                    type: "select",
-                    required: true,
-                    defaultValue: "todo",
-                    options: [
-                        {
-                            label: "To do",
-                            value: "todo",
-                        },
-                        {
-                            label: "In progress",
-                            value: "in_progress",
-                        },
-                        {
-                            label: "Done",
-                            value: "done",
-                        },
-                    ],
-                },
+
                 {
                     name: "dueDate",
                     type: "date",
                     required: false,
                 },
+
                 {
                     name: "assignedTo",
                     type: "relationship",
                     relationTo: "users",
                     required: false,
                 },
+
                 {
-                    name: "urgency",
-                    type: "select",
+                    name: "completed",
+                    type: "checkbox",
                     required: true,
-                    defaultValue: "low",
-                    options: [
-                        {
-                            label: "Peut attendre",
-                            value: "low",
-                        },
-                        {
-                            label: "Très urgent",
-                            value: "high",
-                        },
-                    ],
-                },
-                {
-                    name: "subtasks",
-                    type: "array",
-                    required: false,
-                    fields: [
-                        {
-                            name: "title",
-                            type: "text",
-                            required: true,
-                        },
-                        {
-                            name: "description",
-                            type: "textarea",
-                            required: false,
-                        },
-                        {
-                            name: "dueDate",
-                            type: "date",
-                            required: false,
-                        },
-                        {
-                            name: "assignedTo",
-                            type: "relationship",
-                            relationTo: "users",
-                            required: false,
-                        },
-                        {
-                            name: "completed",
-                            type: "checkbox",
-                            required: true,
-                            defaultValue: false,
-                        },
-                    ],
+                    defaultValue: false,
                 },
             ],
-        };
+        },
+    ],
+};

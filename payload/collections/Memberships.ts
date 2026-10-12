@@ -1,6 +1,6 @@
 import type { CollectionConfig, Where } from "payload";
 
-import { ROLE_OPTIONS } from "@/domain/Roles";
+import { ROLE_OPTIONS } from "@/domain/roles";
 
 // ---------------------------------------------------------------------
 // Memberships (join table: user <-> caregroup with role)
@@ -10,10 +10,17 @@ import { ROLE_OPTIONS } from "@/domain/Roles";
 // - what role they have inside that caregroup (admin/family/professional/patient)
 //   - admin: full management inside the caregroup
 //   - family: can collaborate inside the caregroup
-//   - professional: read-only on medical content (MVP)
+//   - professional: read- only on medical content (MVP)
 //   - patient: read-only access to caregroup content (cases/tasks/attachments), can use messages
 export const Memberships: CollectionConfig = {
     slug: "memberships",
+    // Garantit unicité user <==> caregroup. 
+    indexes: [
+        {
+            fields: ["user", "careGroup"],
+            unique: true,
+        },
+    ],
     access: {
         create: async ({ req, data }) => {
             if (!req.user) return false;

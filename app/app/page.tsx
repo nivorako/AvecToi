@@ -17,6 +17,7 @@ export default async function AppHomePage() {
 
             <div className="mt-6 grid grid-cols-1 gap-3">
                 {caregroups.docs.map((cg) => (
+                
                     <Link
                         key={cg.id}
                         href={`/app/caregroup/${cg.id}`}

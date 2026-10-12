@@ -1,7 +1,7 @@
 import { expect } from "@jest/globals";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
-import type { InvitableRole, Role } from "@/domain/Roles";
+import type { InvitableRole, Role } from "@/domain/roles";
 
 // ---------------------------------------------------------------------------
 // Types partagés
@@ -105,7 +105,9 @@ export async function stopPayload(args: {
         }
     }
 
-    await mongod.stop();
+    if (mongod) {
+        await mongod.stop();
+    }
 }
 
 // ---------------------------------------------------------------------------

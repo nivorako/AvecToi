@@ -1,4 +1,4 @@
-import type { Role } from "@/domain/Roles";
+import type { Role } from "@/domain/roles";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 import { revalidatePath } from "next/cache";

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import Button from "@/components/ui/Button/Button";
-import type { InvitableRole } from "@/domain/Roles";
+import type { InvitableRole } from "@/domain/roles";
 
 import { getPayload } from "payload";
 

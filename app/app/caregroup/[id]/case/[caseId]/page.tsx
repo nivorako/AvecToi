@@ -1,7 +1,7 @@
 
 import Link from "next/link";
 import PageSummary from "@/components/ui/PageSummary";
-import type { Role } from "@/domain/Roles";
+import type { Role } from "@/domain/roles";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
