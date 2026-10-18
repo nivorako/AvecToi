@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
 type Item = {
     label: string;
@@ -14,23 +14,30 @@ type Item = {
 
 const subscribeToNothing = () => () => {};
 
-const ITEMS: Item[] = [
-    { icon: "👤", label: "Profil",        href: "/app/profile" },
-    { icon: "👥", label: "Membres",       href: "/app" },
-    { icon: "🏠", label: "Care Group",    href: "/app" },
-    { icon: "🕐", label: "Historique",    href: "/app/history" },
-    { icon: "🔔", label: "Notifications", href: "/app/notifications" },
-    { icon: "⚙️", label: "Paramètres",   href: "/app/settings" },
-    { icon: "❓", label: "Aide",          href: "/app/help" },
-    { icon: "🚪", label: "Déconnexion",   danger: true },
-];
-
 export default function SettingsDrawer() {
     const [open, setOpen] = useState(false);
     const [loadingLogout, setLoadingLogout] = useState(false);
     const mounted = useSyncExternalStore(subscribeToNothing, () => true, () => false);
     const router = useRouter();
-     async function handleLogout() {
+    const params = useParams();
+    const careGroupId =
+        typeof params.id === "string" ? params.id : null;
+
+    const items: Item[] = [
+        { icon: "👤", label: "Profil",        href: "/app/profile" },
+        { icon: "👥", label: "Membres",       href: careGroupId
+                                                        ? `/app/caregroup/${encodeURIComponent(careGroupId)}/members`
+                                                        : "/app", },
+        { icon: "🏠", label: "Care Group",    href: careGroupId
+                                                        ? `/app/caregroup/${encodeURIComponent(careGroupId)}`
+                                                        : "/app", },
+        { icon: "🕐", label: "Historique",    href: "/app/history" },
+        { icon: "🔔", label: "Notifications", href: "/app/notifications" },
+        { icon: "⚙️", label: "Paramètres",   href: "/app/settings" },
+        { icon: "❓", label: "Aide",          href: "/app/help" },
+        { icon: "🚪", label: "Déconnexion",   danger: true },
+    ];
+    async function handleLogout() {
         setLoadingLogout(true);
         try {
             await fetch("/api/auth/logout", {
@@ -95,7 +102,7 @@ export default function SettingsDrawer() {
                 </div>
 
                  <nav className="flex flex-col py-2">
-                    {ITEMS.map((item) => (
+                    {items.map((item) => (
                         item.label === "Déconnexion" ? (
                             <button
                                 key={item.label}

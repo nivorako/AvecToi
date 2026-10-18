@@ -196,9 +196,11 @@ export default buildConfig({
 
     endpoints: [
         {
-            path: "/invitations/accept",
+            path: "/accept-invitation",
             method: "post",
             handler: async (req) => {
+                console.log("URL REÇUE PAR LE HANDLER :", req.url);
+                console.log("ENDPOINT ACCEPT APPELE");
                 let input: {
                     token?: string;
                     email?: string;
@@ -269,7 +271,14 @@ export default buildConfig({
                     // Une opération Payload peut déjà avoir annulé
                     // et supprimé la transaction partagée.
                     if (ownsTransaction) { 
-                        await killTransaction(req);
+                         try {
+                            await killTransaction(req);
+                        } catch (rollbackError) {
+                            req.payload.logger.error({
+                                err: rollbackError,
+                                msg: "Échec de l'annulation de la transaction d'invitation.",
+                            });
+                        }
                     }
 
                     req.payload.logger.error({

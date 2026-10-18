@@ -17,6 +17,13 @@ let payloadInstanceCache: Awaited<ReturnType<typeof getPayload>> | null = null;
 export async function getPayloadInstance() {
     if (!payloadInstanceCache) {
         payloadInstanceCache = await getPayload({ config });
+
+        console.log(
+            "PAYLOAD ENDPOINTS:",
+            payloadInstanceCache.config.endpoints.map(
+                ({ path, method }) => ({ path, method }),
+            ),
+        );
     }
     return payloadInstanceCache;
 }
