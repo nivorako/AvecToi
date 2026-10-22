@@ -7,6 +7,7 @@ type AcceptInvitationInput = {
     token: string;
     email: string;
     password: string;
+    name: string;
 };
 
 type AcceptInvitationResult = {
@@ -48,7 +49,12 @@ export async function acceptInvitation(
     const token = input.token?.trim();
     const email = normalizeEmail(input.email ?? "");
     const password = input.password ?? "";
+    const name = input.name?.trim();
 
+    if (!name) {
+        throw new Error("Le nom est requis.");
+    }
+    
     if (!token) {
         throw new Error("Le token d'invitation est requis.");
     }
@@ -210,6 +216,7 @@ export async function acceptInvitation(
             data: {
                 email,
                 password,
+                name,
             },
             req,
             overrideAccess: true,
@@ -376,6 +383,7 @@ export async function acceptInvitation(
 
     // ------------------------------------------------------------
     // 8. Acceptation conditionnelle de l'invitation
+    // autorisation explicite de l’acceptation lorsque celle-ci provient de notre service métier.
     // ------------------------------------------------------------
 
     const invitationUpdateResult =
@@ -402,6 +410,9 @@ export async function acceptInvitation(
             },
             data: {
                 status: "accepted",
+            },
+            context: {
+                invitationAcceptance: true,
             },
             req,
             overrideAccess: true,

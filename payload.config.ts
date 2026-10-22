@@ -205,6 +205,7 @@ export default buildConfig({
                     token?: string;
                     email?: string;
                     password?: string;
+                    name?: string;
                 };
 
                 try {
@@ -219,8 +220,10 @@ export default buildConfig({
                 const token = input.token?.trim();
                 const email = input.email?.trim().toLowerCase();
                 const password = input.password;
+                const name = input.name?.trim();
 
                 if (
+                    !name  || 
                     !token ||
                     !email ||
                     typeof password !== "string" ||
@@ -256,6 +259,7 @@ export default buildConfig({
                         token,
                         email,
                         password,
+                        name,
                     });
 
                     // Seul le propriétaire de la transaction peut la valider.

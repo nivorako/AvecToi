@@ -1,8 +1,5 @@
 import Link from "next/link";
 
-import { redirect } from "next/navigation";
-
-import Button from "@/components/ui/Button/Button";
 import type { InvitableRole } from "@/domain/roles";
 
 import { getPayload } from "payload";
@@ -12,6 +9,8 @@ import config from "@/payload.config";
 import { getCurrentUser } from "@/lib/payloadRest";
 
 import { WrongAccountActions } from "./WrongAccountActions";
+
+import AcceptInvitationForm from "./AcceptInvitationForm";
 
 type Invitation = {
     id: string;
@@ -23,85 +22,8 @@ type Invitation = {
     expiresAt?: string;
 };
 
-async function acceptInvite(invite: Invitation) {
-    "use server";
-
-    const user = await getCurrentUser();
-    if (!user) {
-        redirect(
-            `/register?next=${encodeURIComponent(`/invite/${invite.token}`)}`,
-        );
-    }
-
-    if (!invite.email || !user.email) {
-        return;
-    }
-
-    if (invite.email.toLowerCase() !== user.email.toLowerCase()) {
-        return;
-    }
-
-    if (!invite.careGroup || !invite.role) {
-        return;
-    }
-
-    if (invite.status !== "pending") {
-        return;
-    }
-
-    if (
-        invite.expiresAt &&
-        new Date(invite.expiresAt).getTime() < new Date().getTime()
-    ) {
-        return;
-    }
-
-    const payload = await getPayload({ config });
-
-    const existingMembership = await payload.find({
-        collection: "memberships",
-        depth: 0,
-        limit: 1,
-        pagination: false,
-        where: {
-            and: [
-                {
-                    user: {
-                        equals: user.id,
-                    },
-                },
-                {
-                    careGroup: {
-                        equals: invite.careGroup,
-                    },
-                },
-            ],
-        },
-        overrideAccess: true,
-    });
-
-    if (existingMembership.docs.length === 0) {
-        await payload.create({
-            collection: "memberships",
-            data: {
-                careGroup: invite.careGroup,
-                user: user.id,
-                role: invite.role,
-            },
-            overrideAccess: true,
-        });
-    }
-
-    await payload.update({
-        collection: "invitations",
-        id: invite.id,
-        data: {
-            status: "accepted",
-        },
-        overrideAccess: true,
-    });
-
-    redirect(`/app/caregroup/${invite.careGroup}`);
+function getCurrentTimestamp() {
+    return Date.now();
 }
 
 export default async function InvitePage({
@@ -109,6 +31,9 @@ export default async function InvitePage({
 }: {
     params: Promise<{ token: string }>;
 }) {
+
+    const currentTimestamp = getCurrentTimestamp();
+
     const { token } = await params;
 
     const payload = await getPayload({ config });
@@ -147,21 +72,26 @@ export default async function InvitePage({
     }
 
     const user = await getCurrentUser();
-    if (!user) {
-        const emailParam = invite.email
-            ? `&email=${encodeURIComponent(invite.email)}`
+    
+    const wrongUser = Boolean(
+        user &&
+            invite.email &&
+            (!user.email ||
+                invite.email.toLowerCase() !== user.email.toLowerCase()),
+    );
+
+    const expired =
+        !invite.expiresAt ||
+        new Date(invite.expiresAt).getTime() <= currentTimestamp;
+
+    const invalid =
+        invite.status !== "pending" || expired || wrongUser;
+
+    const careGroupID =
+        typeof invite.careGroup === "string" ||
+        typeof invite.careGroup === "number"
+            ? String(invite.careGroup)
             : "";
-        redirect(
-            `/register?next=${encodeURIComponent(`/invite/${token}`)}${emailParam}`,
-        );
-    }
-
-    const wrongUser =
-        invite.email && user.email
-            ? invite.email.toLowerCase() !== user.email.toLowerCase()
-            : true;
-
-    const invalid = invite.status !== "pending" || wrongUser;
 
     return (
         <div className="w-full bg-background">
@@ -186,11 +116,19 @@ export default async function InvitePage({
 
                     {invalid ? (
                         <div className="mt-6 rounded-2xl border border-border bg-card px-3 py-2 text-sm text-muted">
-                            {wrongUser
+                            {/* {wrongUser
                                 ? `Tu es connecté avec ${user.email}. Cette invitation est pour ${invite.email}.`
                                 : invite.status !== "pending"
                                   ? "Cette invitation n'est plus valide."
-                                  : "Invitation invalide."}
+                                  : "Invitation invalide."} */}
+
+                            {wrongUser
+                                ? `Tu es connecté avec ${user?.email}. Cette invitation est pour ${invite.email}.`
+                                : invite.status !== "pending"
+                                ? "Cette invitation n'est plus en attente."
+                                : expired
+                                    ? "Cette invitation a expiré."
+                                    : "Cette invitation est invalide."}
 
                             {wrongUser ? (
                                 <div className="mt-4">
@@ -216,18 +154,19 @@ export default async function InvitePage({
                                 </div>
                             ) : null}
                         </div>
-                    ) : (
-                        <form
-                            action={acceptInvite.bind(null, invite)}
-                            className="mt-6"
-                        >
-                            <Button type="submit" variant="primary" size="md">
-                                {"Accepter l'invitation"}
-                            </Button>
-                        </form>
-                    )}
+                    ) :  careGroupID ? (
+                                <AcceptInvitationForm
+                                    token={token}
+                                    invitedEmail={invite.email ?? ""}
+                                    careGroupID={careGroupID}
+                                />
+                            ) : (
+                                <p role="alert" className="mt-6 text-sm text-red-600">
+                                    Cette invitation n&apos;est associée à aucun CareGroup valide.
+                                </p>  
+                    )} 
                 </div>
             </main>
         </div>
-    );
+    ); 
 }

@@ -152,6 +152,7 @@ export const Invitations: CollectionConfig = {
                         },
                     };
                 },
+                delete: () => false,
             },
             fields: [
                 {
@@ -394,17 +395,23 @@ export const Invitations: CollectionConfig = {
                             // -------------------------------------------------------------
                             // Le status est le seul champ mutable.
                             // L'admin peut uniquement révoquer une invitation pending.
+                            // pending → accepted via le service prévu (acceptInvitation)
                             // -------------------------------------------------------------
-
+                            
                             const previousStatus = originalDoc?.status;
                             const nextStatus = data.status ?? previousStatus;
 
                             if (previousStatus !== nextStatus) {
-                                const allowedTransition =
+                                const isRevocation =
                                     previousStatus === "pending" &&
                                     nextStatus === "revoked";
 
-                                if (!allowedTransition) {
+                                const isInvitationAcceptance =
+                                    previousStatus === "pending" &&
+                                    nextStatus === "accepted" &&
+                                    req.context?.invitationAcceptance === true;
+
+                                if (!isRevocation && !isInvitationAcceptance) {
                                     throw new Error(
                                         `Transition de statut interdite : ${previousStatus} → ${nextStatus}.`,
                                     );

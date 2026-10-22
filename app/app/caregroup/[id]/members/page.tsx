@@ -57,7 +57,13 @@ async function deleteInvitation(invitationID: string, careGroupID: string) {
     }
 
     await payloadREST(`/api/invitations/${invitationID}`, {
-        method: "DELETE",
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            status: "revoked",
+        }),
     });
 
     revalidatePath(`/app/caregroup/${careGroupID}/members`);
@@ -67,13 +73,14 @@ async function inviteMember(prevState: InviteState, formData: FormData) {
     "use server";
 
     const careGroup = String(formData.get("careGroup") ?? "");
+    // normalise l’adresse email en minuscules ;
     const email = String(formData.get("email") ?? "")
         .trim()
         .toLowerCase();
     const role = String(formData.get("role") ?? "");
 
     const user = await requireUser();
-
+    // vérifie le CareGroup, l’email et le rôle ;
     if (!careGroup) return { ok: false, message: "Caregroup invalide." };
     if (!email) return { ok: false, message: "Email requis." };
     // We also support inviting a "patient" role which grants read-only access.
@@ -120,13 +127,13 @@ async function inviteMember(prevState: InviteState, formData: FormData) {
     if (existingInvite.docs.length > 0) {
         return { ok: false, message: "Invitation déjà envoyée." };
     }
-
+    // crée un UUID utilisé comme token ;
     const token = randomUUID();
-
+    // fixe une expiration à 7 jours ;
     const expiresAt = new Date(
         Date.now() + 7 * 24 * 60 * 60 * 1000,
     ).toISOString();
-
+    // crée le document Payload invitations
     try {
         await payloadREST("/api/invitations", {
             method: "POST",
@@ -145,7 +152,6 @@ async function inviteMember(prevState: InviteState, formData: FormData) {
     } catch {
         return { ok: false, message: "Erreur lors de l'invitation." };
     }
-
     revalidatePath(`/app/caregroup/${careGroup}/members`);
     return { ok: true, message: "Invitation créée." };
 }

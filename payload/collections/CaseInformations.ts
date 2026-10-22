@@ -3,8 +3,6 @@ import { getRelationshipID } from "@/payload/utils/getRelationshipID";
 
 const VISIBILITY_OPTIONS = ["shared", "patient", "internal"] as const;
 
-type Visibility = (typeof VISIBILITY_OPTIONS)[number];
-
 export const CaseInformations: CollectionConfig = {
     slug: "case-informations",
 
