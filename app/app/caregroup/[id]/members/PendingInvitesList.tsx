@@ -46,7 +46,8 @@ export function PendingInvitesList({
         <div className="flex flex-col gap-2">
             {invitations.map((invite) => {
                 const url = invite.token ? `/invite/${invite.token}` : "";
-
+                
+                console.log("invitationID : ", invite.id);
                 return (
                     <div
                         key={invite.id}

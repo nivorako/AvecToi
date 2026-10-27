@@ -275,7 +275,7 @@ export const Patients: CollectionConfig = {
         // FULL NAME
         // -------------------------------------------------------------
         beforeValidate: [
-            async ({ data, req, originalDoc, context }) => {
+            async ({ data, req, originalDoc, context, operation }) => {
                 if (!data) return data;
 
                 // ---------------------------------------------------------
@@ -330,14 +330,29 @@ export const Patients: CollectionConfig = {
                 //        ↓
                 // association User ↔ Patient
                 // ---------------------------------------------------------
-                if (!originalDoc) {
+               
+                // if (!originalDoc) {
+                //     if (newUserID) {
+                //         throw new Error(
+                //             "Un Patient doit être créé sans compte utilisateur. " +
+                //             "L'association avec un User se fait lors du processus d'invitation.",
+                //         );
+                //     }
+
+                //     return {
+                //         ...data,
+                //         fullName,
+                //     };
+                // }
+
+                if (operation === "create") {
                     if (newUserID) {
                         throw new Error(
                             "Un Patient doit être créé sans compte utilisateur. " +
                             "L'association avec un User se fait lors du processus d'invitation.",
                         );
                     }
-
+        
                     return {
                         ...data,
                         fullName,

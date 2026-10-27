@@ -177,6 +177,7 @@ export const CareGroups: CollectionConfig = {
                         careGroup: doc.id,
                         role: "admin",
                     },
+                    req,
                 });
 
                 await req.payload.create({
@@ -186,6 +187,7 @@ export const CareGroups: CollectionConfig = {
                         firstName: "Patient",
                         lastName: "Care",
                     },
+                    req,
                 });
             },
         ],
