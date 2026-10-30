@@ -61,7 +61,7 @@ export async function POST(req: Request) {
         disableTransaction: true,
     } as unknown as Parameters<
         Awaited<ReturnType<typeof getPayload>>["findByID"]
-    >[0])) as { careGroup?: unknown; type?: unknown };
+    >[0])) as { careGroup?: unknown; caseType?: unknown };
 
     const careGroupID =
         typeof relatedTask?.careGroup === "string" ||
@@ -92,7 +92,7 @@ export async function POST(req: Request) {
     >[0]);
 
     const role = (membership.docs[0] as { role?: string } | undefined)?.role;
-    const taskType = relatedTask?.type;
+    const taskType = relatedTask?.caseType;
 
     const canCreate =
         role === "admin" ||

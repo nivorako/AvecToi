@@ -1,6 +1,8 @@
 import type { CollectionConfig, Where } from "payload";
 import { getRelationshipID } from "@/payload/utils/getRelationshipID";
 
+import { CASE_TYPE_OPTIONS } from "@/domain/caseTypes";
+
 export const TaskAttachments: CollectionConfig = {
             slug: "task-attachments",
             admin: {
@@ -43,8 +45,8 @@ export const TaskAttachments: CollectionConfig = {
 
                     console.info("task-attachments.create.relatedTask", {
                         taskID,
-                        type: (relatedTask as { type?: unknown } | undefined)
-                            ?.type,
+                        caseType: (relatedTask as { caseType?: unknown } | undefined)
+                            ?.caseType,
                         careGroup: (
                             relatedTask as { careGroup?: unknown } | undefined
                         )?.careGroup,
@@ -88,7 +90,7 @@ export const TaskAttachments: CollectionConfig = {
                     // - professional: can attach docs only to medical tasks
                     if (role === "admin" || role === "family") return true;
                     if (role === "professional") {
-                        return relatedTask?.type === "medical";
+                        return relatedTask?.caseType === "medical";
                     }
 
                     return false;
@@ -318,16 +320,7 @@ export const TaskAttachments: CollectionConfig = {
                         readOnly: true,
                         position: "sidebar",
                     },
-                    options: [
-                        {
-                            label: "Medical",
-                            value: "medical",
-                        },
-                        {
-                            label: "Custom",
-                            value: "custom",
-                        },
-                    ],
+                    options: [...CASE_TYPE_OPTIONS],
                 },
                 {
                     name: "description",

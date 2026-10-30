@@ -1,5 +1,6 @@
 import type { CollectionConfig, Where } from "payload";
 import { getRelationshipID } from "@/payload/utils/getRelationshipID";
+import { CASE_TYPE_OPTIONS } from "@/domain/caseTypes";
 
 const VISIBILITY_OPTIONS = ["shared", "patient", "internal"] as const;
 
@@ -79,10 +80,15 @@ export const CaseAttachments: CollectionConfig = {
 
             if (
                 role === "admin" ||
-                role === "family" ||
-                role === "professional"
+                role === "family"
             ) {
                 return true;
+            }
+
+            if (role === "professional") {
+                if (relatedCase.type === "medical") {
+                    return true;
+                }
             }
 
             return false;
@@ -162,11 +168,47 @@ export const CaseAttachments: CollectionConfig = {
              * the Case-level permission system.
              */
             if (professionalCareGroupIDs.length > 0) {
-                or.push({
-                    careGroup: {
-                        in: professionalCareGroupIDs,
+                const medicalCases = await req.payload.find({
+                    collection: "cases",
+                    depth: 0,
+                    limit: 100,
+                    pagination: false,
+                    overrideAccess: true,
+                    where: {
+                        and: [
+                            {
+                                careGroup: {
+                                    in: professionalCareGroupIDs,
+                                },
+                            },
+                            {
+                                type: {
+                                    equals: "medical",
+                                },
+                            },
+                        ],
                     },
                 });
+                const medicalCaseIDs = medicalCases.docs.map(
+                    (caseDoc) => caseDoc.id,
+                );
+
+                if (medicalCaseIDs.length > 0) {
+                    or.push({
+                        and: [
+                            {
+                                careGroup: {
+                                    in: professionalCareGroupIDs,
+                                },
+                            },
+                            {
+                                case: {
+                                    in: medicalCaseIDs,
+                                },
+                            },
+                        ],
+                    });
+                }
             }
 
             /*
@@ -223,11 +265,28 @@ export const CaseAttachments: CollectionConfig = {
                 },
             });
 
-            const editableCareGroupIDs = memberships.docs
+            if (memberships.docs.length === 0) {
+                return {
+                    id: {
+                        in: [] as string[],
+                    },
+                } as Where;
+            }
+
+            const adminOrFamilyEditableCareGroupIDs = memberships.docs
                 .filter(
                     (membership) =>
                         membership.role === "admin" ||
-                        membership.role === "family" ||
+                        membership.role === "family",
+                )
+                .map((membership) =>
+                    getRelationshipID(membership.careGroup),
+                )
+                .filter(Boolean);
+
+            const professionalEditableCareGroupIDs = memberships.docs
+                .filter(
+                    (membership) =>
                         membership.role === "professional",
                 )
                 .map((membership) =>
@@ -235,14 +294,64 @@ export const CaseAttachments: CollectionConfig = {
                 )
                 .filter(Boolean);
 
-            if (editableCareGroupIDs.length === 0) {
-                return false;
+            const or: Where[] = [];
+
+            if (adminOrFamilyEditableCareGroupIDs.length > 0) {
+                or.push({
+                    careGroup: {
+                        in: adminOrFamilyEditableCareGroupIDs,
+                    },
+                });
             }
 
+            if (professionalEditableCareGroupIDs.length > 0) {
+                const medicalCases = await req.payload.find({
+                    collection: "cases",
+                    depth: 0,
+                    limit: 100,
+                    pagination: false,
+                    overrideAccess: true,
+                    where: {
+                        and: [
+                            {
+                                careGroup: {
+                                    in: professionalEditableCareGroupIDs,
+                                },
+                            },
+                            {
+                                type: {
+                                    equals: "medical",
+                                },
+                            },
+                        ],
+                    },
+                });
+                const medicalCaseIDs = medicalCases.docs.map(
+                    (caseDoc) => caseDoc.id,
+                );
+
+                if (medicalCaseIDs.length > 0) {
+                    or.push({
+                        and: [
+                            {
+                                careGroup: {
+                                    in: professionalEditableCareGroupIDs,
+                                },
+                            },
+                            {
+                                case: {
+                                    in: medicalCaseIDs,
+                                },
+                            },
+                        ],
+                    });
+                }
+            }
+
+            if (or.length === 0) return false;
+
             return {
-                careGroup: {
-                    in: editableCareGroupIDs,
-                },
+                or,
             } as Where;
         },
 
@@ -326,6 +435,7 @@ export const CaseAttachments: CollectionConfig = {
                     case: caseID,
                     careGroup: relatedCase.careGroup,
                     patient: relatedCase.patient,
+                    caseType: relatedCase.type,
                 };
             },
         ],
@@ -359,6 +469,16 @@ export const CaseAttachments: CollectionConfig = {
             type: "relationship",
             relationTo: "cases",
             required: true,
+        },
+        {
+            name: "caseType",
+            type: "select",
+            required: true,
+            options: [...CASE_TYPE_OPTIONS],
+            admin: {
+                readOnly: true,
+                position: "sidebar",
+            },
         },
 
         {

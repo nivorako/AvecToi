@@ -4,6 +4,8 @@ import { useState } from "react";
 
 import Button from "@/components/ui/Button/Button";
 
+import { CASE_TYPE_OPTIONS } from "@/domain/caseTypes";
+
 export default function AddDossierPanel({
     careGroupId,
     action,
@@ -45,8 +47,11 @@ export default function AddDossierPanel({
                                 required
                                 defaultValue="medical"
                             >
-                                <option value="medical">Medical</option>
-                                <option value="custom">Custom</option>
+                                {CASE_TYPE_OPTIONS.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label}
+                                    </option>
+                                ))}   
                             </select>
                         </div>
                         <div className="mt-2 flex flex-wrap gap-2">

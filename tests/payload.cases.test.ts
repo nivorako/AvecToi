@@ -30,7 +30,7 @@ describe("Payload — Cases & Case Attachments", () => {
         await cleanCollections(payload);
     });
 
-    it("patient can read cases in their caregroup (medical + custom)", async () => {
+    it("patient can read cases in their caregroup (medical + other)", async () => {
         const admin = await createUser(payload, {
             email: "admin-patient-cases@example.com",
             password: "password",
@@ -70,12 +70,12 @@ describe("Payload — Cases & Case Attachments", () => {
             type: "medical",
         });
 
-        const customCase = await createCase(payload, {
+        const otherCase = await createCase(payload, {
             actingUser: admin,
             careGroupID: careGroup.id,
             patientID: patient.id,
-            title: "Custom",
-            type: "custom",
+            title: "Other",
+            type: "other",
         });
 
         const res = await payload.find({
@@ -89,7 +89,7 @@ describe("Payload — Cases & Case Attachments", () => {
 
         const ids = res.docs.map((d) => d.id);
         expect(ids).toContain(medicalCase.id);
-        expect(ids).toContain(customCase.id);
+        expect(ids).toContain(otherCase.id);
     });
 
     it("patient cannot update case description", async () => {
@@ -129,7 +129,7 @@ describe("Payload — Cases & Case Attachments", () => {
             careGroupID: careGroup.id,
             patientID: patient.id,
             title: "Case",
-            type: "custom",
+            type: "other",
         });
 
         await expect(
@@ -194,7 +194,7 @@ describe("Payload — Cases & Case Attachments", () => {
                 careGroup: careGroup.id,
                 patient: patient.id,
                 title: "Family case",
-                type: "custom",
+                type: "other",
             },
             user: family,
             overrideAccess: false,
@@ -217,7 +217,7 @@ describe("Payload — Cases & Case Attachments", () => {
         ).rejects.toBeTruthy();
     });
 
-    it("professional can read medical cases but not custom cases", async () => {
+    it("professional can read medical cases but not other cases", async () => {
         const admin = await createUser(payload, {
             email: "admin-cases@example.com",
             password: "password",
@@ -257,12 +257,12 @@ describe("Payload — Cases & Case Attachments", () => {
             type: "medical",
         });
 
-        const customCase = await createCase(payload, {
+        const otherCase = await createCase(payload, {
             actingUser: admin,
             careGroupID: careGroup.id,
             patientID: patient.id,
-            title: "Custom",
-            type: "custom",
+            title: "Other",
+            type: "other",
         });
 
         const res = await payload.find({
@@ -276,7 +276,7 @@ describe("Payload — Cases & Case Attachments", () => {
 
         const ids = res.docs.map((d) => d.id);
         expect(ids).toContain(medicalCase.id);
-        expect(ids).not.toContain(customCase.id);
+        expect(ids).not.toContain(otherCase.id);
     });
 
     it("forces case.careGroup from patient.careGroup on create", async () => {
@@ -317,7 +317,7 @@ describe("Payload — Cases & Case Attachments", () => {
         expect(relationshipToID(created.careGroup)).toBe(cgA.id);
     });
 
-    it("recalculates case.careGroup from patient when updating patient", async () => {
+    it("rejects moving a case to another careGroup by changing its patient", async () => {
         const admin = await createUser(payload, {
             email: "admin-case-force-update@example.com",
             password: "password",
@@ -359,15 +359,26 @@ describe("Payload — Cases & Case Attachments", () => {
             overrideAccess: false,
         });
 
-        const updatedCase = await payload.update({
+        await expect(
+            payload.update({
+                collection: "cases",
+                id: createdCase.id,
+                data: { patient: patientB.id },
+                user: admin,
+                overrideAccess: false,
+            }),
+        ).rejects.toThrow("A case cannot be moved to another careGroup");
+
+        const unchangedCase = await payload.findByID({
             collection: "cases",
             id: createdCase.id,
-            data: { patient: patientB.id },
+            depth: 0,
             user: admin,
             overrideAccess: false,
         });
 
-        expect(relationshipToID(updatedCase.careGroup)).toBe(cgB.id);
+        expect(relationshipToID(unchangedCase.patient)).toBe(patientA.id);
+        expect(relationshipToID(unchangedCase.careGroup)).toBe(cgA.id);
     });
 
     it("rejects creating a case with an invalid patient id", async () => {
@@ -421,7 +432,7 @@ describe("Payload — Cases & Case Attachments", () => {
             careGroupID: careGroup.id,
             patientID: patient.id,
             title: "Case",
-            type: "custom",
+            type: "other",
         });
 
         const attachment = await createCaseAttachment(payload, {
@@ -433,9 +444,104 @@ describe("Payload — Cases & Case Attachments", () => {
 
         expect(relationshipToID(attachment.careGroup)).toBe(careGroup.id);
         expect(relationshipToID(attachment.patient)).toBe(patient.id);
-        expect(attachment.caseType).toBe("custom");
+        expect(attachment.caseType).toBe("other");
         expect(attachment.description).toBe("Doc important");
         expect(typeof attachment.filename).toBe("string");
+    });
+
+    it("uses the current case type for professional attachment access", async () => {
+        const admin = await createUser(payload, {
+            email: "admin-professional-attachments@example.com",
+            password: "password",
+            name: "Admin",
+        });
+
+        const professional = await createUser(payload, {
+            email: "professional-attachments@example.com",
+            password: "password",
+            name: "Professional",
+        });
+
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
+            name: "CG",
+        });
+
+        await addMembership(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            userID: professional.id,
+            role: "professional",
+        });
+
+        const patient = await createPatient(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            firstName: "Pat",
+            lastName: "Pro",
+        });
+
+        const caseDoc = await createCase(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            patientID: patient.id,
+            title: "Medical case",
+            type: "medical",
+        });
+
+        const attachment = await createCaseAttachment(payload, {
+            actingUser: professional,
+            caseID: caseDoc.id,
+            filename: "professional.pdf",
+        });
+
+        await payload.update({
+            collection: "cases",
+            id: caseDoc.id,
+            data: { type: "other" },
+            user: admin,
+            overrideAccess: false,
+        });
+
+        const hiddenAttachments = await payload.find({
+            collection: "case-attachments",
+            depth: 0,
+            limit: 100,
+            pagination: false,
+            user: professional,
+            overrideAccess: false,
+        });
+
+        expect(hiddenAttachments.docs.map((doc) => doc.id)).not.toContain(
+            attachment.id,
+        );
+        await expect(
+            payload.update({
+                collection: "case-attachments",
+                id: attachment.id,
+                data: { displayName: "Forbidden rename" },
+                user: professional,
+                overrideAccess: false,
+            }),
+        ).rejects.toBeTruthy();
+
+        await payload.update({
+            collection: "cases",
+            id: caseDoc.id,
+            data: { type: "medical" },
+            user: admin,
+            overrideAccess: false,
+        });
+
+        const renamed = await payload.update({
+            collection: "case-attachments",
+            id: attachment.id,
+            data: { displayName: "Allowed rename" },
+            user: professional,
+            overrideAccess: false,
+        });
+
+        expect(renamed.displayName).toBe("Allowed rename");
     });
 
     it("family can upload, rename (displayName), and delete an attachment", async () => {
@@ -475,7 +581,7 @@ describe("Payload — Cases & Case Attachments", () => {
             careGroupID: careGroup.id,
             patientID: patient.id,
             title: "Case",
-            type: "custom",
+            type: "other",
         });
 
         const attachment = await createCaseAttachment(payload, {

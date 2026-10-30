@@ -1,5 +1,6 @@
 import type { CollectionConfig, Where } from "payload";
 import { getRelationshipID } from "@/payload/utils/getRelationshipID";
+import { CASE_TYPE_OPTIONS } from "@/domain/caseTypes";
 
 export const Tasks: CollectionConfig = {
     slug: "tasks",
@@ -78,7 +79,9 @@ export const Tasks: CollectionConfig = {
              * the access-control layer and the related Case.
              */
             if (role === "professional") {
-                return true;
+                if (relatedCase.type === "medical") {
+                    return true;
+                }
             }
 
             return false;
@@ -138,6 +141,32 @@ export const Tasks: CollectionConfig = {
                 )
                 .filter(Boolean);
 
+            const linkedPatients = await req.payload.find({
+                collection: "patients",
+                depth: 0,
+                limit: 1,
+                pagination: false,
+                overrideAccess: true,
+                where: {
+                    and: [
+                        {
+                            user: {
+                                equals: req.user.id,
+                            },
+                        },
+                        {
+                            careGroup: {
+                                in: patientCareGroupIDs,
+                            },
+                        },
+                    ],
+                },
+            });
+
+            const linkedPatientIDs = linkedPatients.docs.map(
+                (patient) => patient.id,
+            );
+
             const or: Where[] = [];
 
             /*
@@ -160,11 +189,47 @@ export const Tasks: CollectionConfig = {
              * determining which Cases the professional may access.
              */
             if (professionalCareGroupIDs.length > 0) {
-                or.push({
-                    careGroup: {
-                        in: professionalCareGroupIDs,
+                const medicalCases = await req.payload.find({
+                    collection: "cases",
+                    depth: 0,
+                    limit: 100,
+                    pagination: false,
+                    overrideAccess: true,
+                    where: {
+                        and: [
+                            {
+                                careGroup: {
+                                    in: professionalCareGroupIDs,
+                                },
+                            },
+                            {
+                                type: {
+                                    equals: "medical",
+                                },
+                            },
+                        ],
                     },
                 });
+                const medicalCaseIDs = medicalCases.docs.map(
+                    (caseDoc) => caseDoc.id,
+                );
+
+                if (medicalCaseIDs.length > 0) {
+                    or.push({
+                        and: [
+                            {
+                                careGroup: {
+                                    in: professionalCareGroupIDs,
+                                },
+                            },
+                            {
+                                case: {
+                                    in: medicalCaseIDs,
+                                },
+                            },
+                        ],
+                    });
+                }
             }
 
             /*
@@ -185,7 +250,7 @@ export const Tasks: CollectionConfig = {
                             or: [
                                 {
                                     patient: {
-                                        equals: req.user.id,
+                                        in: linkedPatientIDs,
                                     },
                                 },
                                 {
@@ -227,11 +292,20 @@ export const Tasks: CollectionConfig = {
                 },
             });
 
-            const editableCareGroupIDs = myMemberships.docs
+            const adminOrFamilyEditableCaregroupID = myMemberships.docs
                 .filter(
                     (membership) =>
                         membership.role === "admin" ||
-                        membership.role === "family" ||
+                        membership.role === "family",
+                )
+                .map((membership) =>
+                    getRelationshipID(membership.careGroup),
+                )
+                .filter(Boolean);
+
+            const professionalEditableCareGroupIDs = myMemberships.docs
+                .filter(
+                    (membership) =>
                         membership.role === "professional",
                 )
                 .map((membership) =>
@@ -239,14 +313,80 @@ export const Tasks: CollectionConfig = {
                 )
                 .filter(Boolean);
 
-            if (editableCareGroupIDs.length === 0) {
-                return false;
+            const or: Where[] = [];
+
+            /*
+             * Admin / Family
+             *
+             * Can update tasks belonging to their CareGroups.
+             */
+            if (adminOrFamilyEditableCaregroupID.length > 0) {
+                or.push({
+                    careGroup: {
+                        in: adminOrFamilyEditableCaregroupID,
+                    },
+                });
+            }
+
+            /*
+             * Professional
+             * Case-level access remains responsible for
+             * determining which Cases the professional may access.
+             */
+            if (professionalEditableCareGroupIDs.length > 0) {
+                const medicalCases = await req.payload.find({
+                    collection: "cases",
+                    depth: 0,
+                    limit: 100,
+                    pagination: false,
+                    overrideAccess: true,
+                    where: {
+                        and: [
+                            {
+                                careGroup: {
+                                    in: professionalEditableCareGroupIDs,
+                                },
+                            },
+                            {
+                                type: {
+                                    equals: "medical",
+                                },
+                            },
+                        ],
+                    },
+                });
+                const medicalCaseIDs = medicalCases.docs.map(
+                    (caseDoc) => caseDoc.id,
+                );
+
+                if (medicalCaseIDs.length > 0) {
+                    or.push({
+                        and: [
+                            {
+                                careGroup: {
+                                    in: professionalEditableCareGroupIDs,
+                                },
+                            },
+                            {
+                                case: {
+                                    in: medicalCaseIDs,
+                                },
+                            },
+                        ],
+                    });
+                }
+            }
+
+            if (or.length === 0) {
+                return {
+                    id: {
+                        in: [] as string[],
+                    },
+                } as Where;
             }
 
             return {
-                careGroup: {
-                    in: editableCareGroupIDs,
-                },
+                or,
             } as Where;
         },
 
@@ -318,6 +458,7 @@ export const Tasks: CollectionConfig = {
                     case: caseID,
                     careGroup: relatedCase.careGroup,
                     patient: relatedCase.patient,
+                    caseType: relatedCase.type,
                 };
             },
         ],
@@ -351,6 +492,16 @@ export const Tasks: CollectionConfig = {
             type: "relationship",
             relationTo: "cases",
             required: true,
+        },
+        {
+            name: "caseType",
+            type: "select",
+            required: true,
+            options: [...CASE_TYPE_OPTIONS],
+            admin: {
+                readOnly: true,
+                position: "sidebar",
+            },
         },
 
         {

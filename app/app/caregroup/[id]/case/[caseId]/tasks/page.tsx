@@ -7,6 +7,8 @@ import PageSummary from "@/components/ui/PageSummary";
 import TaskItemRow from "@/components/task/TaskItemRow";
 import AddCaseTaskPanel from "@/components/case/AddCaseTaskPanel";
 
+import { CaseType } from "@/domain/caseTypes"
+
 type CaseDoc = {
     id: string;
     type?: string;
@@ -24,7 +26,7 @@ type Task = {
     title: string;
     status: "todo" | "in_progress" | "done";
     urgency: "low" | "high";
-    caseType: "medical" | "custom";
+    caseType: CaseType;
     responsable?: string;
     dueDate?: string;
     careGroup?: string | { id: string };
@@ -106,9 +108,7 @@ export default async function TasksPage({params}: {params: Promise <{id: string;
         const assignedTo = formData.get("assignedTo")?.toString() || undefined;
         const dueDateRaw = formData.get("dueDate")?.toString();
         const formCaseId = formData.get("case")?.toString();
-        const formCareGroupId = formData.get("careGroup")?.toString();
-        const formCaseType = formData.get("caseType")?.toString();
-
+       
         // Vérifie canCreateTask
         if (!canCreateTask) {
             throw new Error("Vous n'avez pas la permission de créer une tâche");
@@ -116,14 +116,6 @@ export default async function TasksPage({params}: {params: Promise <{id: string;
 
         if (formCaseId !== caseId) {
             throw new Error("Le caseId ne correspond pas");
-        }
-        
-        if (formCareGroupId !== caregroupID) {
-            throw new Error("Le careGroup ne correspond pas");
-        }
-        
-        if (formCaseType !== (isMedical ? "medical" : "custom")) {
-            throw new Error("Le type de dossier ne correspond pas");
         }
 
         // 4. Conversion du champ date
@@ -136,8 +128,6 @@ export default async function TasksPage({params}: {params: Promise <{id: string;
             body: JSON.stringify({
                 title,
                 case: caseId,
-                careGroup: caregroupID,
-                caseType: isMedical ? "medical" : "custom",
                 status: "todo",
                 urgency: "low",
                 assignedTo: assignedTo || undefined,
@@ -184,7 +174,6 @@ export default async function TasksPage({params}: {params: Promise <{id: string;
                         <AddCaseTaskPanel
                             careGroupId={caregroupID}
                             caseId={caseId}
-                            caseType={caseDoc?.type ?? "custom"}
                             action={createTask}
                             users={users}
                         />

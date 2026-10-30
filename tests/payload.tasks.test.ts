@@ -60,6 +60,7 @@ describe("Payload — Tasks", () => {
             careGroupID: careGroup.id,
             firstName: "P",
             lastName: "T",
+            userID: patientUser.id,
         });
 
         const caseDoc = await createCase(payload, {
@@ -67,7 +68,7 @@ describe("Payload — Tasks", () => {
             careGroupID: careGroup.id,
             patientID: patient.id,
             title: "Case",
-            type: "custom",
+            type: "other",
         });
 
         const task = await createTask(payload, {
@@ -135,7 +136,7 @@ describe("Payload — Tasks", () => {
         expect(relationshipToID(task.patient)).toBe(patient.id);
     });
 
-    it("professional can read medical tasks but not custom tasks", async () => {
+    it("professional can read medical tasks but not other tasks", async () => {
         const admin = await createUser(payload, {
             email: "admin-tasks@example.com",
             password: "password",
@@ -175,12 +176,12 @@ describe("Payload — Tasks", () => {
             type: "medical",
         });
 
-        const customCase = await createCase(payload, {
+        const otherCase = await createCase(payload, {
             actingUser: admin,
             careGroupID: careGroup.id,
             patientID: patient.id,
-            title: "Custom",
-            type: "custom",
+            title: "Other",
+            type: "other",
         });
 
         const medicalTask = await createTask(payload, {
@@ -189,10 +190,10 @@ describe("Payload — Tasks", () => {
             title: "Medical Task",
         });
 
-        const customTask = await createTask(payload, {
+        const otherTask = await createTask(payload, {
             actingUser: admin,
-            caseID: customCase.id,
-            title: "Custom Task",
+            caseID: otherCase.id,
+            title: "Other Task",
         });
 
         const res = await payload.find({
@@ -206,7 +207,7 @@ describe("Payload — Tasks", () => {
 
         const ids = res.docs.map((d) => d.id);
         expect(ids).toContain(medicalTask.id);
-        expect(ids).not.toContain(customTask.id);
+        expect(ids).not.toContain(otherTask.id);
     });
 
     it("uses the related case type instead of the derived task caseType for professional access", async () => {
@@ -249,12 +250,12 @@ describe("Payload — Tasks", () => {
             type: "medical",
         });
 
-        const customCase = await createCase(payload, {
+        const otherCase = await createCase(payload, {
             actingUser: admin,
             careGroupID: careGroup.id,
             patientID: patient.id,
-            title: "Custom",
-            type: "custom",
+            title: "Other",
+            type: "other",
         });
 
         const medicalTask = await createTask(payload, {
@@ -263,23 +264,23 @@ describe("Payload — Tasks", () => {
             title: "Medical Task",
         });
 
-        const customTask = await createTask(payload, {
+        const otherTask = await createTask(payload, {
             actingUser: admin,
-            caseID: customCase.id,
-            title: "Custom Task",
+            caseID: otherCase.id,
+            title: "Other Task",
         });
 
         await payload.update({
             collection: "cases",
             id: medicalCase.id,
-            data: { type: "custom" },
+            data: { type: "other" },
             user: admin,
             overrideAccess: false,
         });
 
         await payload.update({
             collection: "cases",
-            id: customCase.id,
+            id: otherCase.id,
             data: { type: "medical" },
             user: admin,
             overrideAccess: false,
@@ -296,7 +297,7 @@ describe("Payload — Tasks", () => {
 
         const ids = res.docs.map((d) => d.id);
         expect(ids).not.toContain(medicalTask.id);
-        expect(ids).toContain(customTask.id);
+        expect(ids).toContain(otherTask.id);
 
         await expect(
             payload.update({
@@ -310,7 +311,7 @@ describe("Payload — Tasks", () => {
 
         const updated = await payload.update({
             collection: "tasks",
-            id: customTask.id,
+            id: otherTask.id,
             data: { title: "Allowed update" },
             user: professional,
             overrideAccess: false,
@@ -358,7 +359,7 @@ describe("Payload — Tasks", () => {
                 status: "todo",
                 careGroup: cgB.id,
                 patient: "000000000000000000000000",
-                caseType: "custom",
+                caseType: "other",
             },
             user: admin,
             overrideAccess: false,

@@ -1,6 +1,8 @@
 
 import type { CollectionConfig, Where } from "payload";
 
+import { CASE_TYPE_OPTIONS } from "@/domain/caseTypes";
+
 // ---------------------------------------------------------------------
 // Cases (dossiers thématiques)
 // ---------------------------------------------------------------------
@@ -335,36 +337,7 @@ export const Cases: CollectionConfig = {
             name: "type",
             type: "select",
             required: true,
-            options: [
-                {
-                    label: "Médical",
-                    value: "medical",
-                },
-                {
-                    label: "Administratif",
-                    value: "administrative",
-                },
-                {
-                    label: "Transport",
-                    value: "transport",
-                },
-                {
-                    label: "Financier",
-                    value: "financial",
-                },
-                {
-                    label: "Social",
-                    value: "social",
-                },
-                {
-                    label: "Juridique",
-                    value: "legal",
-                },
-                {
-                    label: "Autre",
-                    value: "other",
-                },
-            ],
+            options: [...CASE_TYPE_OPTIONS],
         },
         {
             name: "subtype",
@@ -381,7 +354,7 @@ export const Cases: CollectionConfig = {
             name: "sensitivity",
             type: "select",
             required: true,
-            defaultValue: "normal",
+            defaultValue: "low",
             options: [
                 {
                     label: "Low",

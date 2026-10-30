@@ -1,6 +1,7 @@
 import { expect } from "@jest/globals";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
+import type { CaseType } from "@/domain/caseTypes";
 import type { InvitableRole, Role } from "@/domain/roles";
 
 // ---------------------------------------------------------------------------
@@ -225,6 +226,7 @@ export async function createPatient(
         careGroupID: string;
         firstName: string;
         lastName: string;
+        userID?: string;
     },
 ): Promise<{ id: string; fullName: string }> {
     const created = await payload.create({
@@ -238,6 +240,17 @@ export async function createPatient(
         overrideAccess: false,
     });
 
+    if (args.userID) {
+        await payload.update({
+            collection: "patients",
+            id: created.id,
+            data: { user: args.userID },
+            user: args.actingUser,
+            overrideAccess: true,
+            context: { invitationAcceptance: true },
+        });
+    }
+
     const fullName =
         typeof created.fullName === "string" ? created.fullName : "";
     return { id: created.id, fullName };
@@ -250,7 +263,7 @@ export async function createCase(
         careGroupID: string;
         patientID: string;
         title: string;
-        type: "medical" | "custom";
+        type: CaseType;
     },
 ): Promise<{ id: string }> {
     const created = await payload.create({

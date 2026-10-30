@@ -9,6 +9,8 @@ import AddTaskAttachmentPanel from "@/components/task/AddTaskAttachmentPanel";
 import { TaskAttachmentRow } from "@/components/task/TaskAttachmentRow";
 import TaskMetadataBar from "@/components/task/TaskMetadataBar";
 
+import { isCaseType } from "@/domain/caseTypes";
+
 type CaseDoc = {
     id: string;
     title?: string;
@@ -96,16 +98,18 @@ export default async function TaskPage({
         : undefined;
 
     const role = membership?.role;
-    const normalizedCaseType =
-        caseDoc?.type === "medical" || caseDoc?.type === "custom"
-            ? caseDoc.type
-            : "";
+
+    const normalizedCaseType = isCaseType(caseDoc?.type)
+    ? caseDoc.type
+    : undefined;
+
     const canCreateTask =
         role === "admin" ||
         role === "family" ||
         (role === "professional" && normalizedCaseType === "medical");
 
     const canUpdateCase = canCreateTask;
+
     return (
 
         <>

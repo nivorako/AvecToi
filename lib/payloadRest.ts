@@ -147,7 +147,17 @@ export async function payloadREST<T>(
     }
 
     if (!res.ok) {
-        throw new Error(`Payload REST error ${res.status} on ${path}`);
+        const responseBody = await res.text();
+
+        console.error("Payload REST failure:", {
+            status: res.status,
+            path,
+            responseBody,
+        });
+
+        throw new Error(
+            `Payload REST error ${res.status} on ${path}`,
+        );
     }
 
     return (await res.json()) as T;

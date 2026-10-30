@@ -3,6 +3,8 @@ import Link from "next/link";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
+import { CaseType, isCaseType } from "@/domain/caseTypes";
+
 type Task = {
     id: string;
     title?: string;
@@ -54,9 +56,40 @@ const MONTH_FR = [
     "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
 ];
 
-const CASE_ICONS: Record<string, string> = {
-    medical: "🏥",
-    custom: "📄",
+
+
+const CASE_ICONS: Record<
+    CaseType,
+    { icon: string; color: string }
+> = {
+    medical: {
+        icon: "medical-icon",
+        color: "bg-sky-100 text-sky-600",
+    },
+    administrative: {
+        icon: "administrative-icon",
+        color: "bg-indigo-100 text-indigo-600",
+    },
+    transport: {
+        icon: "transport-icon",
+        color: "bg-amber-100 text-amber-600",
+    },
+    financial: {
+        icon: "financial-icon",
+        color: "bg-emerald-100 text-emerald-600",
+    },
+    social: {
+        icon: "social-icon",
+        color: "bg-violet-100 text-violet-600",
+    },
+    legal: {
+        icon: "legal-icon",
+        color: "bg-rose-100 text-rose-600",
+    },
+    other: {
+        icon: "other-icon",
+        color: "bg-slate-100 text-slate-600",
+    },
 };
 
 export default async function CareGroupCalendarPage({
@@ -182,7 +215,11 @@ export default async function CareGroupCalendarPage({
                         const caseObj = typeof t.case === "object" ? t.case : null;
                         const caseId = caseObj?.id ?? (typeof t.case === "string" ? t.case : undefined);
                         const caseTitle = caseObj?.title;
-                        const caseType = caseObj?.type ?? "";
+                        // const caseType = caseObj?.type ?? "";
+                        const rawCaseType = caseObj?.type;
+                        const caseType: CaseType = isCaseType(rawCaseType)
+                            ? rawCaseType
+                            : "other";
                         return (
                             <Link
                                 key={t.id}
@@ -198,7 +235,8 @@ export default async function CareGroupCalendarPage({
                                                 <line x1="12" y1="17" x2="12.01" y2="17" />
                                             </svg>
                                         ) : (
-                                            CASE_ICONS[caseType] ?? "📅"
+                                            // CASE_ICONS[caseType] ?? "📅"
+                                            CASE_ICONS[caseType].icon
                                         )}
                                     </div>
                                     <div className="min-w-0">

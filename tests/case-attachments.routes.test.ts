@@ -151,7 +151,7 @@ describe("Case attachments Next route handlers", () => {
             collection: "cases",
             data: {
                 title: "Case",
-                type: "custom",
+                type: "other",
                 careGroup: careGroup.id,
                 patient: patient.id,
             },

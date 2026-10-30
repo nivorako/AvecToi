@@ -5,19 +5,16 @@ import { useState } from "react";
 import Button from "@/components/ui/Button/Button";
 
 export default function AddCaseTaskPanel({
-    careGroupId,
     caseId,
-    caseType,
     action,
     users,
 }: {
     careGroupId: string;
     caseId: string;
-    caseType: string;
     action: (formData: FormData) => Promise<void>;
     users: Array<{ id: string; name?: string }>;
 }) {
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(false); 
 
     return (
         <div className="flex justify-center">
@@ -34,12 +31,6 @@ export default function AddCaseTaskPanel({
                 <div className="w-full rounded-2xl border border-border bg-card p-4">
                     <form action={action} className="flex flex-col gap-2">
                         <input type="hidden" name="case" value={caseId} />
-                        <input
-                            type="hidden"
-                            name="careGroup"
-                            value={careGroupId}
-                        />
-                        <input type="hidden" name="caseType" value={caseType} />
                         <input
                             name="title"
                             placeholder="Titre"

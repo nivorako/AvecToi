@@ -8,23 +8,53 @@ import SearchInput from "@/components/ui/SearchInput";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
+import { isCaseType, CASE_TYPE_OPTIONS, CaseType } from "@/domain/caseTypes";
+
 type Case = {
     id: string;
-    title?: string;
-    type?: string;
+    title?: string; 
+    type?: CaseType;
     updatedAt?: string;
     careGroup?: string | { id: string };
 };
 
 const FILTERS = [
     { label: "Tous", value: "tous" },
-    { label: "Médical", value: "medical" },
-    { label: "Personnel", value: "custom" },
+    ...CASE_TYPE_OPTIONS,
 ];
 
-const CATEGORY_CONFIG: Record<string, { icon: string; color: string }> = {
-    medical: { icon: "🩺", color: "bg-sky-100 text-sky-600" },
-    custom: { icon: "�", color: "bg-slate-100 text-slate-600" },
+const CATEGORY_CONFIG: Record<
+    CaseType,
+    { icon: string; color: string }
+> = {
+    medical: {
+        icon: "medical-icon",
+        color: "bg-sky-100 text-sky-600",
+    },
+    administrative: {
+        icon: "administrative-icon",
+        color: "bg-indigo-100 text-indigo-600",
+    },
+    transport: {
+        icon: "transport-icon",
+        color: "bg-amber-100 text-amber-600",
+    },
+    financial: {
+        icon: "financial-icon",
+        color: "bg-emerald-100 text-emerald-600",
+    },
+    social: {
+        icon: "social-icon",
+        color: "bg-violet-100 text-violet-600",
+    },
+    legal: {
+        icon: "legal-icon",
+        color: "bg-rose-100 text-rose-600",
+    },
+    other: {
+        icon: "other-icon",
+        color: "bg-slate-100 text-slate-600",
+    },
 };
 
 export default async function CareGroupCasesPage({
@@ -38,10 +68,6 @@ export default async function CareGroupCasesPage({
     const { filter } = await searchParams;
 
     await requireUser();
-
-    // const cases = await payloadREST<{ docs: Case[] }>(
-    //     `/api/cases?where[careGroup][equals]=${encodeURIComponent(id)}&limit=50&depth=0`,
-    // );
 
     const cases = await payloadREST<{ docs: Case[] }>(
         `/api/cases?where[careGroup][equals]=${encodeURIComponent(id)}&where[status][not_equals]=archived&limit=50&depth=0`,
@@ -117,11 +143,11 @@ export default async function CareGroupCasesPage({
     async function createCase(formData: FormData) {
         "use server";
         const title = String(formData.get("title") ?? "").trim();
-        const type = String(formData.get("type") ?? "");
+       
+        const type = formData.get("type")
         const careGroup = id;
-
-        if (!title || (type !== "medical" && type !== "custom")) return;
-
+       
+        if (!title || !isCaseType(type)) return;
         const user = await requireUser();
 
         const membership = await payloadREST<{ docs: { role?: string }[] }>(
@@ -190,8 +216,10 @@ export default async function CareGroupCasesPage({
                         <CaseSummaryCard
                             key={c.id}
                             href={`/app/caregroup/${id}/case/${c.id}`}
-                            categoryIcon={CATEGORY_CONFIG[c.type ?? ""]?.icon ?? "�"}
-                            categoryColor={CATEGORY_CONFIG[c.type ?? ""]?.color ?? "bg-slate-100 text-slate-600"}
+                            // categoryIcon={CATEGORY_CONFIG[c.type ?? ""]?.icon ?? "�"}
+                            // categoryColor={CATEGORY_CONFIG[c.type ?? ""]?.color ?? "bg-slate-100 text-slate-600"}
+                            categoryIcon={CATEGORY_CONFIG[c.type ?? "other"].icon}
+                            categoryColor={CATEGORY_CONFIG[c.type ?? "other"].color}
                             title={c.title ?? c.id}
                             status={computeStatus(c.id)}
                             meta={computeMeta(c.id)}
