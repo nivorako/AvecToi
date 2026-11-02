@@ -393,7 +393,7 @@ export default async function CasePage({
                 </div>
             </div>
 
-            {/* daanger zone */}
+            {/* danger zone */}
             {role === "admin" && (
                 <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4">
                     <h2 className="text-sm font-semibold text-rose-700 mb-3">Zone de danger</h2>

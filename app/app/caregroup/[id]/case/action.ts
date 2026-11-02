@@ -16,6 +16,12 @@ export async function archiveCase(formData: FormData) {
 
     if (membership?.role !== "admin") return;
 
+    console.log("Tentative archivage :", {
+        caseID,
+        careGroup,
+        role: membership?.role,
+    });
+
     await payloadREST(`/api/cases/${encodeURIComponent(caseID)}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
@@ -23,6 +29,10 @@ export async function archiveCase(formData: FormData) {
     });
 
     revalidatePath(`/app/caregroup/${careGroup}/cases`);
+
+    const { redirect } = await import("next/navigation");
+
+    redirect(`/app/caregroup/${careGroup}/cases`);
 }
 
 export async function deleteCase(formData: FormData) {
