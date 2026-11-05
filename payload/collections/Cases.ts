@@ -1,4 +1,4 @@
-
+import { APIError } from "payload";
 import type { CollectionConfig, Where } from "payload";
 
 import { CASE_TYPE_OPTIONS } from "@/domain/caseTypes";
@@ -102,6 +102,76 @@ export const Cases: CollectionConfig = {
                 };
             },
         ],
+
+        beforeChange: [
+            async ({ req, data, operation, originalDoc }) => {
+                // La création initiale n'est pas concernée.
+                if (operation !== "update") {
+                    return data;
+                }
+
+                // Aucun changement de statut demandé.
+                if (
+                    data?.status === undefined ||
+                    data.status === originalDoc?.status
+                ) {
+                    return data;
+                }
+
+                if (!req.user) {
+                    throw new APIError(
+                        "Authentication required to change case status",
+                        401,
+                    );
+                }
+
+                // Le CareGroup réel du dossier existant.
+                const careGroupID =
+                    typeof originalDoc?.careGroup === "object"
+                        ? originalDoc.careGroup.id
+                        : originalDoc?.careGroup;
+
+                if (!careGroupID) {
+                    throw new Error("Case has no careGroup");
+                }
+
+                const memberships = await req.payload.find({
+                    collection: "memberships",
+                    depth: 0,
+                    limit: 100,
+                    pagination: false,
+                    where: {
+                        and: [
+                            {
+                                user: {
+                                    equals: req.user.id,
+                                },
+                            },
+                            {
+                                careGroup: {
+                                    equals: careGroupID,
+                                },
+                            },
+                            {
+                                role: {
+                                    equals: "admin",
+                                },
+                            },
+                        ],
+                    },
+                });
+
+                if (memberships.docs.length === 0) {
+                    throw new APIError(
+                        "Only a CareGroup administrator can change case status",
+                        403,
+                    );
+                }
+
+                return data;
+            },
+        ],
+
     },
 
     access: {

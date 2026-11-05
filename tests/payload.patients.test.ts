@@ -187,6 +187,41 @@ describe("Payload — Patients", () => {
         expect(readBack.fullName).toBe("Rahaa Tina");
     });
 
+    it("ignores legacy memberships with an unknown role when reading patients", async () => {
+        const admin = await createUser(payload, {
+            email: "admin-legacy-role@example.com",
+            password: "password",
+            name: "Admin",
+        });
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
+            name: "Legacy role",
+        });
+        const client = new MongoClient(mongod.getUri("payload-tests"));
+
+        try {
+            await client.connect();
+            await client.db("payload-tests").collection("memberships").insertOne({
+                careGroup: new ObjectId(),
+                user: new ObjectId(admin.id),
+                role: "owner",
+            });
+        } finally {
+            await client.close();
+        }
+
+        const patients = await payload.find({
+            collection: "patients",
+            depth: 0,
+            limit: 1,
+            user: admin,
+            overrideAccess: false,
+            where: { careGroup: { equals: careGroup.id } },
+        });
+
+        expect(patients.docs).toHaveLength(1);
+    });
+
     it("denies reading patients from a different caregroup (multi-tenant)", async () => {
         const adminA = await createUser(payload, {
             email: "adminA@example.com",

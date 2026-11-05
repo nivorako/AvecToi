@@ -5,8 +5,9 @@ import { ROLE_PERMISSIONS } from "@/domain/rolePermissions";
 // Does the role have this permission?
 
 export function hasPermission(
-    role: Role,
+    role: unknown,
     permission: Permission,
 ): boolean {
-    return ROLE_PERMISSIONS[role].includes(permission);
+    const permissions = ROLE_PERMISSIONS[role as Role];
+    return permissions?.includes(permission) ?? false;
 }
