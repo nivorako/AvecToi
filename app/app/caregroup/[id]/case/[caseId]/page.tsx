@@ -5,7 +5,7 @@ import type { Role } from "@/domain/roles";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
-import { archiveCase, deleteCase } from "../../case/action"; 
+import { archiveCase, restoreCase } from "../../case/action"; 
 
 type Message = {
     id: string;
@@ -394,27 +394,47 @@ export default async function CasePage({
             </div>
 
             {/* danger zone */}
+
             {role === "admin" && (
                 <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4">
-                    <h2 className="text-sm font-semibold text-rose-700 mb-3">Zone de danger</h2>
-                    <div className="flex flex-col gap-2">
+                    <h2 className="text-sm font-semibold text-rose-700 mb-3">
+                        Zone de gestion du dossier
+                    </h2>
+
+                    {caseDoc.status === "active" ? (
                         <form action={archiveCase}>
                             <input type="hidden" name="case" value={caseId} />
-                            <input type="hidden" name="careGroup" value={careGroupID ?? ""} />
-                            <button type="submit" className="w-full rounded-xl bg-white border border-rose-300 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50">
+                            <input
+                                type="hidden"
+                                name="careGroup"
+                                value={careGroupID ?? ""}
+                            />
+                            <button
+                                type="submit"
+                                className="w-full rounded-xl bg-white border border-rose-300 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50"
+                            >
                                 Archiver ce dossier
                             </button>
                         </form>
-                        <form action={deleteCase}>
+                    ) : caseDoc.status === "archived" ? (
+                        <form action={restoreCase}>
                             <input type="hidden" name="case" value={caseId} />
-                            <input type="hidden" name="careGroup" value={careGroupID ?? ""} />
-                            <button type="submit" className="w-full rounded-xl bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700">
-                                Supprimer définitivement
+                            <input
+                                type="hidden"
+                                name="careGroup"
+                                value={careGroupID ?? ""}
+                            />
+                            <button
+                                type="submit"
+                                className="w-full rounded-xl bg-white border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
+                            >
+                                Restaurer ce dossier
                             </button>
                         </form>
-                    </div>
+                    ) : null}
                 </div>
             )}
+
         </div>
     );
 }

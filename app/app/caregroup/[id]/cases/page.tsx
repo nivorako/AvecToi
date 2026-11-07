@@ -8,6 +8,8 @@ import SearchInput from "@/components/ui/SearchInput";
 import { requireUser } from "@/lib/requireUser";
 import { payloadREST } from "@/lib/payloadRest";
 
+import Link from "next/link";
+
 import { isCaseType, CASE_TYPE_OPTIONS, CaseType } from "@/domain/caseTypes";
 
 type Case = {
@@ -72,6 +74,12 @@ export default async function CareGroupCasesPage({
     const cases = await payloadREST<{ docs: Case[] }>(
         `/api/cases?where[careGroup][equals]=${encodeURIComponent(id)}&where[status][not_equals]=archived&limit=50&depth=0`,
     );
+
+    const archivedCasesRes = await payloadREST<{ totalDocs: number }>(
+        `/api/cases?where[careGroup][equals]=${encodeURIComponent(id)}&where[status][equals]=archived&limit=1&depth=0`,
+    );
+
+    const archivedCount = archivedCasesRes.totalDocs;
 
     const [tasksRes, attachmentsRes] = await Promise.all([
         payloadREST<{ docs: { id: string; case?: string | { id: string }; status?: string; urgency?: string; dueDate?: string }[] }>(
@@ -206,8 +214,22 @@ export default async function CareGroupCasesPage({
             {/* Section 2 — Recherche */}
             <SearchInput placeholder="Rechercher un dossier..." />
 
-            {/* Section 3 — Filtres */}
-            <FilterPills pills={FILTERS} />
+            {/* Section 3 — Filtres et accès aux archives */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <FilterPills pills={FILTERS} />
+
+                <Link
+                    href={`/app/caregroup/${id}/cases/archived`}
+                    className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium ring-1 ring-border bg-card text-foreground hover:bg-muted/10"
+                >
+                    <span aria-hidden="true">📁</span>
+                    Dossiers archivés
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold">
+                        {archivedCount}
+                    </span>
+                    <span aria-hidden="true">→</span>
+                </Link>
+            </div>
 
             {/* Section 4 — Liste */}
             <div className="flex flex-col gap-3">
@@ -216,8 +238,6 @@ export default async function CareGroupCasesPage({
                         <CaseSummaryCard
                             key={c.id}
                             href={`/app/caregroup/${id}/case/${c.id}`}
-                            // categoryIcon={CATEGORY_CONFIG[c.type ?? ""]?.icon ?? "�"}
-                            // categoryColor={CATEGORY_CONFIG[c.type ?? ""]?.color ?? "bg-slate-100 text-slate-600"}
                             categoryIcon={CATEGORY_CONFIG[c.type ?? "other"].icon}
                             categoryColor={CATEGORY_CONFIG[c.type ?? "other"].color}
                             title={c.title ?? c.id}

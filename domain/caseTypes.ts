@@ -17,7 +17,7 @@ export const CASE_TYPE_OPTIONS = [
     { label: "Financier", value: "financial" },
     { label: "Social", value: "social" },
     { label: "Juridique", value: "legal" },
-    { label: "Autre", value: "other" },
+    { label: "Autres", value: "other" },
 ] satisfies Array<{ label: string; value: CaseType }>;
 
 export function isCaseType(value: unknown): value is CaseType {
