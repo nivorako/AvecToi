@@ -11,6 +11,7 @@ export default function TaskSubtasksManager({
     initialSubTasks,
     onSubTasksChange,
     onStatusChange,
+    readOnly = false,
 }: {
     taskID: string;
     initialSubTasks: Array<{ id: string; title: string; completed: boolean }>;
@@ -18,6 +19,7 @@ export default function TaskSubtasksManager({
         subTasks: Array<{ id: string; title: string; completed: boolean }>,
     ) => void;
     onStatusChange?: (status: Status) => void;
+    readOnly?: boolean;
 }) {
     const [subTasks, setSubTasks] = useState(initialSubTasks || []);
     const [isAdding, setIsAdding] = useState(false);
@@ -194,6 +196,7 @@ export default function TaskSubtasksManager({
                             <input
                                 type="checkbox"
                                 checked={subTask.completed}
+                                disabled={readOnly}
                                 onChange={() => toggleSubtask(subTask.id)}
                                 className="w-4 h-4"
                             />
@@ -206,58 +209,64 @@ export default function TaskSubtasksManager({
                             >
                                 {subTask.title}
                             </label>
-                            <button
-                                onClick={() => deleteSubtask(subTask.id)}
-                                className="text-sm text-danger hover:underline"
-                            >
-                                Supprimer
-                            </button>
+                            {!readOnly && (
+                                <button
+                                    onClick={() => deleteSubtask(subTask.id)}
+                                    className="text-sm text-danger hover:underline"
+                                >
+                                    Supprimer
+                                </button>
+                            )}
                         </div>
                     ))}
                 </div>
             )}
 
-            {isAdding ? (
-                <div className="flex gap-2">
-                    <input
-                        type="text"
-                        value={newSubtaskTitle}
-                        onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                        placeholder="Titre de la sous-tâche"
-                        className="flex-1 border rounded px-2 py-1"
-                        onKeyPress={(e) => e.key === "Enter" && addSubtask()}
-                    />
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        size="md"
-                        onClick={addSubtask}
-                    >
-                        Ajouter
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="tertiary"
-                        size="md"
-                        onClick={() => {
-                            setIsAdding(false);
-                            setNewSubtaskTitle("");
-                        }}
-                    >
-                        Annuler
-                    </Button>
-                </div>
-            ) : (
-                <div className="flex justify-center">
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        size="md"
-                        onClick={() => setIsAdding(true)}
-                    >
-                        + Ajouter une sous-tâche
-                    </Button>
-                </div>
+            {!readOnly && (
+                <>
+                    {isAdding ? (
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={newSubtaskTitle}
+                                onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                                placeholder="Titre de la sous-tâche"
+                                className="flex-1 border rounded px-2 py-1"
+                                onKeyPress={(e) => e.key === "Enter" && addSubtask()}
+                            />
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="md"
+                                onClick={addSubtask}
+                            >
+                                Ajouter
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="tertiary"
+                                size="md"
+                                onClick={() => {
+                                    setIsAdding(false);
+                                    setNewSubtaskTitle("");
+                                }}
+                            >
+                                Annuler
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="flex justify-center">
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="md"
+                                onClick={() => setIsAdding(true)}
+                            >
+                                + Ajouter une sous-tâche
+                            </Button>
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );

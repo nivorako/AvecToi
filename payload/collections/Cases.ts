@@ -20,7 +20,7 @@ import { CASE_TYPE_OPTIONS } from "@/domain/caseTypes";
 // MVP access model:
 // - admin: create / read / update / delete
 // - family: create / read / update / delete
-// - professional: read medical cases only
+// - professional: create and read medical cases only
 // - patient: read cases only
 //
 // Admin does not automatically mean universal access.
@@ -179,9 +179,43 @@ export const Cases: CollectionConfig = {
         create: async ({ req, data }) => {
             if (!req.user) return false;
 
-            // Payload Admin UI may check create permission without data.
-            // In that situation, allow the creation UI if the user is
-            // admin/family in at least one CareGroup.
+            // Determine allowed roles based on case type
+            const allowedRoles =
+                data?.type === "medical"
+                    ? ["admin", "family", "professional"]
+                    : ["admin", "family"]   
+
+            let careGroupID = data?.careGroup;
+
+            if (data?.patient) {
+                const patientID =
+                    typeof data.patient === "string" ||
+                    typeof data.patient === "number"
+                        ? data.patient
+                        : (
+                              data.patient as {
+                                  id?: string | number;
+                                  value?: string | number;
+                              }
+                          ).id ??
+                          (
+                              data.patient as {
+                                  id?: string | number;
+                                  value?: string | number;
+                              }
+                          ).value;
+
+                if (!patientID) return false;
+
+                const relatedPatient = await req.payload.findByID({
+                    collection: "patients",
+                    id: patientID,
+                    depth: 0,
+                });
+
+                careGroupID = relatedPatient?.careGroup;
+            }
+
             const andConditions: Where[] = [
                 {
                     user: {
@@ -190,20 +224,20 @@ export const Cases: CollectionConfig = {
                 },
                 {
                     role: {
-                        in: ["admin", "family"],
+                        in: allowedRoles,
                     },
                 },
             ];
 
-            if (data?.careGroup) {
+            if (careGroupID) {
                 andConditions.splice(1, 0, {
                     careGroup: {
-                        equals: data.careGroup,
+                        equals: careGroupID,
                     },
                 });
             }
 
-            const adminOrFamily = await req.payload.find({
+            const authorizedMembership = await req.payload.find({
                 collection: "memberships",
                 depth: 0,
                 limit: 1,
@@ -213,7 +247,7 @@ export const Cases: CollectionConfig = {
                 },
             });
 
-            return adminOrFamily.docs.length > 0;
+            return authorizedMembership.docs.length > 0;
         },
 
         read: async ({ req }) => {
@@ -346,7 +380,7 @@ export const Cases: CollectionConfig = {
             if (!req.user) return false;
 
             // MVP:
-            // only admin and family may delete Cases.
+            // only admin may delete Cases.
             const myMemberships = await req.payload.find({
                 collection: "memberships",
                 depth: 0,
@@ -361,7 +395,7 @@ export const Cases: CollectionConfig = {
                         },
                         {
                             role: {
-                                in: ["admin", "family"],
+                                in: ["admin"],
                             },
                         },
                     ],

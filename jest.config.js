@@ -4,7 +4,7 @@ module.exports = {
     setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
     testMatch: ["<rootDir>/tests/**/*.test.ts"],
     maxWorkers: 1,
-    extensionsToTreatAsEsm: [".ts"],
+    extensionsToTreatAsEsm: [".ts", ".tsx"],
     transform: {
         "^.+\\.tsx?$": [
             "ts-jest",

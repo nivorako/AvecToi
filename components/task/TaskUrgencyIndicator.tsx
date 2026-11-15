@@ -7,6 +7,7 @@ type Urgency = "low" | "high";
 type Props = {
     taskID: string;
     initialUrgency?: Urgency;
+    disabled?: boolean;
 };
 
 const urgencyConfig: Record<Urgency, { label: string; activeClasses: string; dotColor: string }> = {
@@ -17,6 +18,7 @@ const urgencyConfig: Record<Urgency, { label: string; activeClasses: string; dot
 export default function TaskUrgencyIndicator({
     taskID,
     initialUrgency = "low",
+    disabled = false,
 }: Props) {
     const [pending, startTransition] = useTransition();
     const [currentUrgency, setCurrentUrgency] = useState<Urgency>(initialUrgency);
@@ -51,7 +53,7 @@ export default function TaskUrgencyIndicator({
                             key={key}
                             type="button"
                             onClick={() => updateUrgency(key)}
-                            disabled={pending}
+                            disabled={pending || disabled}
                             className={`
                                 flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm font-medium
                                 transition-all duration-150 disabled:opacity-50

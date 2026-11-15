@@ -32,6 +32,9 @@ export const Tasks: CollectionConfig = {
 
             if (!relatedCase) return false;
 
+            // Un dossier archivé ne peut plus recevoir de nouvelles tâches.
+            if (relatedCase.status === "archived") return false;
+
             const careGroupID = getRelationshipID(
                 relatedCase.careGroup,
             );
@@ -320,12 +323,50 @@ export const Tasks: CollectionConfig = {
              *
              * Can update tasks belonging to their CareGroups.
              */
+
             if (adminOrFamilyEditableCaregroupID.length > 0) {
-                or.push({
-                    careGroup: {
-                        in: adminOrFamilyEditableCaregroupID,
+                const activeCases = await req.payload.find({
+                    collection: "cases",
+                    depth: 0,
+                    limit: 100,
+                    pagination: false,
+                    overrideAccess: true,
+                    where: {
+                        and: [
+                            {
+                                careGroup: {
+                                    in: adminOrFamilyEditableCaregroupID,
+                                },
+                            },
+                            {
+                                status: {
+                                    equals: "active",
+                                },
+                            },
+                        ],
                     },
                 });
+
+                const activeCaseIDs = activeCases.docs.map(
+                    (caseDoc) => caseDoc.id,
+                );
+
+                if (activeCaseIDs.length > 0) {
+                    or.push({
+                        and: [
+                            {
+                                careGroup: {
+                                    in: adminOrFamilyEditableCaregroupID,
+                                },
+                            },
+                            {
+                                case: {
+                                    in: activeCaseIDs,
+                                },
+                            },
+                        ],
+                    });
+                }
             }
 
             /*
@@ -333,6 +374,7 @@ export const Tasks: CollectionConfig = {
              * Case-level access remains responsible for
              * determining which Cases the professional may access.
              */
+
             if (professionalEditableCareGroupIDs.length > 0) {
                 const medicalCases = await req.payload.find({
                     collection: "cases",
@@ -350,6 +392,11 @@ export const Tasks: CollectionConfig = {
                             {
                                 type: {
                                     equals: "medical",
+                                },
+                            },
+                            {
+                                status: {
+                                    equals: "active",
                                 },
                             },
                         ],

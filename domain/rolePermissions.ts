@@ -139,6 +139,7 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
 
         // Cases
         "cases.read",
+        "cases.create",
         "cases.update",
 
         // Case Informations

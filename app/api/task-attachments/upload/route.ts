@@ -61,14 +61,47 @@ export async function POST(req: Request) {
         disableTransaction: true,
     } as unknown as Parameters<
         Awaited<ReturnType<typeof getPayload>>["findByID"]
-    >[0])) as { careGroup?: unknown; caseType?: unknown };
+    >[0])) as { careGroup?: unknown; caseType?: unknown; case?: unknown; };
+
+    const rawCase = relatedTask?.case;
+
+    // Extract case ID from various possible shapes
+    const caseID =
+        typeof rawCase === "string" || typeof rawCase === "number"
+            ? rawCase
+            : (rawCase as { id?: string | number } | undefined)?.id;
+
+    if (!caseID) {
+        return new Response("Invalid case", { status: 400 });
+    }
+
+    const relatedCase = await payload.findByID({
+        collection: "cases",
+        id: caseID,
+        depth: 0,
+        overrideAccess: true,
+        disableTransaction: true,
+    } as unknown as Parameters<
+        Awaited<ReturnType<typeof getPayload>>["findByID"]
+    >[0]);
+
+    // Check if case is archived
+    if (relatedCase.status !== "active") {
+        return Response.json(
+            { message: "Un dossier archivé est en lecture seule." },
+            { status: 403 },
+        );
+    }
 
     const careGroupID =
-        typeof relatedTask?.careGroup === "string" ||
-        typeof relatedTask?.careGroup === "number"
-            ? relatedTask.careGroup
-            : (relatedTask?.careGroup as { id?: string | number } | undefined)
-                  ?.id;
+    typeof relatedCase?.careGroup === "string" ||
+    typeof relatedCase?.careGroup === "number"
+        ? relatedCase.careGroup
+        : (
+              relatedCase?.careGroup as {
+                  id?: string | number;
+              } | undefined
+          )?.id;
 
     if (!careGroupID) {
         return new Response("Invalid task", { status: 400 });
@@ -92,18 +125,40 @@ export async function POST(req: Request) {
     >[0]);
 
     const role = (membership.docs[0] as { role?: string } | undefined)?.role;
-    const taskType = relatedTask?.caseType;
 
+    if (!role) {
+        return Response.json(
+            { message: "Aucune adhésion trouvée pour le CareGroup de cette tâche." },
+            { status: 403 },
+        );
+    }
+ 
+    if (
+        role === "professional" &&
+        relatedCase.type !== "medical"
+    ) {
+        return Response.json(
+            {
+                message:
+                    "Un professionnel ne peut ajouter un document qu'à une tâche médicale.",
+            },
+            { status: 403 },
+        );
+    }
+    
     const canCreate =
         role === "admin" ||
         role === "family" ||
-        (role === "professional" && taskType === "medical");
+        role === "professional";  
 
     // We bypass Payload access control for the write, but we enforce the same rules here.
     // This keeps the API stable while avoiding transaction issues.
 
     if (!canCreate) {
-        return new Response("Forbidden", { status: 403 });
+         return Response.json(
+        { message: "Vous n'avez pas la permission d'ajouter un document." },
+        { status: 403 },
+    );
     }
 
     const formData = await req.formData();

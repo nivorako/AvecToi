@@ -369,4 +369,101 @@ describe("Payload — Tasks", () => {
         expect(relationshipToID(created.careGroup)).toBe(cgA.id);
         expect(relationshipToID(created.patient)).toBe(patientA.id);
     });
+
+    it("lets professionals attach files to medical tasks only", async () => {
+        const admin = await createUser(payload, {
+            email: "admin-professional-task-attachments@example.com",
+            password: "password",
+            name: "Admin",
+        });
+        const professional = await createUser(payload, {
+            email: "professional-task-attachments@example.com",
+            password: "password",
+            name: "Professional",
+        });
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
+            name: "CG",
+        });
+
+        await addMembership(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            userID: professional.id,
+            role: "professional",
+        });
+
+        const patient = await createPatient(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            firstName: "Task",
+            lastName: "Attachment",
+        });
+        const medicalCase = await createCase(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            patientID: patient.id,
+            title: "Medical",
+            type: "medical",
+        });
+        const otherCase = await createCase(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            patientID: patient.id,
+            title: "Other",
+            type: "other",
+        });
+        const medicalTask = await createTask(payload, {
+            actingUser: admin,
+            caseID: medicalCase.id,
+            title: "Medical task",
+        });
+        const otherTask = await createTask(payload, {
+            actingUser: admin,
+            caseID: otherCase.id,
+            title: "Other task",
+        });
+        const fileBuffer = Buffer.from("task attachment");
+
+        const attachment = await payload.create({
+            collection: "task-attachments",
+            data: { task: medicalTask.id },
+            file: {
+                data: fileBuffer,
+                mimetype: "text/plain",
+                name: "medical.txt",
+                size: fileBuffer.length,
+            },
+            user: professional,
+            overrideAccess: false,
+        });
+
+        expect(attachment.taskType).toBe("medical");
+        expect(relationshipToID(attachment.careGroup)).toBe(careGroup.id);
+
+        const visible = await payload.find({
+            collection: "task-attachments",
+            depth: 0,
+            limit: 100,
+            pagination: false,
+            user: professional,
+            overrideAccess: false,
+        });
+        expect(visible.docs.map((doc) => doc.id)).toContain(attachment.id);
+
+        await expect(
+            payload.create({
+                collection: "task-attachments",
+                data: { task: otherTask.id },
+                file: {
+                    data: fileBuffer,
+                    mimetype: "text/plain",
+                    name: "other.txt",
+                    size: fileBuffer.length,
+                },
+                user: professional,
+                overrideAccess: false,
+            }),
+        ).rejects.toBeTruthy();
+    });
 });

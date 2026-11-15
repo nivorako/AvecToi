@@ -69,7 +69,15 @@ export default async function CareGroupCasesPage({
     const { id } = await params;
     const { filter } = await searchParams;
 
-    await requireUser();
+    const user = await requireUser();
+
+    const membership = await payloadREST<{
+        docs: { role?: string }[];
+    }>(
+        `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(id)}&limit=1&depth=0`,
+    ).then((response) => response.docs[0]);
+
+    const role = membership?.role;
 
     const cases = await payloadREST<{ docs: Case[] }>(
         `/api/cases?where[careGroup][equals]=${encodeURIComponent(id)}&where[status][not_equals]=archived&limit=50&depth=0`,
@@ -162,7 +170,18 @@ export default async function CareGroupCasesPage({
             `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
         ).then((r) => r.docs[0]);
 
-        if (membership?.role !== "admin" && membership?.role !== "family") return;
+        // Check if user can create case based on role and type
+
+        const canCreate =
+            membership?.role === "admin" ||
+            membership?.role === "family" ||
+            (membership?.role === "professional" && type === "medical");
+
+        if (!canCreate) {
+            throw new Error(
+                "Vous n'avez pas la permission de créer ce type de dossier.",
+            );
+        }
 
         const defaultPatient = await payloadREST<{ docs: { id: string }[] }>(
             `/api/patients?where[careGroup][equals]=${encodeURIComponent(careGroup)}&limit=1&depth=0`,
@@ -208,7 +227,13 @@ export default async function CareGroupCasesPage({
                         className: "text-muted",
                     },
                 ]}
-                extraAction={<AddDossierPanel careGroupId={id} action={createCase} />}
+                extraAction={
+                    <AddDossierPanel 
+                        careGroupId={id} 
+                        action={createCase} 
+                        role={role}
+                    />
+                }
             />
 
             {/* Section 2 — Recherche */}

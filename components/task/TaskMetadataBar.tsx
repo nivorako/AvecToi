@@ -7,6 +7,7 @@ import TaskSubtasksManager from "./TaskSubtasksManager";
 
 type Props = {
     taskID: string;
+    readOnly?: boolean;
     initialUrgency?: "low" | "high";
     initialStatus?: Status;
     initialSubTasks: Array<{ id: string; title: string; completed: boolean }>;
@@ -17,6 +18,7 @@ export default function TaskMetadataBar({
     initialUrgency,
     initialStatus,
     initialSubTasks,
+    readOnly = false,
 }: Props) {
     const [subTasks, setSubTasks] = useState(initialSubTasks);
     const [status, setStatus] = useState<Status>(initialStatus || "todo");
@@ -30,7 +32,7 @@ export default function TaskMetadataBar({
             <TaskStatusIndicator
                 taskID={taskID}
                 status={status}
-                disabled={hasSubTasks}
+                disabled={hasSubTasks || readOnly}
                 onStatusChange={setStatus}
             />
 
@@ -40,6 +42,7 @@ export default function TaskMetadataBar({
                 initialSubTasks={subTasks}
                 onSubTasksChange={setSubTasks}
                 onStatusChange={setStatus}
+                readOnly={readOnly}
             />
 
             {/* Séparateur */}
@@ -49,6 +52,7 @@ export default function TaskMetadataBar({
             <TaskUrgencyIndicator
                 taskID={taskID}
                 initialUrgency={initialUrgency}
+                disabled={readOnly}
             />
         </div>
     );

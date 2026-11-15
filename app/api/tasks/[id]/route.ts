@@ -18,6 +18,7 @@ type TaskDoc = {
     status?: string;
     careGroup?: unknown;
     caseType?: unknown;
+    case?: string | { id: string };
 };
 
 async function getUserIDFromTokenWithOrigin(args: {
@@ -63,10 +64,31 @@ async function authorizeTask(args: {
         id: args.taskID,
         depth: 0,
         overrideAccess: true,
-        disableTransaction: true,
-    } as unknown as Parameters<
-        Awaited<ReturnType<typeof getPayload>>["findByID"]
-    >[0])) as unknown as TaskDoc;
+    })) as unknown as TaskDoc;
+
+    const caseID =
+        typeof task.case === "string"
+            ? task.case
+            : task.case?.id;
+
+    if (!caseID) {
+        return { ok: false, status: 400, message: "Invalid case" };
+    }
+
+   const relatedCase = await payload.findByID({
+        collection: "cases",
+        id: caseID,
+        depth: 0,
+        overrideAccess: true,
+    });
+
+    if (relatedCase.status === "archived") {
+        return {
+            ok: false,
+            status: 403,
+            message: "Archived cases are read-only",
+        };
+    }
 
     const careGroupID =
         typeof task?.careGroup === "string" ||

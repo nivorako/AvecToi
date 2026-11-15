@@ -1,6 +1,8 @@
 import type { Role } from "@/domain/roles";
 import { requireUser } from "@/lib/requireUser";
 
+import { notFound } from "next/navigation";
+
 import TaskDescriptionEditor from "@/components/task/TaskDescriptionEditor";
 import { payloadREST } from "@/lib/payloadRest";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
@@ -15,8 +17,9 @@ type CaseDoc = {
     id: string;
     title?: string;
     type?: string;
+    status?: "active" | "archived";
     description?: string;
-    careGroup?: string | { id: string; name?: string };
+    careGroup?: string | { id: string; name?: string }; 
 };
 
 type Membership = {
@@ -67,6 +70,16 @@ export default async function TaskPage({
     );
     const task = tasks.docs[0];
 
+    const taskCaseID = 
+        typeof task?.case === "string"
+            ? task.case
+            : task?.case?.id;
+
+    // Vérifier que la task appartient bien au caseId passé en paramètre
+    if (!taskCaseID || taskCaseID !== caseId) {
+        notFound();
+    }
+
     // Extraire le careGroupId (peut être une string ou un objet avec id)
     const careGroupId =
         typeof task?.careGroup === "string"
@@ -82,7 +95,10 @@ export default async function TaskPage({
     );
 
     // Case data (depth=1 to populate relationships like careGroup).
-    const caseDoc = await payloadREST<CaseDoc>(`/api/cases/${caseId}?depth=1`);
+    const caseDoc = await payloadREST<CaseDoc>(`/api/cases/${taskCaseID}?depth=1`);
+
+    // Check if case is archived
+    const isArchived = caseDoc?.status === "archived";
 
     // Used to render a "Retour caregroup" link when available.
     const careGroupID =
@@ -103,10 +119,14 @@ export default async function TaskPage({
     ? caseDoc.type
     : undefined;
 
+    // Check if user can create task
     const canCreateTask =
-        role === "admin" ||
-        role === "family" ||
-        (role === "professional" && normalizedCaseType === "medical");
+        !isArchived &&
+        (
+            role === "admin" ||
+            role === "family" ||
+            (role === "professional" && normalizedCaseType === "medical")
+        );     
 
     const canUpdateCase = canCreateTask;
 
@@ -162,6 +182,7 @@ export default async function TaskPage({
                 initialUrgency={task?.urgency}
                 initialStatus={task?.status as "todo" | "in_progress" | "done"}
                 initialSubTasks={task?.subtasks || []}
+                readOnly={isArchived}
             />
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
@@ -193,10 +214,7 @@ export default async function TaskPage({
                                             a.displayName ?? a.filename ?? a.id
                                         }
                                         description={a.description}
-                                        canManage={
-                                            role === "admin" ||
-                                            role === "family"
-                                        }
+                                        canManage={canUpdateCase}
                                     />
                                 ))
                             ) : (

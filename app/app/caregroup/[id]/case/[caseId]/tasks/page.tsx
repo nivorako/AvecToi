@@ -13,6 +13,7 @@ type CaseDoc = {
     id: string;
     type?: string;
     title?: string;
+    status?: "active" | "archived";
     careGroup?: string | { id: string };
 }
 
@@ -43,6 +44,8 @@ type Task = {
     }>;
 };
 
+
+
 export default async function TasksPage({params}: {params: Promise <{id: string; caseId: string}>}) {
 
     const user = await requireUser();
@@ -62,17 +65,21 @@ export default async function TasksPage({params}: {params: Promise <{id: string;
     // récupérer le type du dossier
     const isMedical = caseDoc?.type === "medical";
 
+    // récupérer statut dossier
+    const isArchived = caseDoc?.status === "archived";
+
     // récupérer membership
     const membership = caregroupID ? await payloadREST<{docs : Membership[] }>(
         `/api/memberships?where[user][equals]=${encodeURIComponent(user.id)}&where[careGroup][equals]=${encodeURIComponent(caregroupID)}&limit=1&depth=0`,
     ).then((r) => r.docs[0]) : undefined;
 
     // calculer les permissions
-    const canCreateTask = 
+    const canCreateTask =
+    !isArchived && (
         membership?.role === "admin" ||
-        membership?.role === "family" || 
-        (membership?.role === "professional" && isMedical);
-
+        membership?.role === "family" ||
+        (membership?.role === "professional" && isMedical)
+    );
     //récupérer tasks
     const tasks = await payloadREST<{ docs: Task[] }>(
         `/api/tasks?where[case][equals]=${encodeURIComponent(caseId)}&limit=50&depth=1`,

@@ -23,16 +23,6 @@ export const TaskAttachments: CollectionConfig = {
                         (req.body as { task?: unknown } | undefined)?.task ??
                         (req.query as { task?: unknown } | undefined)?.task;
 
-                    console.info("task-attachments.create", {
-                        user: req.user?.id,
-                        hasData: Boolean(data),
-                        dataKeys: data ? Object.keys(data as object) : [],
-                        bodyKeys: req.body
-                            ? Object.keys(req.body as object)
-                            : [],
-                        rawTask,
-                    });
-
                     const taskID = getRelationshipID(rawTask)
 
                     if (!taskID) return false;
@@ -43,24 +33,21 @@ export const TaskAttachments: CollectionConfig = {
                         depth: 0,
                     });
 
-                    console.info("task-attachments.create.relatedTask", {
-                        taskID,
-                        caseType: (relatedTask as { caseType?: unknown } | undefined)
-                            ?.caseType,
-                        careGroup: (
-                            relatedTask as { careGroup?: unknown } | undefined
-                        )?.careGroup,
+                    // Vérifier le dossier associé à la tâche
+                    const caseID = getRelationshipID(relatedTask.case);
+
+                    if (!caseID) return false;
+
+                    const relatedCase = await req.payload.findByID({
+                        collection: "cases",
+                        id: caseID,
+                        depth: 0,
                     });
 
-                    const careGroupID =
-                        typeof relatedTask?.careGroup === "string" ||
-                        typeof relatedTask?.careGroup === "number"
-                            ? relatedTask.careGroup
-                            : (
-                                  relatedTask?.careGroup as {
-                                      id?: string | number;
-                                  }
-                              )?.id;
+                    // Un dossier archivé ne peut plus recevoir de documents
+                    if (relatedCase.status !== "active") return false;
+
+                    const careGroupID = getRelationshipID(relatedCase.careGroup);
 
                     if (!careGroupID) return false;
 
@@ -79,18 +66,12 @@ export const TaskAttachments: CollectionConfig = {
 
                     const role = membership.docs[0]?.role;
 
-                    console.info("task-attachments.create.membership", {
-                        careGroupID,
-                        membershipCount: membership.docs.length,
-                        role,
-                    });
-
                     // Same permissions as tasks:
                     // - admin/family: can always attach docs within their caregroup
                     // - professional: can attach docs only to medical tasks
                     if (role === "admin" || role === "family") return true;
                     if (role === "professional") {
-                        return relatedTask?.caseType === "medical";
+                        return relatedCase?.type === "medical";
                     }
 
                     return false;
@@ -149,7 +130,6 @@ export const TaskAttachments: CollectionConfig = {
                                 {
                                     careGroup: {
                                         in: professionalCareGroupIDs,
-                                        exists: false,
                                     },
                                 },
                                 {
@@ -185,13 +165,41 @@ export const TaskAttachments: CollectionConfig = {
                         .map((m) => m.careGroup)
                         .filter(Boolean);
 
-                    if (!adminOrFamilyCareGroupIDs.length) return false;
+                    const professionalCareGroupIDs = myMemberships.docs
+                        .filter((m) => m.role === "professional")
+                        .map((m) => m.careGroup)
+                        .filter(Boolean);
 
-                    return {
-                        careGroup: {
-                            in: adminOrFamilyCareGroupIDs,
-                        },
-                    };
+                    const or: Where[] = [];
+
+                    if (adminOrFamilyCareGroupIDs.length > 0) {
+                        or.push({
+                            careGroup: {
+                                in: adminOrFamilyCareGroupIDs,
+                            },
+                        });
+                    }
+
+                    if (professionalCareGroupIDs.length > 0) {
+                        or.push({
+                            and: [
+                                {
+                                    careGroup: {
+                                        in: professionalCareGroupIDs,
+                                    },
+                                },
+                                {
+                                    taskType: {
+                                        equals: "medical",
+                                    },
+                                },
+                            ],
+                        });
+                    }
+
+                    if (or.length === 0) return false;
+
+                    return { or } as Where;
                 },
                 delete: async ({ req }) => {
                     if (!req.user) return false;
@@ -208,17 +216,48 @@ export const TaskAttachments: CollectionConfig = {
                         },
                     });
 
-                    const careGroupIDs = myMemberships.docs
+                    const adminOrFamilyCareGroupIDs = myMemberships.docs
+                        .filter(
+                            (m) => m.role === "admin" || m.role === "family",
+                        )
                         .map((m) => m.careGroup)
                         .filter(Boolean);
 
-                    if (!careGroupIDs.length) return false;
+                    const professionalCareGroupIDs = myMemberships.docs
+                        .filter((m) => m.role === "professional")
+                        .map((m) => m.careGroup)
+                        .filter(Boolean);
 
-                    return {
-                        careGroup: {
-                            in: careGroupIDs,
-                        },
-                    };
+                    const or: Where[] = [];
+
+                    if (adminOrFamilyCareGroupIDs.length > 0) {
+                        or.push({
+                            careGroup: {
+                                in: adminOrFamilyCareGroupIDs,
+                            },
+                        });
+                    }
+
+                    if (professionalCareGroupIDs.length > 0) {
+                        or.push({
+                            and: [
+                                {
+                                    careGroup: {
+                                        in: professionalCareGroupIDs,
+                                    },
+                                },
+                                {
+                                    taskType: {
+                                        equals: "medical",
+                                    },
+                                },
+                            ],
+                        });
+                    }
+
+                    if (or.length === 0) return false;
+
+                    return { or } as Where;
                 },
             },
             hooks: {

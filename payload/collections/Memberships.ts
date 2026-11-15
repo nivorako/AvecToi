@@ -10,7 +10,7 @@ import { ROLE_OPTIONS } from "@/domain/roles";
 // - what role they have inside that caregroup (admin/family/professional/patient)
 //   - admin: full management inside the caregroup
 //   - family: can collaborate inside the caregroup
-//   - professional: read- only on medical content (MVP)
+//   - professional: access is limited to medical content by each collection (MVP)
 //   - patient: read-only access to caregroup content (cases/tasks/attachments), can use messages
 export const Memberships: CollectionConfig = {
     slug: "memberships",

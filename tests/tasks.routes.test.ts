@@ -171,6 +171,97 @@ describe("Tasks Next route handlers", () => {
         );
     }
 
+    async function seedProfessionalTask({
+        caseType,
+        caseStatus = "active",
+        addMembership = true,
+        suffix,
+    }: {
+        caseType: "medical" | "other";
+        caseStatus?: "active" | "archived";
+        addMembership?: boolean;
+        suffix: string;
+    }) {
+        const professional = (await payload.create({
+            collection: "users",
+            data: {
+                email: `professional-${suffix}@test.com`,
+                password: "password",
+                name: "Professional",
+            },
+            overrideAccess: true,
+        })) as { id: string };
+
+        const careGroup = (await payload.create({
+            collection: "caregroups",
+            data: { name: `CG ${suffix}` },
+            overrideAccess: true,
+        })) as { id: string };
+
+        if (addMembership) {
+            await payload.create({
+                collection: "memberships",
+                data: {
+                    careGroup: careGroup.id,
+                    user: professional.id,
+                    role: "professional",
+                },
+                overrideAccess: true,
+            });
+        }
+
+        const patient = (await payload.create({
+            collection: "patients",
+            data: {
+                careGroup: careGroup.id,
+                firstName: "Patient",
+                lastName: suffix,
+            },
+            overrideAccess: true,
+        })) as { id: string };
+
+        const caseDoc = (await payload.create({
+            collection: "cases",
+            data: {
+                title: `Case ${suffix}`,
+                type: caseType,
+                status: caseStatus,
+                careGroup: careGroup.id,
+                patient: patient.id,
+            },
+            overrideAccess: true,
+        })) as { id: string };
+
+        const task = (await payload.create({
+            collection: "tasks",
+            data: {
+                title: `Task ${suffix}`,
+                status: "todo",
+                case: caseDoc.id,
+            },
+            overrideAccess: true,
+        })) as { id: string };
+
+        return { professional, careGroup, task };
+    }
+
+    async function uploadTaskAttachment(taskID: string) {
+        const formData = new FormData();
+        formData.set(
+            "file",
+            new File(["document"], "document.txt", { type: "text/plain" }),
+        );
+        formData.set("description", "Document professionnel");
+
+        const mod = await import("@/app/api/task-attachments/upload/route");
+        return mod.POST(
+            new Request(
+                `${ORIGIN}/api/task-attachments/upload?task=${encodeURIComponent(taskID)}`,
+                { method: "POST", body: formData },
+            ),
+        );
+    }
+
     // =========================================================================
     // PATCH — mise à jour du statut
     // =========================================================================
@@ -345,5 +436,140 @@ describe("Tasks Next route handlers", () => {
         });
 
         expect(res.status).toBe(400);
+    });
+
+    test("POST /api/task-attachments/upload lets a professional upload to an active medical case", async () => {
+        const seeded = await seedProfessionalTask({
+            caseType: "medical",
+            suffix: "medical-upload",
+        });
+
+        jest.resetModules();
+        mockAuthAs(seeded.professional.id);
+
+        const res = await uploadTaskAttachment(seeded.task.id);
+
+        expect(res.status).toBe(200);
+        const created = (await res.json()) as { id: string };
+        expect(created.id).toBeTruthy();
+
+        const visible = (await payload.find({
+            collection: "task-attachments",
+            depth: 0,
+            limit: 100,
+            pagination: false,
+            user: seeded.professional,
+            overrideAccess: false,
+        })) as { docs: Array<{ id: string }> };
+
+        expect(visible.docs.map((doc) => doc.id)).toContain(created.id);
+    });
+
+    test("PATCH and DELETE /api/task-attachments/:id let a professional manage a medical attachment", async () => {
+        const seeded = await seedProfessionalTask({
+            caseType: "medical",
+            suffix: "medical-manage",
+        });
+
+        jest.resetModules();
+        mockAuthAs(seeded.professional.id);
+
+        const uploadResponse = await uploadTaskAttachment(seeded.task.id);
+        const attachment = (await uploadResponse.json()) as { id: string };
+        const mod = await import("@/app/api/task-attachments/[id]/route");
+
+        const patchResponse = await mod.PATCH(
+            new Request(`${ORIGIN}/api/task-attachments/${attachment.id}`, {
+                method: "PATCH",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ displayName: "Nouveau nom" }),
+            }),
+            { params: Promise.resolve({ id: attachment.id }) },
+        );
+
+        expect(patchResponse.status).toBe(200);
+        await expect(patchResponse.json()).resolves.toMatchObject({
+            id: attachment.id,
+            displayName: "Nouveau nom",
+        });
+
+        const deleteResponse = await mod.DELETE(
+            new Request(`${ORIGIN}/api/task-attachments/${attachment.id}`, {
+                method: "DELETE",
+            }),
+            { params: Promise.resolve({ id: attachment.id }) },
+        );
+
+        expect(deleteResponse.status).toBe(200);
+    });
+
+    test("POST /api/task-attachments/upload denies a professional on a non-medical case", async () => {
+        const seeded = await seedProfessionalTask({
+            caseType: "other",
+            suffix: "non-medical-upload",
+        });
+
+        jest.resetModules();
+        mockAuthAs(seeded.professional.id);
+
+        const res = await uploadTaskAttachment(seeded.task.id);
+
+        expect(res.status).toBe(403);
+        await expect(res.json()).resolves.toEqual({
+            message:
+                "Un professionnel ne peut ajouter un document qu'à une tâche médicale.",
+        });
+    });
+
+    test("POST /api/task-attachments/upload denies a professional outside the task caregroup", async () => {
+        const seeded = await seedProfessionalTask({
+            caseType: "medical",
+            addMembership: false,
+            suffix: "other-caregroup-upload",
+        });
+
+        const otherCareGroup = (await payload.create({
+            collection: "caregroups",
+            data: { name: "Other professional CG" },
+            overrideAccess: true,
+        })) as { id: string };
+
+        await payload.create({
+            collection: "memberships",
+            data: {
+                careGroup: otherCareGroup.id,
+                user: seeded.professional.id,
+                role: "professional",
+            },
+            overrideAccess: true,
+        });
+
+        jest.resetModules();
+        mockAuthAs(seeded.professional.id);
+
+        const res = await uploadTaskAttachment(seeded.task.id);
+
+        expect(res.status).toBe(403);
+        await expect(res.json()).resolves.toEqual({
+            message: "Aucune adhésion trouvée pour le CareGroup de cette tâche.",
+        });
+    });
+
+    test("POST /api/task-attachments/upload denies uploads to an archived case", async () => {
+        const seeded = await seedProfessionalTask({
+            caseType: "medical",
+            caseStatus: "archived",
+            suffix: "archived-upload",
+        });
+
+        jest.resetModules();
+        mockAuthAs(seeded.professional.id);
+
+        const res = await uploadTaskAttachment(seeded.task.id);
+
+        expect(res.status).toBe(403);
+        await expect(res.json()).resolves.toEqual({
+            message: "Un dossier archivé est en lecture seule.",
+        });
     });
 });

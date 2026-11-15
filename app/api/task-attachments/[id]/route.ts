@@ -56,7 +56,7 @@ async function canManageAttachment(args: {
         disableTransaction: true,
     } as unknown as Parameters<
         Awaited<ReturnType<typeof getPayload>>["findByID"]
-    >[0])) as { careGroup?: unknown };
+    >[0])) as { careGroup?: unknown; taskType?: unknown };
 
     const careGroupID =
         typeof attachment?.careGroup === "string" ||
@@ -88,7 +88,12 @@ async function canManageAttachment(args: {
 
     const role = (membership.docs[0] as { role?: string } | undefined)?.role;
 
-    if (role !== "admin" && role !== "family") {
+    const canManage =
+        role === "admin" ||
+        role === "family" ||
+        (role === "professional" && attachment.taskType === "medical");
+
+    if (!canManage) {
         return { ok: false, status: 403, message: "Forbidden" };
     }
 

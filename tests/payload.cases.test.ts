@@ -143,7 +143,7 @@ describe("Payload — Cases & Case Attachments", () => {
         ).rejects.toBeTruthy();
     });
 
-    it("lets family create cases but denies professionals creating cases", async () => {
+    it("lets family create cases and professionals create medical cases", async () => {
         const admin = await createUser(payload, {
             email: "admin-case-create@example.com",
             password: "password",
@@ -200,7 +200,54 @@ describe("Payload — Cases & Case Attachments", () => {
             overrideAccess: false,
         });
 
+        const professionalCase = await payload.create({
+            collection: "cases",
+            data: {
+                careGroup: careGroup.id,
+                patient: patient.id,
+                title: "Dentiste",
+                type: "medical",
+            },
+            user: professional,
+            overrideAccess: false,
+        });
+
         expect(familyCase.id).toBeTruthy();
+        expect(professionalCase.id).toBeTruthy();
+        expect(professionalCase.type).toBe("medical");
+    });
+
+    it("denies professionals creating non-medical cases", async () => {
+        const admin = await createUser(payload, {
+            email: "admin-pro-non-medical-case@example.com",
+            password: "password",
+            name: "Admin",
+        });
+
+        const professional = await createUser(payload, {
+            email: "pro-non-medical-case@example.com",
+            password: "password",
+            name: "Pro",
+        });
+
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
+            name: "CG",
+        });
+
+        await addMembership(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            userID: professional.id,
+            role: "professional",
+        });
+
+        const patient = await createPatient(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            firstName: "A",
+            lastName: "B",
+        });
 
         await expect(
             payload.create({
@@ -208,7 +255,58 @@ describe("Payload — Cases & Case Attachments", () => {
                 data: {
                     careGroup: careGroup.id,
                     patient: patient.id,
-                    title: "Pro case",
+                    title: "Administrative case",
+                    type: "administrative",
+                },
+                user: professional,
+                overrideAccess: false,
+            }),
+        ).rejects.toBeTruthy();
+    });
+
+    it("denies professionals creating medical cases outside their caregroup", async () => {
+        const admin = await createUser(payload, {
+            email: "admin-pro-other-caregroup-case@example.com",
+            password: "password",
+            name: "Admin",
+        });
+
+        const professional = await createUser(payload, {
+            email: "pro-other-caregroup-case@example.com",
+            password: "password",
+            name: "Pro",
+        });
+
+        const professionalCareGroup = await createCareGroupAsAdmin(payload, {
+            admin,
+            name: "Professional CG",
+        });
+        const otherCareGroup = await createCareGroupAsAdmin(payload, {
+            admin,
+            name: "Other CG",
+        });
+
+        await addMembership(payload, {
+            actingUser: admin,
+            careGroupID: professionalCareGroup.id,
+            userID: professional.id,
+            role: "professional",
+        });
+
+        const otherPatient = await createPatient(payload, {
+            actingUser: admin,
+            careGroupID: otherCareGroup.id,
+            firstName: "Other",
+            lastName: "Patient",
+        });
+
+        await expect(
+            payload.create({
+                collection: "cases",
+                data: {
+                    careGroup: professionalCareGroup.id,
+                    patient: otherPatient.id,
+                    title: "Outside caregroup",
                     type: "medical",
                 },
                 user: professional,
@@ -622,5 +720,161 @@ describe("Payload — Cases & Case Attachments", () => {
         });
 
         expect(remaining.docs.length).toBe(0);
+    });
+
+    it("lets an administrator archive and restore a case while list counts follow its status", async () => {
+        const admin = await createUser(payload, {
+            email: "admin-case-archive@example.com",
+            password: "password",
+            name: "Admin",
+        });
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
+            name: "Archive group",
+        });
+        const patient = await createPatient(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            firstName: "Archive",
+            lastName: "Patient",
+        });
+        const caseDoc = await createCase(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            patientID: patient.id,
+            title: "Case to archive",
+            type: "medical",
+        });
+
+        const archived = await payload.update({
+            collection: "cases",
+            id: caseDoc.id,
+            data: { status: "archived" },
+            user: admin,
+            overrideAccess: false,
+        });
+        expect(archived.status).toBe("archived");
+
+        const activeAfterArchive = await payload.find({
+            collection: "cases",
+            where: {
+                and: [
+                    { careGroup: { equals: careGroup.id } },
+                    { status: { not_equals: "archived" } },
+                ],
+            },
+            depth: 0,
+            limit: 50,
+            user: admin,
+            overrideAccess: false,
+        });
+        const archivedAfterArchive = await payload.find({
+            collection: "cases",
+            where: {
+                and: [
+                    { careGroup: { equals: careGroup.id } },
+                    { status: { equals: "archived" } },
+                ],
+            },
+            depth: 0,
+            limit: 50,
+            user: admin,
+            overrideAccess: false,
+        });
+        expect(activeAfterArchive.docs.map((doc) => doc.id)).not.toContain(
+            caseDoc.id,
+        );
+        expect(archivedAfterArchive.docs.map((doc) => doc.id)).toContain(
+            caseDoc.id,
+        );
+        expect(archivedAfterArchive.docs).toHaveLength(1);
+
+        const restored = await payload.update({
+            collection: "cases",
+            id: caseDoc.id,
+            data: { status: "active" },
+            user: admin,
+            overrideAccess: false,
+        });
+        expect(restored.status).toBe("active");
+
+        const archivedAfterRestore = await payload.find({
+            collection: "cases",
+            where: {
+                and: [
+                    { careGroup: { equals: careGroup.id } },
+                    { status: { equals: "archived" } },
+                ],
+            },
+            depth: 0,
+            limit: 50,
+            user: admin,
+            overrideAccess: false,
+        });
+        expect(archivedAfterRestore.docs).toHaveLength(0);
+    });
+
+    it("prevents a family member from restoring an archived case", async () => {
+        const admin = await createUser(payload, {
+            email: "admin-case-family-restore@example.com",
+            password: "password",
+            name: "Admin",
+        });
+        const family = await createUser(payload, {
+            email: "family-case-restore@example.com",
+            password: "password",
+            name: "Family",
+        });
+        const careGroup = await createCareGroupAsAdmin(payload, {
+            admin,
+            name: "Family restore group",
+        });
+        await addMembership(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            userID: family.id,
+            role: "family",
+        });
+        const patient = await createPatient(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            firstName: "Family",
+            lastName: "Patient",
+        });
+        const caseDoc = await createCase(payload, {
+            actingUser: admin,
+            careGroupID: careGroup.id,
+            patientID: patient.id,
+            title: "Archived case",
+            type: "other",
+        });
+        await payload.update({
+            collection: "cases",
+            id: caseDoc.id,
+            data: { status: "archived" },
+            user: admin,
+            overrideAccess: false,
+        });
+
+        await expect(
+            payload.update({
+                collection: "cases",
+                id: caseDoc.id,
+                data: { status: "active" },
+                user: family,
+                overrideAccess: false,
+            }),
+        ).rejects.toThrow(
+            "Only a CareGroup administrator can change case status",
+        );
+
+        const unchanged = await payload.findByID({
+            collection: "cases",
+            id: caseDoc.id,
+            depth: 0,
+            user: admin,
+            overrideAccess: false,
+        });
+        expect(unchanged.status).toBe("archived");
     });
 });
