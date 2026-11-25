@@ -21,6 +21,13 @@ type TaskDoc = {
     case?: string | { id: string };
 };
 
+type CaseDoc = {
+    id: string;
+    status?: string;
+    type?: string;
+    careGroup?: unknown;
+};
+
 async function getUserIDFromTokenWithOrigin(args: {
     token: string;
     origin: string;
@@ -47,6 +54,7 @@ async function authorizeTask(args: {
           ok: true;
           payload: Awaited<ReturnType<typeof getPayload>>;
           task: TaskDoc;
+          relatedCase: CaseDoc; 
           role: string;
       }
     | { ok: false; status: number; message: string }
@@ -75,12 +83,12 @@ async function authorizeTask(args: {
         return { ok: false, status: 400, message: "Invalid case" };
     }
 
-   const relatedCase = await payload.findByID({
+    const relatedCase = (await payload.findByID({
         collection: "cases",
         id: caseID,
         depth: 0,
         overrideAccess: true,
-    });
+    })) as unknown as CaseDoc;
 
     if (relatedCase.status === "archived") {
         return {
@@ -90,11 +98,13 @@ async function authorizeTask(args: {
         };
     }
 
+    const careGroup = relatedCase.careGroup;
+ 
     const careGroupID =
-        typeof task?.careGroup === "string" ||
-        typeof task?.careGroup === "number"
-            ? task.careGroup
-            : (task?.careGroup as { id?: string | number } | undefined)?.id;
+        typeof careGroup === "string" ||
+        typeof careGroup === "number"
+            ? careGroup
+            : (careGroup as { id?: string | number } | undefined)?.id;
 
     if (!careGroupID) {
         return { ok: false, status: 400, message: "Invalid task" };
@@ -120,7 +130,8 @@ async function authorizeTask(args: {
     const role = (membership.docs[0] as { role?: string } | undefined)?.role;
     if (!role) return { ok: false, status: 403, message: "Forbidden" };
 
-    return { ok: true, payload, task, role };
+    return { ok: true, payload, task, relatedCase, role };
+
 }
 
 export async function PATCH(
@@ -139,7 +150,7 @@ export async function PATCH(
     const canUpdate =
         auth.role === "admin" ||
         auth.role === "family" ||
-        (auth.role === "professional" && auth.task?.caseType === "medical");
+        (auth.role === "professional" && auth.relatedCase.type === "medical");
 
     if (!canUpdate) return new Response("Forbidden", { status: 403 });
 

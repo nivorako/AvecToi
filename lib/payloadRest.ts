@@ -139,21 +139,15 @@ export async function payloadREST<T>(
                 },
                 cache: "no-store",
             },
-        );
+        ); 
 
         if (retry.ok) {
             return (await retry.json()) as T;
-        }
+        } 
     }
 
     if (!res.ok) {
         const responseBody = await res.text();
-
-        console.error("Payload REST failure:", {
-            status: res.status,
-            path,
-            responseBody,
-        });
 
         throw new Error(
             `Payload REST error ${res.status} on ${path}`,

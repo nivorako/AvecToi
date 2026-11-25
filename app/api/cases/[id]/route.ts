@@ -15,6 +15,7 @@ export async function GET(
 
         const token = (await cookies()).get("avectoi-token")?.value;
         if (!token) {
+            
             return NextResponse.json( 
                 { error: "Unauthorized" },
                 { status: 401 },
@@ -26,6 +27,7 @@ export async function GET(
 
         const { user } = await payload.auth({ headers });
         if (!user) {
+           
             return NextResponse.json(
                 { error: "Unauthorized" },
                 { status: 401 },

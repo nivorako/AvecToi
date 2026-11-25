@@ -1,7 +1,50 @@
-import type { CollectionConfig, Where } from "payload";
+
+import { 
+    APIError, 
+    type CollectionConfig, 
+    type Where, 
+    type PayloadRequest, 
+} from "payload";
+
 import { getRelationshipID } from "@/payload/utils/getRelationshipID";
 
 import { CASE_TYPE_OPTIONS } from "@/domain/caseTypes";
+
+async function ensureCaseIsActive(
+    req: PayloadRequest,
+    taskValue: unknown,
+): Promise<void> {
+    const taskID = getRelationshipID(taskValue);
+
+    if (!taskID) {
+        throw new APIError("Tâche associée introuvable.", 400);
+    }
+
+    const relatedTask = await req.payload.findByID({
+        collection: "tasks",
+        id: taskID,
+        depth: 0,
+    });
+
+    const caseID = getRelationshipID(relatedTask.case);
+
+    if (!caseID) {
+        throw new APIError("Dossier associé introuvable.", 400);
+    }
+
+    const relatedCase = await req.payload.findByID({
+        collection: "cases",
+        id: caseID,
+        depth: 0,
+    });
+
+    if (relatedCase.status !== "active") {
+        throw new APIError(
+            "Un dossier archivé est en lecture seule.",
+            403,
+        );
+    }
+}
 
 export const TaskAttachments: CollectionConfig = {
             slug: "task-attachments",
@@ -316,6 +359,26 @@ export const TaskAttachments: CollectionConfig = {
                                 ? { description }
                                 : {}),
                         };
+                    },
+                ],
+                beforeChange: [
+                    async ({ req, data, originalDoc }) => {
+                        const taskValue = data?.task ?? originalDoc?.task;
+
+                        await ensureCaseIsActive(req, taskValue);
+
+                        return data;
+                    },
+                ],
+                beforeDelete: [
+                    async ({ req, id }) => {
+                        const attachment = await req.payload.findByID({
+                            collection: "task-attachments",
+                            id,
+                            depth: 0,
+                        });
+
+                        await ensureCaseIsActive(req, attachment.task);
                     },
                 ],
             },

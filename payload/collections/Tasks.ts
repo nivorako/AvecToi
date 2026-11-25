@@ -441,9 +441,9 @@ export const Tasks: CollectionConfig = {
             if (!req.user) return false;
 
             /*
-             * Task deletion is intentionally restricted
-             * to admin and family in the MVP.
-             */
+            * Task deletion is intentionally restricted
+            * to admin and family in the MVP.
+            */
             const myMemberships = await req.payload.find({
                 collection: "memberships",
                 depth: 0,
@@ -475,30 +475,83 @@ export const Tasks: CollectionConfig = {
                 return false;
             }
 
-            return {
-                careGroup: {
-                    in: careGroupIDs,
+            // Only tasks belonging to active cases can be deleted.
+            const activeCases = await req.payload.find({
+                collection: "cases",
+                depth: 0,
+                limit: 100,
+                pagination: false,
+                overrideAccess: true,
+                where: {
+                    and: [
+                        {
+                            careGroup: {
+                                in: careGroupIDs,
+                            },
+                        },
+                        {
+                            status: {
+                                equals: "active",
+                            },
+                        },
+                    ],
                 },
+            });
+
+            const activeCaseIDs = activeCases.docs.map(
+                (caseDoc) => caseDoc.id,
+            );
+
+            if (activeCaseIDs.length === 0) {
+                return false;
+            }
+
+            return {
+                and: [
+                    {
+                        careGroup: {
+                            in: careGroupIDs,
+                        },
+                    },
+                    {
+                        case: {
+                            in: activeCaseIDs,
+                        },
+                    },
+                ],
             } as Where;
         },
+
     },
 
     hooks: {
         beforeValidate: [
-            async ({ req, data }) => {
-                if (!data?.case) return data;
+            async ({ req, data, originalDoc, operation }) => {
+                let caseID: string | number | undefined;
 
-                const caseID = getRelationshipID(data.case);
+                if (operation === "update") {
+                    // Lors d'une modification, on conserve toujours
+                    // le dossier d'origine de la tâche.
+                    caseID = getRelationshipID(originalDoc?.case);
 
-                if (!caseID) return data;
+                    if (!caseID) {
+                        throw new Error(
+                            "Unable to determine the original task case.",
+                        );
+                    }
+                } else {
+                    // Lors de la création, on utilise le dossier fourni.
+                    caseID = getRelationshipID(data?.case);
+
+                    if (!caseID) return data;
+                }
 
                 const relatedCase = await req.payload.findByID({
                     collection: "cases",
                     id: caseID,
                     depth: 0,
+                    overrideAccess: true,
                 });
-
-                if (!relatedCase) return data;
 
                 return {
                     ...data,

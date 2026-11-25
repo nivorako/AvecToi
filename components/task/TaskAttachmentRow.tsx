@@ -58,18 +58,9 @@ export function TaskAttachmentRow({
     taskHref,
 }: Props) {
     const router = useRouter();
-    const [expanded, setExpanded] = useState(false);
+    // const [expanded, setExpanded] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const [pending, startTransition] = useTransition();
-
-    const normalizedDescription = (description ?? "").trim();
-    const isLong = normalizedDescription.length > 90;
-
-    const visibleDescription = !normalizedDescription
-        ? ""
-        : expanded || !isLong
-          ? normalizedDescription
-          : `${normalizedDescription.slice(0, 90)}…`;
 
     return (
         <div className="rounded-2xl border border-border bg-card px-3 py-2 text-sm">
@@ -92,26 +83,7 @@ export function TaskAttachmentRow({
                                         {label}
                                     </a>
                                 </div>
-                                {normalizedDescription ? (
-                                    <div className="min-w-0 text-xs text-muted">
-                                        <span className="break-words">
-                                            {visibleDescription}
-                                        </span>
-                                        {isLong ? (
-                                            <button
-                                                type="button"
-                                                className="ml-2 underline"
-                                                onClick={() =>
-                                                    setExpanded((v) => !v)
-                                                }
-                                            >
-                                                {expanded
-                                                    ? "Voir moins"
-                                                    : "Voir plus"}
-                                            </button>
-                                        ) : null}
-                                    </div>
-                                ) : null}
+
                             </div>
 
                             {canManage ? (

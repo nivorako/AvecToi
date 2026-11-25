@@ -56,7 +56,57 @@ async function canManageAttachment(args: {
         disableTransaction: true,
     } as unknown as Parameters<
         Awaited<ReturnType<typeof getPayload>>["findByID"]
-    >[0])) as { careGroup?: unknown; taskType?: unknown };
+    >[0])) as { careGroup?: unknown; taskType?: unknown;  task?: unknown; };
+
+    // Retrieve the related task
+    const taskID =
+        typeof attachment.task === "string" ||
+        typeof attachment.task === "number"
+            ? attachment.task
+            : (attachment.task as { id?: string | number } | undefined)?.id;
+
+    if (!taskID) {
+        return { ok: false, status: 400, message: "Invalid task" };
+    }
+
+    const relatedTask = await payload.findByID({
+        collection: "tasks",
+        id: taskID,
+        depth: 0,
+        overrideAccess: true,
+        disableTransaction: true,
+    } as unknown as Parameters<
+        Awaited<ReturnType<typeof getPayload>>["findByID"]
+    >[0]);
+
+    // Retrieve the related case
+    const caseID =
+        typeof relatedTask.case === "string" ||
+        typeof relatedTask.case === "number"
+            ? relatedTask.case
+            : (relatedTask.case as { id?: string | number } | undefined)?.id;
+
+    if (!caseID) {
+        return { ok: false, status: 400, message: "Invalid case" };
+    }
+
+    const relatedCase = await payload.findByID({
+        collection: "cases",
+        id: caseID,
+        depth: 0,
+        overrideAccess: true,
+        disableTransaction: true,
+    } as unknown as Parameters<
+        Awaited<ReturnType<typeof getPayload>>["findByID"]
+    >[0]);
+
+    if (relatedCase.status !== "active") {
+        return {
+            ok: false,
+            status: 403,
+            message: "Un dossier archivé est en lecture seule.",
+        };
+    }
 
     const careGroupID =
         typeof attachment?.careGroup === "string" ||
@@ -91,7 +141,7 @@ async function canManageAttachment(args: {
     const canManage =
         role === "admin" ||
         role === "family" ||
-        (role === "professional" && attachment.taskType === "medical");
+        (role === "professional" && relatedCase.type === "medical");
 
     if (!canManage) {
         return { ok: false, status: 403, message: "Forbidden" };
