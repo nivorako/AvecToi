@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { getPayload } from "payload";
 
 import {
+    safeStoredMimeType,
     validateUploadFile,
     validateUploadRequestSize,
 } from "@/lib/uploads";
@@ -194,7 +195,7 @@ export async function POST(req: Request) {
         },
         file: {
             data: buffer,
-            mimetype: file.type || "application/octet-stream",
+            mimetype: safeStoredMimeType(file.type),
             name: file.name,
             size: file.size,
         },

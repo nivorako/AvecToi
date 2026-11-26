@@ -5,6 +5,7 @@ import path from "node:path";
 import { Readable } from "node:stream";
 import { getPayload } from "payload";
 
+import { buildDownloadHeaders } from "@/lib/uploads";
 import config from "@/payload.config";
 
 export const runtime = "nodejs";
@@ -152,21 +153,14 @@ export async function GET(
     });
 
     if (fileRes.ok && fileRes.body) {
-        const headers: Record<string, string> = {};
-        const contentType = fileRes.headers.get("content-type");
-        if (contentType) headers["content-type"] = contentType;
-
-        const contentDisposition = fileRes.headers.get("content-disposition");
-        if (contentDisposition) {
-            headers["content-disposition"] = contentDisposition;
-        } else if (doc.filename) {
-            headers["content-disposition"] =
-                `inline; filename="${doc.filename}"`;
-        }
-
         return new Response(fileRes.body, {
             status: fileRes.status,
-            headers,
+            headers: buildDownloadHeaders({
+                contentType: fileRes.headers.get("content-type"),
+                storedMimeType: doc.mimeType,
+                filename: doc.filename,
+                contentDisposition: fileRes.headers.get("content-disposition"),
+            }),
         });
     }
 
@@ -206,9 +200,9 @@ export async function GET(
     const stream = Readable.toWeb(createReadStream(absolutePath));
     return new Response(stream as unknown as ReadableStream, {
         status: 200,
-        headers: {
-            "content-type": doc.mimeType || "application/octet-stream",
-            "content-disposition": `inline; filename="${doc.filename}"`,
-        },
+        headers: buildDownloadHeaders({
+            contentType: doc.mimeType,
+            filename: doc.filename,
+        }),
     });
 }

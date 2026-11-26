@@ -54,3 +54,56 @@ export function validateUploadFile(file: File): Response | null {
 
     return null;
 }
+
+const ACTIVE_MIME_TYPES = new Set([
+    "text/html",
+    "image/svg+xml",
+    "text/xml",
+    "application/xml",
+    "application/xhtml+xml",
+]);
+
+export function isActiveMimeType(
+    contentType: string | null | undefined,
+): boolean {
+    if (!contentType) return false;
+    const mime = contentType.split(";")[0].trim().toLowerCase();
+    return ACTIVE_MIME_TYPES.has(mime) || mime.endsWith("+xml");
+}
+
+export function safeStoredMimeType(
+    mimeType: string | null | undefined,
+): string {
+    return isActiveMimeType(mimeType)
+        ? "application/octet-stream"
+        : mimeType || "application/octet-stream";
+}
+
+export function buildDownloadHeaders(args: {
+    contentType?: string | null;
+    storedMimeType?: string | null;
+    filename?: string | null;
+    contentDisposition?: string | null;
+}): Record<string, string> {
+    const safeFilename = (args.filename ?? "file").replace(/["\r\n]/g, "_");
+    const headers: Record<string, string> = {
+        "x-content-type-options": "nosniff",
+    };
+
+    if (
+        isActiveMimeType(args.contentType) ||
+        isActiveMimeType(args.storedMimeType)
+    ) {
+        headers["content-type"] = "application/octet-stream";
+        headers["content-disposition"] =
+            `attachment; filename="${safeFilename}"`;
+        return headers;
+    }
+
+    headers["content-type"] =
+        args.contentType || args.storedMimeType || "application/octet-stream";
+    headers["content-disposition"] =
+        args.contentDisposition || `inline; filename="${safeFilename}"`;
+
+    return headers;
+}
