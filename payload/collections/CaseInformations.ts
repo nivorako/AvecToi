@@ -36,7 +36,6 @@ export const CaseInformations: CollectionConfig = {
             const membership = await req.payload.find({
                 collection: "memberships",
                 depth: 0,
-                limit: 1,
                 pagination: false,
                 where: {
                     and: [
@@ -59,13 +58,16 @@ export const CaseInformations: CollectionConfig = {
 
             if (
                 role === "admin" ||
-                role === "family" ||
-                role === "professional"
+                role === "family" 
             ) {
                 return true;
             }
 
-            return false;
+            if (role === "professional") {
+                return relatedCase.type === "medical";
+            }
+
+            return false; 
         },
 
         read: async ({ req }) => {
@@ -74,7 +76,6 @@ export const CaseInformations: CollectionConfig = {
             const memberships = await req.payload.find({
                 collection: "memberships",
                 depth: 0,
-                limit: 100,
                 pagination: false,
                 where: {
                     user: {
@@ -89,7 +90,7 @@ export const CaseInformations: CollectionConfig = {
                         in: [] as string[],
                     },
                 } as Where;
-            }
+            };
 
             const adminOrFamilyCareGroupIDs = memberships.docs
                 .filter(
@@ -141,13 +142,34 @@ export const CaseInformations: CollectionConfig = {
              * determining whether the professional may access
              * the related Case.
              */
+
             if (professionalCareGroupIDs.length > 0) {
-                or.push({
-                    careGroup: {
-                        in: professionalCareGroupIDs,
+
+                const medicalCases = await req.payload.find({
+                    collection: "cases",
+                    depth: 0,
+                    pagination: false,
+                    overrideAccess: true,
+                    where: {
+                        and: [
+                            { careGroup: { in: professionalCareGroupIDs } },
+                            { type: { equals: "medical" } },
+                        ],
                     },
                 });
-            }
+
+                const medicalCaseIDs = medicalCases.docs.map((c) => c.id);
+
+                if (medicalCaseIDs.length > 0) {
+                    or.push({
+                        and: [
+                            { careGroup: { in: professionalCareGroupIDs } },
+                            { case: { in: medicalCaseIDs } },
+                        ],
+                    });
+                };
+
+            };
 
             /*
              * Patient
@@ -172,7 +194,7 @@ export const CaseInformations: CollectionConfig = {
                         },
                     ],
                 });
-            }
+            };
 
             if (or.length === 0) {
                 return {
@@ -180,7 +202,7 @@ export const CaseInformations: CollectionConfig = {
                         in: [] as string[],
                     },
                 } as Where;
-            }
+            };
 
             return {
                 or,
@@ -193,7 +215,6 @@ export const CaseInformations: CollectionConfig = {
             const memberships = await req.payload.find({
                 collection: "memberships",
                 depth: 0,
-                limit: 100,
                 pagination: false,
                 where: {
                     user: {
@@ -202,24 +223,66 @@ export const CaseInformations: CollectionConfig = {
                 },
             });
 
-            const editableCareGroupIDs = memberships.docs
+            const adminOrFamilyEditableCareGroupIDs = memberships.docs
                 .filter(
                     (membership) =>
                         membership.role === "admin" ||
-                        membership.role === "family" ||
-                        membership.role === "professional",
+                        membership.role === "family",
                 )
                 .map((membership) => getRelationshipID(membership.careGroup))
                 .filter(Boolean);
 
-            if (editableCareGroupIDs.length === 0) {
+            const professionalEditableCareGroupIDs = memberships.docs
+                .filter(
+                    (membership) => membership.role === "professional",
+                )
+                .map((membership) => getRelationshipID(membership.careGroup))
+                .filter(Boolean);
+
+            const or: Where[] = [];   
+            
+            if (adminOrFamilyEditableCareGroupIDs.length > 0) {
+                or.push({
+                    careGroup: {
+                        in: adminOrFamilyEditableCareGroupIDs,
+                    },
+                });
+            };
+
+            if (professionalEditableCareGroupIDs.length > 0) {
+
+                const medicalCases = await req.payload.find({
+                    collection: "cases",
+                    depth: 0,
+                    pagination: false,
+                    overrideAccess: true,
+                    where: {
+                        and: [
+                            { careGroup: { in: professionalEditableCareGroupIDs } },
+                            { type: { equals: "medical" } },
+                        ],
+                    },
+                });
+
+                const medicalCaseIDs = medicalCases.docs.map((c) => c.id);
+
+                if (medicalCaseIDs.length > 0) {
+                    or.push({
+                        and: [
+                            { careGroup: { in: professionalEditableCareGroupIDs } },
+                            { case: { in: medicalCaseIDs } },
+                        ],
+                    });
+                };
+
+            };
+
+             if (or.length === 0) {
                 return false;
             }
-
+ 
             return {
-                careGroup: {
-                    in: editableCareGroupIDs,
-                },
+                or,
             } as Where;
         },
 
@@ -229,7 +292,6 @@ export const CaseInformations: CollectionConfig = {
             const memberships = await req.payload.find({
                 collection: "memberships",
                 depth: 0,
-                limit: 100,
                 pagination: false,
                 where: {
                     user: {
