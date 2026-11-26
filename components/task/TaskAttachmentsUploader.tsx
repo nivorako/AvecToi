@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import Button from "@/components/ui/Button/Button";
+import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/uploads";
 
 export function TaskAttachmentsUploader({ taskID }: { taskID: string }) {
     const router = useRouter();
@@ -75,6 +76,7 @@ export function TaskAttachmentsUploader({ taskID }: { taskID: string }) {
                 type="file"
                 name="file"
                 className="input"
+                accept={UPLOAD_ACCEPT_ATTRIBUTE}
                 required
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />

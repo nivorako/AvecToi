@@ -1,6 +1,11 @@
 import { cookies } from "next/headers";
 import { getPayload } from "payload";
 
+import {
+    validateUploadFile,
+    validateUploadRequestSize,
+} from "@/lib/uploads";
+
 import config from "@/payload.config";
 
 export const runtime = "nodejs";
@@ -161,12 +166,22 @@ export async function POST(req: Request) {
     );
     }
 
+    const requestSizeError = validateUploadRequestSize(req);
+    if (requestSizeError) {
+        return requestSizeError;
+    }
+
     const formData = await req.formData();
     const file = formData.get("file");
     const description = String(formData.get("description") ?? "");
 
     if (!(file instanceof File)) {
         return new Response("Missing file", { status: 400 });
+    }
+
+    const fileError = validateUploadFile(file);
+    if (fileError) {
+        return fileError;
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
