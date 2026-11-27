@@ -384,68 +384,29 @@ export const Patients: CollectionConfig = {
                                 "L'acceptation d'une invitation doit associer un compte utilisateur.",
                             );
                         }
-                    }
-                } else {
-                    if (!req.user) {
-                        throw new Error(
-                            "Vous devez être authentifié pour modifier le compte associé au Patient.",
+
+                        if (!req.user) {
+                            throw new Error(
+                                "Vous devez être authentifié pour modifier le compte associé au Patient.",
+                            );
+                        }
+
+                        // Le CareGroup du Patient existant
+                        const careGroupID = getRelationshipID(
+                            originalDoc.careGroup,
                         );
-                    }
 
-                    // Le CareGroup du Patient existant
-                    const careGroupID = getRelationshipID(
-                        originalDoc.careGroup,
-                    );
+                        if (!careGroupID) {
+                            throw new Error(
+                                "Impossible de déterminer le CareGroup du Patient.",
+                            );
+                        }
 
-                    if (!careGroupID) {
-                        throw new Error(
-                            "Impossible de déterminer le CareGroup du Patient.",
-                        );
-                    }
-
-                    // Vérifier que l'utilisateur connecté est admin
-                    // de ce CareGroup.
-                    const adminMemberships =
-                        await req.payload.find({
-                            collection: "memberships",
-                            depth: 0,
-                            limit: 1,
-                            pagination: false,
-                            where: {
-                                and: [
-                                    {
-                                        user: {
-                                            equals: req.user.id,
-                                        },
-                                    },
-                                    {
-                                        careGroup: {
-                                            equals: careGroupID,
-                                        },
-                                    },
-                                    {
-                                        role: {
-                                            equals: "admin",
-                                        },
-                                    },
-                                ],
-                            },
-                        });
-
-                    if (!adminMemberships.docs.length) {
-                        throw new Error(
-                            "Seul un administrateur du CareGroup peut modifier le compte associé au Patient.",
-                        );
-                    }
-
-                    // -----------------------------------------------------
-                    // 7. Vérifier qu'un User n'est pas déjà associé
-                    //    à un autre Patient : unicité
-                    // -----------------------------------------------------
-                    if (newUserID) {
-                        const existingPatients =
+                        // Vérifier que l'utilisateur connecté est admin
+                        // de ce CareGroup.
+                        const adminMemberships =
                             await req.payload.find({
-                                collection: "patients",
+                                collection: "memberships",
                                 depth: 0,
                                 limit: 1,
                                 pagination: false,
@@ -453,26 +414,65 @@ export const Patients: CollectionConfig = {
                                     and: [
                                         {
                                             user: {
-                                                equals: newUserID,
+                                                equals: req.user.id,
                                             },
                                         },
                                         {
-                                            id: {
-                                                not_equals:
-                                                    originalDoc.id,
+                                            careGroup: {
+                                                equals: careGroupID,
+                                            },
+                                        },
+                                        {
+                                            role: {
+                                                equals: "admin",
                                             },
                                         },
                                     ],
                                 },
                             });
 
-                        if (existingPatients.docs.length) {
+                        if (!adminMemberships.docs.length) {
                             throw new Error(
-                                "Ce compte utilisateur est déjà associé à un autre Patient.",
+                                "Seul un administrateur du CareGroup peut modifier le compte associé au Patient.",
                             );
                         }
-                    }
-                }
+
+                        // -----------------------------------------------------
+                        // 7. Vérifier qu'un User n'est pas déjà associé
+                        //    à un autre Patient : unicité
+                        // -----------------------------------------------------
+                        if (newUserID) {
+                            const existingPatients =
+                                await req.payload.find({
+                                    collection: "patients",
+                                    depth: 0,
+                                    limit: 1,
+                                    pagination: false,
+                                    where: {
+                                        and: [
+                                            {
+                                                user: {
+                                                    equals: newUserID,
+                                                },
+                                            },
+                                            {
+                                                id: {
+                                                    not_equals:
+                                                        originalDoc.id,
+                                                },
+                                            },
+                                        ],
+                                    },
+                                });
+
+                            if (existingPatients.docs.length) {
+                                throw new Error(
+                                    "Ce compte utilisateur est déjà associé à un autre Patient.",
+                                );
+                            }
+                        };
+                    };
+                };
 
                 // ---------------------------------------------------------
                 // 8. Retourner les données

@@ -173,7 +173,7 @@ describe("Payload — Memberships & Invitations", () => {
             actingUser: family,
             careGroupID: careGroup.id,
             email: "family-invited@example.com",
-            role: "patient",
+            role: "family",
         });
 
         const familyRead = await payload.find({
@@ -206,9 +206,19 @@ describe("Payload — Memberships & Invitations", () => {
                 }),
             ).rejects.toBeTruthy();
         }
+
+        // Une invitation de rôle patient est réservée à un admin.
+        await expect(
+            createInvitation(payload, {
+                actingUser: family,
+                careGroupID: careGroup.id,
+                email: "patient-invited@example.com",
+                role: "patient",
+            }),
+        ).rejects.toBeTruthy();
     });
 
-    it("denies deleting invitations unless acting user is admin of that caregroup", async () => {
+    it("denies deleting invitations for everyone; an admin can only revoke them", async () => {
         const admin = await createUser(payload, {
             email: "admin-invite-delete@example.com",
             password: "password",
@@ -240,23 +250,29 @@ describe("Payload — Memberships & Invitations", () => {
             role: "family",
         });
 
-        await expect(
-            payload.delete({
-                collection: "invitations",
-                id: invitation.id,
-                user: family,
-                overrideAccess: false,
-                depth: 0,
-            }),
-        ).rejects.toBeTruthy();
+        // On révoque, on n'efface pas : la suppression est refusée pour tous.
+        for (const actingUser of [family, admin]) {
+            await expect(
+                payload.delete({
+                    collection: "invitations",
+                    id: invitation.id,
+                    user: actingUser,
+                    overrideAccess: false,
+                    depth: 0,
+                }),
+            ).rejects.toBeTruthy();
+        }
 
-        await payload.delete({
+        const revoked = await payload.update({
             collection: "invitations",
             id: invitation.id,
+            data: { status: "revoked" },
             user: admin,
             overrideAccess: false,
             depth: 0,
         });
+
+        expect(revoked.status).toBe("revoked");
 
         const readBack = await payload.find({
             collection: "invitations",
@@ -268,6 +284,7 @@ describe("Payload — Memberships & Invitations", () => {
             where: { id: { equals: invitation.id } },
         });
 
-        expect(readBack.docs).toHaveLength(0);
+        expect(readBack.docs).toHaveLength(1);
+        expect(readBack.docs[0].status).toBe("revoked");
     });
 });

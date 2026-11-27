@@ -26,7 +26,7 @@ type CaseAttachmentDoc = {
     filename?: string;
     mimeType?: string;
     careGroup?: unknown;
-    caseType?: unknown;
+    case?: unknown;
 };
 
 async function getUserIDFromTokenWithOrigin(args: {
@@ -122,8 +122,34 @@ export async function GET(
         Awaited<ReturnType<typeof getPayload>>["find"]
     >[0]);
 
+    const rawCase = doc?.case;
+    const caseID =
+        typeof rawCase === "string" || typeof rawCase === "number"
+            ? rawCase
+            : (rawCase as { id?: string | number } | undefined)?.id;
+
+    if (!caseID) {
+        return new Response("Not found", { status: 404 });
+    }
+
+    let relatedCase: { type?: unknown } | null = null;
+
+    try {
+        relatedCase = (await payload.findByID({
+            collection: "cases",
+            id: caseID,
+            depth: 0,
+            overrideAccess: true,
+            disableTransaction: true,
+        } as unknown as Parameters<
+            Awaited<ReturnType<typeof getPayload>>["findByID"]
+        >[0])) as { type?: unknown };
+    } catch {
+        return new Response("Not found", { status: 404 });
+    }
+
     const role = (membership.docs[0] as { role?: string } | undefined)?.role;
-    const caseType = doc?.caseType;
+    const caseType = relatedCase?.type;
 
     const canRead =
         role === "admin" ||

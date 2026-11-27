@@ -1,7 +1,10 @@
+// Check if PAYLOAD_SECRET is defined
+if (!process.env.PAYLOAD_SECRET) throw new Error("PAYLOAD_SECRET is required")
+
 // Prevent this file from being imported in the browser
 if (typeof window !== "undefined") {
     throw new Error("payload.config.ts should only be imported server-side");
-}
+};
 
 import { mongooseAdapter } from "@payloadcms/db-mongodb";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
@@ -315,7 +318,7 @@ export default buildConfig({
     editor: lexicalEditor({}),
 
     // Secret used for signing tokens/cookies, etc.
-    secret: process.env.PAYLOAD_SECRET || "",
+    secret: process.env.PAYLOAD_SECRET,
 
     // Server URL used in various places (links, etc). In dev it's usually http://localhost:3000
     serverURL: process.env.NEXT_PUBLIC_SERVER_URL || undefined,

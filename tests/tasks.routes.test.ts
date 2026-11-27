@@ -249,7 +249,9 @@ describe("Tasks Next route handlers", () => {
         const formData = new FormData();
         formData.set(
             "file",
-            new File(["document"], "document.txt", { type: "text/plain" }),
+            new File(["document"], "document.pdf", {
+                type: "application/pdf",
+            }),
         );
         formData.set("description", "Document professionnel");
 

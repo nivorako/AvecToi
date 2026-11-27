@@ -10,6 +10,7 @@ import { getRelationshipID } from "@/payload/utils/getRelationshipID";
 
 import { CASE_TYPE_OPTIONS } from "@/domain/caseTypes";
 
+// Ensure the case associated with the task is active
 async function ensureCaseIsActive(
     req: PayloadRequest,
     taskValue: unknown,
@@ -44,6 +45,77 @@ async function ensureCaseIsActive(
             403,
         );
     }
+}
+
+// Build where clause for professional access to medical tasks
+async function buildProfessionalWhere(
+    req: PayloadRequest,
+    professionalCareGroupIDs: unknown[],
+): Promise<Where | null> {
+    // Extract care group IDs from relationships
+    const careGroupIDs = professionalCareGroupIDs
+        .map((id) => getRelationshipID(id))
+        .filter((id): id is string | number => id !== undefined);
+
+    if (careGroupIDs.length === 0) return null;
+
+    const medicalCases = await req.payload.find({
+        collection: "cases",
+        depth: 0,
+        limit: 100,
+        pagination: false,
+        overrideAccess: true,
+        where: {
+            and: [
+                {
+                    careGroup: {
+                        in: careGroupIDs,
+                    },
+                },
+                {
+                    type: {
+                        equals: "medical",
+                    },
+                },
+            ],
+        },
+    });
+
+    const medicalCaseIDs = medicalCases.docs.map((caseDoc) => caseDoc.id);
+
+    if (medicalCaseIDs.length === 0) return null;
+
+    const medicalTasks = await req.payload.find({
+        collection: "tasks",
+        depth: 0,
+        limit: 500,
+        pagination: false,
+        overrideAccess: true,
+        where: {
+            case: {
+                in: medicalCaseIDs,
+            },
+        },
+    });
+
+    const medicalTaskIDs = medicalTasks.docs.map((task) => task.id);
+
+    if (medicalTaskIDs.length === 0) return null;
+
+    return {
+        and: [
+            {
+                careGroup: {
+                    in: careGroupIDs,
+                },
+            },
+            {
+                task: {
+                    in: medicalTaskIDs,
+                },
+            },
+        ],
+    };
 }
 
 export const TaskAttachments: CollectionConfig = {
@@ -168,20 +240,15 @@ export const TaskAttachments: CollectionConfig = {
                     }
 
                     if (professionalCareGroupIDs.length > 0) {
-                        or.push({
-                            and: [
-                                {
-                                    careGroup: {
-                                        in: professionalCareGroupIDs,
-                                    },
-                                },
-                                {
-                                    taskType: {
-                                        equals: "medical",
-                                    },
-                                },
-                            ],
-                        });
+                        const professionalWhere =
+                            await buildProfessionalWhere(
+                                req,
+                                professionalCareGroupIDs,
+                            );
+
+                        if (professionalWhere) {
+                            or.push(professionalWhere);
+                        }
                     }
 
                     return { or } as Where;
@@ -224,20 +291,15 @@ export const TaskAttachments: CollectionConfig = {
                     }
 
                     if (professionalCareGroupIDs.length > 0) {
-                        or.push({
-                            and: [
-                                {
-                                    careGroup: {
-                                        in: professionalCareGroupIDs,
-                                    },
-                                },
-                                {
-                                    taskType: {
-                                        equals: "medical",
-                                    },
-                                },
-                            ],
-                        });
+                        const professionalWhere =
+                            await buildProfessionalWhere(
+                                req,
+                                professionalCareGroupIDs,
+                            );
+
+                        if (professionalWhere) {
+                            or.push(professionalWhere);
+                        }
                     }
 
                     if (or.length === 0) return false;
@@ -282,20 +344,15 @@ export const TaskAttachments: CollectionConfig = {
                     }
 
                     if (professionalCareGroupIDs.length > 0) {
-                        or.push({
-                            and: [
-                                {
-                                    careGroup: {
-                                        in: professionalCareGroupIDs,
-                                    },
-                                },
-                                {
-                                    taskType: {
-                                        equals: "medical",
-                                    },
-                                },
-                            ],
-                        });
+                        const professionalWhere =
+                            await buildProfessionalWhere(
+                                req,
+                                professionalCareGroupIDs,
+                            );
+
+                        if (professionalWhere) {
+                            or.push(professionalWhere);
+                        }
                     }
 
                     if (or.length === 0) return false;

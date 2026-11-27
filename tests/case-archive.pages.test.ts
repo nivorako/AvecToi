@@ -95,6 +95,9 @@ describe("case archive pages", () => {
             }
             if (path.startsWith("/api/tasks?")) return { docs: [] };
             if (path.startsWith("/api/case-attachments?")) return { docs: [] };
+            if (path.startsWith("/api/memberships?")) {
+                return { docs: [{ role: "admin" }] };
+            }
             throw new Error(`Unexpected Payload request: ${path}`);
         });
 
